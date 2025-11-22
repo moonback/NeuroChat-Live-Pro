@@ -1,0 +1,8 @@
+{
+  "name": "NeuroChat Pro",
+  "description": "Assistant vocal professionnel immersif avec rendu 3D temps réel et personnalités dynamiques propulsé par Gemini Live.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
