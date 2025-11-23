@@ -14,11 +14,13 @@ interface ControlPanelProps {
   inputAnalyser?: AnalyserNode | null;
   availableCameras?: MediaDeviceInfo[];
   selectedCameraId?: string;
+  isWakeWordEnabled?: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
   onToggleVideo: () => void;
   onToggleScreenShare?: () => void;
   onCameraChange?: (cameraId: string) => void;
+  onToggleWakeWord?: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -30,11 +32,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   inputAnalyser = null,
   availableCameras = [],
   selectedCameraId = '',
+  isWakeWordEnabled = true,
   onConnect,
   onDisconnect,
   onToggleVideo,
   onToggleScreenShare,
   onCameraChange,
+  onToggleWakeWord,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -196,6 +200,44 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <span className="relative z-10">Partager Écran</span>
+                    </>
+                )}
+                </button>
+            </Tooltip>
+          )}
+
+          {/* Wake Word Toggle - Visible seulement quand déconnecté */}
+          {!isConnected && onToggleWakeWord && (
+            <Tooltip content={isWakeWordEnabled ? "Désactiver la détection vocale 'Bonjour'" : "Activer la détection vocale 'Bonjour'"}>
+                <button
+                onClick={onToggleWakeWord}
+                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.02] overflow-hidden ${
+                    isWakeWordEnabled 
+                    ? 'border-emerald-500/50 text-emerald-200 hover:border-emerald-500/70' 
+                    : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                }`}
+                style={{
+                    boxShadow: isWakeWordEnabled ? '0 0 30px rgba(16, 185, 129, 0.3)' : undefined
+                }}
+                >
+                {isWakeWordEnabled && (
+                    <div className="absolute inset-0 bg-emerald-500/10"></div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {isWakeWordEnabled ? (
+                    <>
+                    <svg className="w-4 h-4 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                    <span className="relative z-10">Désactiver 'Bonjour'</span>
+                    </>
+                ) : (
+                    <>
+                    <svg className="w-4 h-4 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                    <span className="relative z-10">Activer 'Bonjour'</span>
                     </>
                 )}
                 </button>

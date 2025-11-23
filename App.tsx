@@ -30,6 +30,13 @@ const App: React.FC = () => {
   // Custom Personality State
   const [currentPersonality, setCurrentPersonality] = useState<Personality>(DEFAULT_PERSONALITY);
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
+  
+  // Wake Word Detection State
+  const [isWakeWordEnabled, setIsWakeWordEnabled] = useState<boolean>(() => {
+    // Charger la préférence depuis localStorage, par défaut activé
+    const saved = localStorage.getItem('wakeWordEnabled');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -500,13 +507,13 @@ const App: React.FC = () => {
       });
     }
 
-    // Démarrer l'écoute si on n'est pas connecté
-    if (connectionState === ConnectionState.DISCONNECTED || connectionState === ConnectionState.ERROR) {
+    // Démarrer l'écoute si on n'est pas connecté ET si le wake word est activé
+    if ((connectionState === ConnectionState.DISCONNECTED || connectionState === ConnectionState.ERROR) && isWakeWordEnabled) {
       if (wakeWordDetectorRef.current && !wakeWordDetectorRef.current.isActive()) {
         wakeWordDetectorRef.current.start();
       }
     } else {
-      // Arrêter l'écoute si on est connecté
+      // Arrêter l'écoute si on est connecté OU si le wake word est désactivé
       if (wakeWordDetectorRef.current && wakeWordDetectorRef.current.isActive()) {
         wakeWordDetectorRef.current.stop();
       }
@@ -519,7 +526,12 @@ const App: React.FC = () => {
         wakeWordDetectorRef.current = null;
       }
     };
-  }, [connectionState]);
+  }, [connectionState, isWakeWordEnabled]);
+
+  // Sauvegarder la préférence du wake word dans localStorage
+  useEffect(() => {
+    localStorage.setItem('wakeWordEnabled', isWakeWordEnabled.toString());
+  }, [isWakeWordEnabled]);
 
   useEffect(() => {
     return () => {
@@ -1275,6 +1287,8 @@ const App: React.FC = () => {
             onToggleScreenShare={toggleScreenShare}
             onCameraChange={changeCamera}
             onEditPersonality={() => setIsPersonalityEditorOpen(true)}
+            isWakeWordEnabled={isWakeWordEnabled}
+            onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
           />
         </main>
       </div>
