@@ -9,6 +9,7 @@ import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
+import { VideoContextAnalyzer } from './utils/videoContextAnalyzer';
 
 const App: React.FC = () => {
   // State
@@ -60,6 +61,7 @@ const App: React.FC = () => {
   const videoStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const frameIntervalRef = useRef<number | NodeJS.Timeout | null>(null);
+  const videoContextAnalyzerRef = useRef<VideoContextAnalyzer | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -132,6 +134,11 @@ const App: React.FC = () => {
         frameIntervalRef.current = null;
       }
       
+      // Reset context analyzer for new camera source
+      if (videoContextAnalyzerRef.current) {
+        videoContextAnalyzerRef.current.reset();
+      }
+      
       // Start new stream with selected camera
       try {
         const constraints: MediaStreamConstraints = {
@@ -170,6 +177,11 @@ const App: React.FC = () => {
       setIsScreenShareActive(true);
       isScreenShareActiveRef.current = true;
 
+      // Reset context analyzer for screen share source
+      if (videoContextAnalyzerRef.current) {
+        videoContextAnalyzerRef.current.reset();
+      }
+
       // Use screen stream in video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -206,6 +218,11 @@ const App: React.FC = () => {
     setIsScreenShareActive(false);
     isScreenShareActiveRef.current = false;
 
+    // Reset context analyzer when switching back to camera
+    if (videoContextAnalyzerRef.current) {
+      videoContextAnalyzerRef.current.reset();
+    }
+
     // Restore camera if active
     if (isVideoActive && videoStreamRef.current && videoRef.current) {
        videoRef.current.srcObject = videoStreamRef.current;
@@ -240,6 +257,11 @@ const App: React.FC = () => {
                     await videoRef.current.play();
                 }
                 
+                // Reset context analyzer for new video stream
+                if (videoContextAnalyzerRef.current) {
+                    videoContextAnalyzerRef.current.reset();
+                }
+                
                 // Start sending frames if we are connected
                 if (connectionState === ConnectionState.CONNECTED) {
                     startFrameTransmission();
@@ -268,6 +290,11 @@ const App: React.FC = () => {
       if (frameIntervalRef.current) {
           clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
           clearInterval(frameIntervalRef.current as number);
+      }
+      
+      // Initialize context analyzer if not already done
+      if (!videoContextAnalyzerRef.current) {
+          videoContextAnalyzerRef.current = new VideoContextAnalyzer();
       }
       
       const canvas = canvasRef.current;
@@ -321,6 +348,15 @@ const App: React.FC = () => {
               // Draw with scaling for better performance
               ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
               
+              // Context Awareness: Analyze frame before sending
+              const analysis = videoContextAnalyzerRef.current.analyzeFrame(canvas, isScreenSharing);
+              
+              // Only send frame if analysis indicates significant change or first frame
+              if (!analysis.shouldSend) {
+                  frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
+                  return;
+              }
+              
               // Use lower quality for faster encoding (still readable)
               const quality = isScreenSharing ? 0.75 : 0.55;
               
@@ -330,12 +366,22 @@ const App: React.FC = () => {
                       const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
                       
                       if (sessionRef.current) {
-                          sessionRef.current.sendRealtimeInput({
+                          // Send frame with optional context prompt
+                          const input: any = {
                               media: {
                                   mimeType: 'image/jpeg',
                                   data: base64
                               }
-                          });
+                          };
+                          
+                          // Add context prompt as text input if available (Gemini Live supports mixed inputs)
+                          if (analysis.contextPrompt) {
+                              // Note: Gemini Live API may support sending text context with media
+                              // For now, we log it for debugging. In future, this could be sent as a tool call or text input
+                              console.debug('Context vidéo:', analysis.contextPrompt);
+                          }
+                          
+                          sessionRef.current.sendRealtimeInput(input);
                       }
                   } catch (e) {
                       console.warn("Error encoding/sending frame", e);

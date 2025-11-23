@@ -106,7 +106,7 @@ La base solide du projet est déjà en place :
 
 ### 🧠 Intelligence Artificielle
 - [ ] **Mémoire Long Terme** - Capacité à se souvenir des conversations passées
-- [ ] **Context Awareness** - Analyse plus fine du contexte vidéo
+- [x] **Context Awareness** - Analyse plus fine du contexte vidéo
 - [ ] **Multi-modèles** - Possibilité de switcher (Gemini Pro vs Flash)
 - [ ] **RAG (Retrieval Augmented Generation)** - Intégration de documents
 - [ ] **Tool Calling** - Exécution d'actions (recherche web, calculs, etc.)
