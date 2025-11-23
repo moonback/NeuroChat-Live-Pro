@@ -84,14 +84,9 @@ export class WakeWordDetector {
           if (detected) {
             console.log(`✅ Wake word détecté! Transcription: "${transcript}"`);
             this.options.onWakeWordDetected();
-            // Arrêter temporairement pour éviter les détections multiples
+            // Arrêter pour éviter les détections multiples
+            // Le redémarrage sera géré par le composant parent selon l'état de connexion
             this.stop();
-            // Redémarrer après un court délai
-            setTimeout(() => {
-              if (!this.isListening) {
-                this.start();
-              }
-            }, 2000); // Augmenter le délai pour éviter les détections multiples
             break;
           }
         }
