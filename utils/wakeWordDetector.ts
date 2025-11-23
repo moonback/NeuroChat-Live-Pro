@@ -68,8 +68,7 @@ export class WakeWordDetector {
           // Supporte aussi les variantes comme "bonjour neurochat" ou juste "neurochat"
           const wakeWords = [
             wakeWordLower,
-            'neurochat', // Toujours supporter "neurochat" même si le wake word est différent
-            'bonjour neurochat',
+            'salut', // Toujours supporter "neurochat" même si le wake word est différent
             'bonjour',
           ];
           

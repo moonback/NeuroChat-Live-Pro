@@ -71,6 +71,7 @@ const App: React.FC = () => {
   const connectRef = useRef<(() => Promise<void>) | null>(null);
   const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
   const chatbotSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
+  const beepAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -83,6 +84,66 @@ const App: React.FC = () => {
 
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Précharger le fichier audio du bip
+  useEffect(() => {
+    const audio = new Audio('/bip.mp3');
+    audio.volume = 0.7; // Volume à 70%
+    audio.preload = 'auto';
+    
+    // Précharger le fichier
+    audio.load();
+    
+    beepAudioRef.current = audio;
+    
+    return () => {
+      if (beepAudioRef.current) {
+        beepAudioRef.current.pause();
+        beepAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Fonction pour émettre un bip sonore depuis un fichier audio
+  const playBeep = () => {
+    try {
+      // Utiliser l'instance préchargée si disponible
+      if (beepAudioRef.current) {
+        // Réinitialiser la position pour pouvoir rejouer
+        beepAudioRef.current.currentTime = 0;
+        
+        // Jouer le son
+        const playPromise = beepAudioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('[App] ✅ Bip joué avec succès');
+            })
+            .catch(error => {
+              console.warn('[App] Erreur lors de la lecture du bip:', error);
+              // Si l'erreur est due au contexte audio, créer une nouvelle instance
+              if (error.name === 'NotAllowedError' || error.name === 'NotSupportedError') {
+                const newAudio = new Audio('/bip.mp3');
+                newAudio.volume = 0.7;
+                newAudio.play().catch(e => {
+                  console.warn('[App] Impossible de jouer le bip (nouvelle instance):', e);
+                });
+              }
+            });
+        }
+      } else {
+        // Fallback : créer une nouvelle instance si l'audio n'est pas préchargé
+        const audio = new Audio('/bip.mp3');
+        audio.volume = 0.7;
+        audio.play().catch(error => {
+          console.warn('[App] Impossible de jouer le bip (fallback):', error);
+        });
+      }
+    } catch (error) {
+      console.warn('[App] Erreur lors de la création du bip:', error);
+    }
   };
 
   // Personality Management
@@ -417,6 +478,9 @@ const App: React.FC = () => {
         continuous: true,
         onWakeWordDetected: () => {
           console.log('[App] Wake word détecté, tentative de connexion...');
+          // Émettre un bip pour signaler qu'on peut parler
+          playBeep();
+          
           // Déclencher la connexion si on n'est pas déjà connecté
           const currentState = connectionStateRef.current;
           console.log('[App] État actuel de la connexion:', currentState);
