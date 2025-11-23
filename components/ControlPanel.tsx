@@ -9,6 +9,7 @@ interface ControlPanelProps {
   connectionState: ConnectionState;
   currentPersonality: Personality;
   isVideoActive: boolean;
+  isScreenShareActive?: boolean;
   latencyMs?: number;
   inputAnalyser?: AnalyserNode | null;
   availableCameras?: MediaDeviceInfo[];
@@ -16,6 +17,7 @@ interface ControlPanelProps {
   onConnect: () => void;
   onDisconnect: () => void;
   onToggleVideo: () => void;
+  onToggleScreenShare?: () => void;
   onCameraChange?: (cameraId: string) => void;
 }
 
@@ -23,6 +25,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   connectionState,
   currentPersonality,
   isVideoActive,
+  isScreenShareActive = false,
   latencyMs = 0,
   inputAnalyser = null,
   availableCameras = [],
@@ -30,6 +33,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onConnect,
   onDisconnect,
   onToggleVideo,
+  onToggleScreenShare,
   onCameraChange,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
@@ -158,6 +162,43 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
+            </Tooltip>
+          )}
+
+          {/* Screen Share Toggle */}
+          {isConnected && onToggleScreenShare && (
+            <Tooltip content={isScreenShareActive ? "Arrêter le partage" : "Partager l'écran"}>
+                <button
+                onClick={onToggleScreenShare}
+                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.02] overflow-hidden ${
+                    isScreenShareActive 
+                    ? 'border-indigo-500/50 text-indigo-200 hover:border-indigo-500/70' 
+                    : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                }`}
+                style={{
+                    boxShadow: isScreenShareActive ? '0 0 30px rgba(99, 102, 241, 0.3)' : undefined
+                }}
+                >
+                {isScreenShareActive && (
+                    <div className="absolute inset-0 bg-indigo-500/10"></div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                {isScreenShareActive ? (
+                    <>
+                    <svg className="w-4 h-4 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="relative z-10">Arrêter Partage</span>
+                    </>
+                ) : (
+                    <>
+                    <svg className="w-4 h-4 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="relative z-10">Partager Écran</span>
+                    </>
+                )}
+                </button>
             </Tooltip>
           )}
         </div>

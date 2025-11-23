@@ -16,6 +16,7 @@ const App: React.FC = () => {
   
   // New Features State
   const [isVideoActive, setIsVideoActive] = useState(false);
+  const [isScreenShareActive, setIsScreenShareActive] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [latency, setLatency] = useState<number>(0);
@@ -40,11 +41,13 @@ const App: React.FC = () => {
   const reconnectAttemptsRef = useRef<number>(0);
   const isReconnectingRef = useRef<boolean>(false);
   const isIntentionalDisconnectRef = useRef<boolean>(false);
+  const isScreenShareActiveRef = useRef(false); // Ref to track screen share state for closures
 
   // Video Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const frameIntervalRef = useRef<number | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
@@ -132,9 +135,72 @@ const App: React.FC = () => {
     enumerateCameras();
   }, []);
 
+  // Screen Share Functions
+  const startScreenShare = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      screenStreamRef.current = stream;
+      setIsScreenShareActive(true);
+      isScreenShareActiveRef.current = true;
+
+      // Use screen stream in video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      // Handle "Stop sharing" from browser UI
+      stream.getVideoTracks()[0].onended = () => {
+        stopScreenShare();
+      };
+
+      // Ensure transmission uses the new stream content
+      if (connectionState === ConnectionState.CONNECTED) {
+        startFrameTransmission();
+      }
+      
+      addToast('success', 'Partage d\'écran', 'Partage d\'écran activé');
+
+    } catch (e) {
+      console.error("Error sharing screen", e);
+      // Don't show error if user cancelled
+      if ((e as any).name !== 'NotAllowedError') {
+        addToast('error', 'Erreur', "Impossible de partager l'écran");
+      }
+      setIsScreenShareActive(false);
+    }
+  };
+
+  const stopScreenShare = async () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(t => t.stop());
+      screenStreamRef.current = null;
+    }
+    setIsScreenShareActive(false);
+    isScreenShareActiveRef.current = false;
+
+    // Restore camera if active
+    if (isVideoActive && videoStreamRef.current && videoRef.current) {
+       videoRef.current.srcObject = videoStreamRef.current;
+       await videoRef.current.play();
+    } else if (videoRef.current) {
+       videoRef.current.srcObject = null;
+    }
+  };
+
+  const toggleScreenShare = () => {
+    if (isScreenShareActive) {
+      stopScreenShare();
+    } else {
+      startScreenShare();
+    }
+  };
+
   // Video Stream Management
   useEffect(() => {
     const startVideo = async () => {
+        if (isScreenShareActive) return;
+
         if (isVideoActive && !videoStreamRef.current) {
             try {
                 const constraints: MediaStreamConstraints = {
@@ -159,14 +225,16 @@ const App: React.FC = () => {
         } else if (!isVideoActive && videoStreamRef.current) {
             videoStreamRef.current.getTracks().forEach(t => t.stop());
             videoStreamRef.current = null;
-            if (frameIntervalRef.current) {
+            
+            // Only stop transmission if screen share is also not active
+            if (!isScreenShareActive && frameIntervalRef.current) {
                 window.clearInterval(frameIntervalRef.current);
                 frameIntervalRef.current = null;
             }
         }
     };
     startVideo();
-  }, [isVideoActive, connectionState]);
+  }, [isVideoActive, connectionState, isScreenShareActive]);
 
   const startFrameTransmission = () => {
       if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
@@ -180,12 +248,17 @@ const App: React.FC = () => {
 
       // Send frames at 1 FPS to save bandwidth but maintain context
       frameIntervalRef.current = window.setInterval(async () => {
-          if (sessionRef.current && videoStreamRef.current) {
+          const isScreenSharing = isScreenShareActiveRef.current;
+          const currentStream = isScreenSharing ? screenStreamRef.current : videoStreamRef.current;
+          
+          if (sessionRef.current && currentStream && video.readyState === 4) {
               canvas.width = video.videoWidth;
               canvas.height = video.videoHeight;
               ctx.drawImage(video, 0, 0);
               
-              const base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+              // Quality adjusted for screen sharing (higher) vs camera (standard)
+              const quality = isScreenSharing ? 0.8 : 0.6;
+              const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
               
               try {
                 sessionRef.current.sendRealtimeInput({
@@ -198,7 +271,7 @@ const App: React.FC = () => {
                   console.warn("Error sending frame", e);
               }
           }
-      }, 1000); 
+      }, isScreenShareActiveRef.current ? 500 : 1000); // Faster updates for screen share (2 FPS) 
   };
 
   useEffect(() => {
@@ -469,6 +542,14 @@ const App: React.FC = () => {
         videoStreamRef.current.getTracks().forEach(t => t.stop());
         videoStreamRef.current = null;
     }
+    
+    // Cleanup screen share
+    if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+        screenStreamRef.current = null;
+    }
+    setIsScreenShareActive(false);
+    isScreenShareActiveRef.current = false;
 
     setConnectionState(ConnectionState.DISCONNECTED);
     setIsTalking(false);
@@ -528,6 +609,11 @@ const App: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent z-0 pointer-events-none" />
       
+      {/* Screen Share Overlay Border */}
+      {isScreenShareActive && (
+         <div className="absolute inset-0 pointer-events-none z-30 border-[6px] border-indigo-500/50 shadow-[inset_0_0_100px_rgba(99,102,241,0.2)] animate-pulse" />
+      )}
+
       {/* Premium Visualizer */}
       <Visualizer 
         analyserRef={analyserRef} 
@@ -542,7 +628,7 @@ const App: React.FC = () => {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Premium Camera Preview (Picture-in-Picture) */}
-      {isVideoActive && !isVideoEnlarged && (
+      {(isVideoActive || isScreenShareActive) && !isVideoEnlarged && (
          <div 
            onClick={() => setIsVideoEnlarged(true)}
            className="absolute top-20 right-4 md:top-8 md:right-8 z-40 w-32 md:w-56 aspect-video rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 transition-transform duration-300"
@@ -551,10 +637,11 @@ const App: React.FC = () => {
            }}>
              <div ref={(ref) => {
                  if (ref && videoRef.current) {
-                    if (videoStreamRef.current) {
+                    const stream = isScreenShareActive ? screenStreamRef.current : videoStreamRef.current;
+                    if (stream) {
                         ref.innerHTML = '';
                         const previewVideo = document.createElement('video');
-                        previewVideo.srcObject = videoStreamRef.current;
+                        previewVideo.srcObject = stream;
                         previewVideo.muted = true;
                         previewVideo.play().catch(() => {});
                         previewVideo.className = "w-full h-full object-cover";
@@ -573,11 +660,13 @@ const App: React.FC = () => {
              
              <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-lg glass-intense">
                <div className="relative">
-                 <span className="block w-2 h-2 bg-red-500 rounded-full" 
-                   style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.8)' }}></span>
-                 <span className="absolute inset-0 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                 <span className={`block w-2 h-2 rounded-full ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}
+                   style={{ boxShadow: isScreenShareActive ? '0 0 10px rgba(99, 102, 241, 0.8)' : '0 0 10px rgba(239, 68, 68, 0.8)' }}></span>
+                 <span className={`absolute inset-0 w-2 h-2 rounded-full animate-ping ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}></span>
                </div>
-               <span className="font-display text-[9px] font-bold uppercase tracking-[0.15em] text-white">Vision Active</span>
+               <span className="font-display text-[9px] font-bold uppercase tracking-[0.15em] text-white">
+                 {isScreenShareActive ? "Partage Écran" : "Vision Active"}
+               </span>
              </div>
              
              {/* Expand Icon Hint */}
@@ -592,7 +681,7 @@ const App: React.FC = () => {
       )}
       
       {/* Enlarged Camera View */}
-      {isVideoActive && isVideoEnlarged && (
+      {(isVideoActive || isScreenShareActive) && isVideoEnlarged && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl animate-in"
           onClick={(e) => {
@@ -609,10 +698,11 @@ const App: React.FC = () => {
               }}>
               <div ref={(ref) => {
                   if (ref && videoRef.current) {
-                     if (videoStreamRef.current) {
+                     const stream = isScreenShareActive ? screenStreamRef.current : videoStreamRef.current;
+                     if (stream) {
                          ref.innerHTML = '';
                          const enlargedVideo = document.createElement('video');
-                         enlargedVideo.srcObject = videoStreamRef.current;
+                         enlargedVideo.srcObject = stream;
                          enlargedVideo.muted = true;
                          enlargedVideo.play().catch(() => {});
                          enlargedVideo.className = "w-full h-full object-contain";
@@ -630,11 +720,13 @@ const App: React.FC = () => {
               {/* Live Indicator */}
               <div className="absolute top-6 left-6 flex items-center gap-3 px-4 py-2.5 rounded-xl glass-intense">
                 <div className="relative">
-                  <span className="block w-3 h-3 bg-red-500 rounded-full" 
-                    style={{ boxShadow: '0 0 15px rgba(239, 68, 68, 0.9)' }}></span>
-                  <span className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                  <span className={`block w-3 h-3 rounded-full ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}
+                    style={{ boxShadow: isScreenShareActive ? '0 0 15px rgba(99, 102, 241, 0.9)' : '0 0 15px rgba(239, 68, 68, 0.9)' }}></span>
+                  <span className={`absolute inset-0 w-3 h-3 rounded-full animate-ping ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}></span>
                 </div>
-                <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-white">Vision Active</span>
+                <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-white">
+                  {isScreenShareActive ? "Partage Écran" : "Vision Active"}
+                </span>
               </div>
               
               {/* Close Button */}
@@ -654,7 +746,9 @@ const App: React.FC = () => {
               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                 <div className="px-4 py-2.5 rounded-xl glass-intense">
                   <span className="font-body text-sm text-slate-300">
-                    {availableCameras.find(cam => cam.deviceId === selectedCameraId)?.label || 'Caméra'}
+                    {isScreenShareActive 
+                      ? 'Partage d\'écran en cours' 
+                      : (availableCameras.find(cam => cam.deviceId === selectedCameraId)?.label || 'Caméra')}
                   </span>
                 </div>
                 
@@ -684,6 +778,7 @@ const App: React.FC = () => {
             connectionState={connectionState}
             currentPersonality={DEFAULT_PERSONALITY}
             isVideoActive={isVideoActive}
+            isScreenShareActive={isScreenShareActive}
             latencyMs={latency}
             inputAnalyser={inputAnalyserRef.current}
             availableCameras={availableCameras}
@@ -697,6 +792,7 @@ const App: React.FC = () => {
                 disconnect(true);
             }}
             onToggleVideo={() => setIsVideoActive(!isVideoActive)}
+            onToggleScreenShare={toggleScreenShare}
             onCameraChange={changeCamera}
           />
         </main>
