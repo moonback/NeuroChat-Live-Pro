@@ -6,7 +6,7 @@ export const DEFAULT_PERSONALITY: Personality = {
   name: 'NeuroChat AI',
   description: 'Assistant Intelligent Professionnel',
   systemInstruction: "Tu es NeuroChat Pro, un assistant IA avancé pour les professionnels. Tu es précis, concis et utile. Ce projet est développé par Maysson.",
-  voiceName: 'Zephyr',
+  voiceName: 'Kore',
   themeColor: '#0ea5e9', // Sky Blue 500 (matches brand)
 };
 
