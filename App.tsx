@@ -70,6 +70,7 @@ const App: React.FC = () => {
   const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
   const connectRef = useRef<(() => Promise<void>) | null>(null);
   const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
+  const chatbotSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -582,6 +583,61 @@ const App: React.FC = () => {
             processor.connect(inputAudioContextRef.current.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Vérifier si le message contient du texte/transcription (seulement si texte présent)
+            const modelTurn = message.serverContent?.modelTurn;
+            if (modelTurn) {
+              const parts = modelTurn.parts || [];
+              for (const part of parts) {
+                const text = (part as any).text;
+                if (text && typeof text === 'string' && text.trim().length > 0) {
+                  const textLower = text.toLowerCase().trim();
+                  
+                  // Phrases qui indiquent une demande de terminer la session
+                  const endSessionPhrases = [
+                    'terminer la session',
+                    'fin de session',
+                    'terminer session',
+                    'redémarrer l\'application',
+                    'redémarrer application',
+                    'redémarrer app',
+                    'relancer l\'application',
+                    'relancer application',
+                    'relancer app',
+                    'redémarrer',
+                    'relancer',
+                    'terminer',
+                    'arrêter la session',
+                    'arrêter session',
+                    'fermer la session',
+                    'fermer session'
+                  ];
+                  
+                  const shouldEndSession = endSessionPhrases.some(phrase => 
+                    textLower.includes(phrase)
+                  );
+                  
+                  if (shouldEndSession) {
+                    console.log('[App] ✅ Demande de terminer la session détectée dans le texte:', text);
+                    addToast('info', 'Fin de session', 'Redémarrage de l\'application...');
+                    isIntentionalDisconnectRef.current = true;
+                    
+                    // Arrêter la reconnaissance vocale si active
+                    if (chatbotSpeechRecognitionRef.current) {
+                      try {
+                        chatbotSpeechRecognitionRef.current.stop();
+                        chatbotSpeechRecognitionRef.current = null;
+                      } catch (e) {}
+                    }
+                    
+                    setTimeout(() => {
+                      disconnect(true);
+                    }, 1000);
+                    return;
+                  }
+                }
+              }
+            }
+
             // Handle Audio
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current && gainNodeRef.current) {
@@ -617,12 +673,165 @@ const App: React.FC = () => {
                 audioSourcesRef.current.delete(source);
                 if (audioSourcesRef.current.size === 0) {
                     setIsTalking(false);
+                    // Garder la reconnaissance vocale active encore 2 secondes après la fin de la réponse
+                    // pour capturer les dernières phrases du chatbot
+                    setTimeout(() => {
+                      if (chatbotSpeechRecognitionRef.current && audioSourcesRef.current.size === 0) {
+                        try {
+                          chatbotSpeechRecognitionRef.current.stop();
+                          chatbotSpeechRecognitionRef.current = null;
+                          console.log('[App] Reconnaissance vocale arrêtée après fin de réponse');
+                        } catch (e) {}
+                      }
+                    }, 2000);
                 }
               });
 
               source.start(nextStartTimeRef.current);
               nextStartTimeRef.current += audioBuffer.duration;
               audioSourcesRef.current.add(source);
+
+              // Démarrer la reconnaissance vocale pour écouter ce que dit le chatbot
+              // (via le microphone qui capte l'audio des haut-parleurs)
+              if (!chatbotSpeechRecognitionRef.current && audioSourcesRef.current.size === 1) {
+                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                  const recognition = new SpeechRecognition();
+                  recognition.continuous = true;
+                  recognition.interimResults = true;
+                  recognition.lang = 'fr-FR';
+                  
+                  recognition.onresult = (event: SpeechRecognitionEvent) => {
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                      const result = event.results[i];
+                      const transcript = result[0].transcript.toLowerCase().trim();
+                      const isFinal = result.isFinal;
+                      
+                      // Log toutes les transcriptions (même intermédiaires) pour déboguer
+                      if (transcript.length > 0) {
+                        console.log(`[App] Transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
+                      }
+                      
+                      if (isFinal && transcript.length > 0) {
+                        console.log('[App] 🔍 Analyse de la transcription finale:', transcript);
+                        
+                        // Mots-clés qui indiquent une demande de terminer la session (détection flexible)
+                        const endSessionKeywords = [
+                          'terminer',
+                          'redémarrer',
+                          'relancer',
+                          'arrêter',
+                          'fermer',
+                          'fin',
+                          'stop'
+                        ];
+                        
+                        // Phrases complètes à détecter (avec variantes)
+                        const endSessionPhrases = [
+                          'terminer la session',
+                          'la session se termine',
+                          'session se termine',
+                          'se termine',
+                          'se termine ici',
+                          'terminer ici',
+                          'fin de session',
+                          'terminer session',
+                          'redémarrer l\'application',
+                          'redémarrer application',
+                          'redémarrer app',
+                          'redémarrer l app',
+                          'relancer l\'application',
+                          'relancer application',
+                          'relancer app',
+                          'relancer l app',
+                          'arrêter la session',
+                          'arrêter session',
+                          'fermer la session',
+                          'fermer session',
+                          'session terminée',
+                          'session est terminée'
+                        ];
+                        
+                        // Vérifier d'abord les phrases complètes
+                        let shouldEndSession = endSessionPhrases.some(phrase => {
+                          const found = transcript.includes(phrase);
+                          if (found) {
+                            console.log('[App] ✅ Phrase complète détectée:', phrase, 'dans:', transcript);
+                          }
+                          return found;
+                        });
+                        
+                        // Si pas de phrase complète, vérifier les mots-clés avec contexte
+                        if (!shouldEndSession) {
+                          shouldEndSession = endSessionKeywords.some(keyword => {
+                            const keywordIndex = transcript.indexOf(keyword);
+                            if (keywordIndex !== -1) {
+                              // Vérifier le contexte autour du mot-clé (20 caractères avant et après)
+                              const contextStart = Math.max(0, keywordIndex - 20);
+                              const contextEnd = Math.min(transcript.length, keywordIndex + keyword.length + 20);
+                              const context = transcript.substring(contextStart, contextEnd);
+                              
+                              // Vérifier si le contexte suggère une fin de session
+                              const contextIndicators = ['session', 'app', 'application', 'ici', 'maintenant', 'tout de suite'];
+                              const hasContext = contextIndicators.some(indicator => context.includes(indicator));
+                              
+                              if (hasContext || keyword === 'redémarrer' || keyword === 'relancer') {
+                                console.log('[App] ✅ Mot-clé avec contexte détecté:', keyword, 'dans:', transcript);
+                                return true;
+                              }
+                            }
+                            return false;
+                          });
+                        }
+                        
+                        if (shouldEndSession) {
+                          console.log('[App] ✅✅✅ DEMANDE DE TERMINER LA SESSION DÉTECTÉE:', transcript);
+                          console.log('[App] 🚀 Déclenchement du redémarrage...');
+                          addToast('info', 'Fin de session', 'Redémarrage de l\'application...');
+                          isIntentionalDisconnectRef.current = true;
+                          
+                          // Arrêter la reconnaissance
+                          try {
+                            recognition.stop();
+                            chatbotSpeechRecognitionRef.current = null;
+                          } catch (e) {
+                            console.warn('[App] Erreur lors de l\'arrêt de la reconnaissance:', e);
+                          }
+                          
+                          // Redémarrer immédiatement
+                          setTimeout(() => {
+                            console.log('[App] 🔄 Appel de disconnect(true) pour redémarrer...');
+                            disconnect(true);
+                          }, 500);
+                          return;
+                        } else {
+                          console.log('[App] ❌ Aucune phrase de fin détectée dans:', transcript);
+                        }
+                      }
+                    }
+                  };
+                  
+                  recognition.onerror = (event: any) => {
+                    // Ignorer les erreurs normales
+                    const ignorableErrors = ['no-speech', 'aborted'];
+                    if (!ignorableErrors.includes(event.error)) {
+                      console.warn('[App] Erreur reconnaissance chatbot:', event.error);
+                    }
+                  };
+                  
+                  recognition.onend = () => {
+                    chatbotSpeechRecognitionRef.current = null;
+                  };
+                  
+                  try {
+                    recognition.start();
+                    chatbotSpeechRecognitionRef.current = recognition;
+                    console.log('[App] 🎤 Reconnaissance vocale démarrée pour écouter le chatbot');
+                  } catch (e) {
+                    console.warn('[App] Impossible de démarrer la reconnaissance:', e);
+                  }
+                }
+              }
             }
 
             if (message.serverContent?.interrupted) {
@@ -690,6 +899,14 @@ const App: React.FC = () => {
   }, [connect]);
 
   const disconnect = (shouldReload: boolean = false) => {
+    // Arrêter la reconnaissance vocale du chatbot
+    if (chatbotSpeechRecognitionRef.current) {
+      try {
+        chatbotSpeechRecognitionRef.current.stop();
+        chatbotSpeechRecognitionRef.current = null;
+      } catch (e) {}
+    }
+
     if (sessionRef.current) {
         try { sessionRef.current.close(); } catch (e) {}
         sessionRef.current = null;
