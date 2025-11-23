@@ -1,6 +1,6 @@
-# 🗺️ Roadmap - Gemini Live Immersive
+# 🗺️ Roadmap - NeuroChat Pro
 
-Ce document détaille l'évolution prévue du projet **NeuroChat**, des fonctionnalités actuelles (MVP) aux versions futures.
+Ce document détaille l'évolution prévue du projet **NeuroChat Pro**, des fonctionnalités actuelles (MVP) aux versions futures.
 
 ---
 
@@ -19,11 +19,38 @@ Ce document détaille l'évolution prévue du projet **NeuroChat**, des fonction
 
 La base solide du projet est déjà en place :
 
-*   **Core** : Connexion Gemini Live API, conversation bidirectionnelle temps réel.
-*   **Audio** : Traitement PCM 16kHz/24kHz, gestion de l'interruption, buffer intelligent.
-*   **Vision** : Analyse flux caméra (1 FPS), PiP preview.
-*   **UI/UX** : Design Glassmorphism, Visualiseur audio particules, Thèmes sombres.
-*   **Personnalisation** : 4 personnalités, sélecteur de voix, persistance locale.
+### 🎯 Fonctionnalités Core
+- ✅ **Connexion Gemini Live API** - Session WebSocket stable
+- ✅ **Conversation bidirectionnelle** en temps réel
+- ✅ **Gestion audio** - Traitement PCM 16kHz/24kHz
+- ✅ **Interruption naturelle** - Possibilité d'interrompre l'IA
+- ✅ **Buffer audio intelligent** - Lecture fluide sans coupures
+
+### 👁️ Vision par ordinateur
+- ✅ **Analyse flux caméra** - Envoi de frames à 1 FPS
+- ✅ **Partage d'écran** - Analyse du contenu à 0.5 FPS
+- ✅ **Preview Picture-in-Picture** - Aperçu avec indicateur visuel
+- ✅ **Vue agrandie** - Mode plein écran
+- ✅ **Sélection de caméra** - Choix parmi les périphériques
+
+### 🎨 Interface utilisateur
+- ✅ **Design Glassmorphism** - Effets de flou et transparence
+- ✅ **Visualiseur audio** - Particules animées et analyse fréquentielle
+- ✅ **Thèmes adaptatifs** - Couleurs selon la personnalité
+- ✅ **Mode sombre premium** - Effets de lueur et gradients
+- ✅ **Responsive design** - Optimisé desktop et mobile
+
+### 🎭 Personnalisation
+- ✅ **Système de personnalités** - Éditeur intégré
+- ✅ **6 voix disponibles** - Puck, Charon, Kore, Fenrir, Zephyr, Aoede
+- ✅ **Instructions système** - Personnalisables par personnalité
+- ✅ **Persistance locale** - Sauvegarde dans localStorage
+
+### 🔧 Stabilité
+- ✅ **Reconnexion automatique** - Backoff exponentiel (5 tentatives max)
+- ✅ **Gestion d'erreurs** - Retry automatique
+- ✅ **Indicateur de latence** - Feedback en temps réel
+- ✅ **Système de notifications** - Toast pour le feedback utilisateur
 
 ---
 
@@ -32,21 +59,44 @@ La base solide du projet est déjà en place :
 *Objectif : Consolider l'existant et rendre l'expérience utilisateur irréprochable.*
 
 ### 🛠️ Technique & Stabilité
-- [x] Gestion d'erreurs robuste (Retry automatique, reconnexion WS).
-- [x] Optimisation latence audio.
-- [ ] Tests unitaires sur les utilitaires audio (`utils/audioUtils.ts`).
-- [ ] Refactoring du composant `App.tsx` (séparation de la logique).
+- [x] Gestion d'erreurs robuste (Retry automatique, reconnexion WS)
+- [x] Optimisation latence audio
+- [x] Indicateur de latence en temps réel
+- [ ] Tests unitaires sur les utilitaires audio (`utils/audioUtils.ts`)
+- [ ] Tests d'intégration pour les composants principaux
+- [ ] Refactoring du composant `App.tsx` (séparation de la logique)
+- [ ] Optimisation des performances (memoization, lazy loading)
+- [ ] Gestion mémoire améliorée (cleanup des ressources)
 
 ### 🎨 Expérience Utilisateur
-- [x] Indicateur de latence (ping) en temps réel.
-- [x] Feedback visuel d'état (connexion, écoute, parole).
-- [ ] Raccourcis clavier (ex: Espace pour Push-to-Talk).
-- [ ] Sélection des périphériques d'entrée/sortie (Micro/Casque).
+- [x] Feedback visuel d'état (connexion, écoute, parole)
+- [x] Indicateur de latence (ping) en temps réel
+- [ ] Raccourcis clavier (ex: Espace pour Push-to-Talk)
+- [ ] Sélection des périphériques d'entrée/sortie (Micro/Casque)
+- [ ] Contrôle du volume de sortie
+- [ ] Mode silencieux (mute microphone)
+- [ ] Animation de transition entre personnalités
+- [ ] Amélioration de l'accessibilité (ARIA labels, navigation clavier)
 
 ### 📝 Fonctionnalités Transcriptions
-- [ ] Export des conversations (TXT/JSON).
-- [ ] Historique persistant (IndexedDB).
-- [ ] Recherche textuelle dans l'historique.
+- [ ] **Transcriptions bidirectionnelles** - Affichage en temps réel
+- [ ] Export des conversations (TXT/JSON/Markdown)
+- [ ] Historique persistant (IndexedDB)
+- [ ] Recherche textuelle dans l'historique
+- [ ] Modal dédié avec historique des dernières interactions
+- [ ] Marquage final/intermédiaire pour distinguer les transcriptions
+
+### 🎯 Améliorations Audio
+- [ ] Détection de voix (VAD) améliorée
+- [ ] Réduction du bruit de fond
+- [ ] Normalisation automatique du volume
+- [ ] Égaliseur audio (basses, médiums, aigus)
+
+### 🎨 Améliorations Visuelles
+- [ ] Thèmes personnalisables (couleurs, effets)
+- [ ] Mode clair/sombre avec transition
+- [ ] Animations de chargement améliorées
+- [ ] Effets visuels supplémentaires (particules, gradients)
 
 ---
 
@@ -55,18 +105,38 @@ La base solide du projet est déjà en place :
 *Objectif : Étendre les capacités cognitives et interactives.*
 
 ### 🧠 Intelligence Artificielle
-- [ ] **Mémoire Long Terme** : Capacité à se souvenir des conversations passées.
-- [ ] **Context Awareness** : Analyse plus fine du contexte vidéo.
-- [ ] **Multi-modèles** : Possibilité de switcher (Gemini Pro vs Flash).
+- [ ] **Mémoire Long Terme** - Capacité à se souvenir des conversations passées
+- [ ] **Context Awareness** - Analyse plus fine du contexte vidéo
+- [ ] **Multi-modèles** - Possibilité de switcher (Gemini Pro vs Flash)
+- [ ] **RAG (Retrieval Augmented Generation)** - Intégration de documents
+- [ ] **Tool Calling** - Exécution d'actions (recherche web, calculs, etc.)
+- [ ] **Streaming amélioré** - Réponses plus fluides et naturelles
 
 ### 🌐 Internationalisation & Accessibilité
-- [ ] Support multilingue complet (Interface + IA).
-- [ ] Mode "Sous-titres" temps réel amélioré.
-- [ ] Contrôle vocal de l'interface ("Neuro, passe en mode sombre").
+- [ ] Support multilingue complet (Interface + IA)
+- [ ] Mode "Sous-titres" temps réel amélioré
+- [ ] Contrôle vocal de l'interface ("Neuro, passe en mode sombre")
+- [ ] Support des lecteurs d'écran
+- [ ] Navigation complète au clavier
 
-### 📊 Analytics
-- [ ] Dashboard d'utilisation (durée sessions, tokens utilisés).
-- [ ] Analyse de sentiment des conversations.
+### 📊 Analytics & Insights
+- [ ] Dashboard d'utilisation (durée sessions, tokens utilisés)
+- [ ] Analyse de sentiment des conversations
+- [ ] Statistiques de performance (latence moyenne, taux d'erreur)
+- [ ] Graphiques de visualisation des données
+- [ ] Export des statistiques
+
+### 🎨 Personnalisation Avancée
+- [ ] Marketplace de personnalités (partage communautaire)
+- [ ] Import/Export de personnalités (JSON)
+- [ ] Personnalités pré-configurées supplémentaires
+- [ ] Système de plugins pour étendre les fonctionnalités
+
+### 🔗 Intégrations
+- [ ] **Webhooks** - Notifications pour événements
+- [ ] **API REST** - Accès programmatique aux fonctionnalités
+- [ ] **Intégration calendrier** - Rappels et rendez-vous
+- [ ] **Intégration notes** - Sauvegarde automatique des conversations importantes
 
 ---
 
@@ -75,24 +145,125 @@ La base solide du projet est déjà en place :
 *Objectif : Une application robuste, sécurisée et déployable à grande échelle.*
 
 ### 🏗️ Architecture
-- [ ] Migration vers une architecture modulaire stricte.
-- [ ] State Management global (Zustand ou Redux Toolkit).
-- [ ] **PWA (Progressive Web App)** pour installation sur mobile/desktop.
+- [ ] Migration vers une architecture modulaire stricte
+- [ ] State Management global (Zustand ou Redux Toolkit)
+- [ ] **PWA (Progressive Web App)** - Installation sur mobile/desktop
+- [ ] Service Worker pour fonctionnement hors-ligne
+- [ ] Cache intelligent des ressources
+- [ ] Code splitting avancé
 
 ### 🔐 Sécurité
-- [ ] Gestion sécurisée des clés API (Proxy Backend ou Serverless Functions).
-- [ ] Authentification utilisateur (Firebase/Supabase).
-- [ ] Conformité RGPD (gestion des données personnelles).
+- [ ] Gestion sécurisée des clés API (Proxy Backend ou Serverless Functions)
+- [ ] Authentification utilisateur (Firebase/Supabase)
+- [ ] Chiffrement des données sensibles
+- [ ] Conformité RGPD (gestion des données personnelles)
+- [ ] Audit de sécurité complet
+- [ ] Rate limiting et protection DDoS
 
 ### 📱 Multi-plateforme
-- [ ] Adaptation mobile responsive parfaite.
-- [ ] Version Desktop (via Electron ou Tauri).
+- [ ] Adaptation mobile responsive parfaite
+- [ ] Version Desktop (via Electron ou Tauri)
+- [ ] Application iOS/Android (React Native ou Capacitor)
+- [ ] Optimisation pour tablettes
+
+### 🚀 Performance & Scalabilité
+- [ ] Optimisation du bundle (tree-shaking, minification)
+- [ ] Lazy loading des composants lourds
+- [ ] Compression des assets (images, audio)
+- [ ] CDN pour les ressources statiques
+- [ ] Monitoring et alertes (Sentry, LogRocket)
+
+### 📚 Documentation
+- [ ] Documentation API complète
+- [ ] Guide de déploiement détaillé
+- [ ] Tutoriels vidéo
+- [ ] Documentation développeur (JSDoc)
+- [ ] Wiki avec FAQ
+
+### 🧪 Tests
+- [ ] Couverture de tests > 80%
+- [ ] Tests E2E (Playwright ou Cypress)
+- [ ] Tests de performance (Lighthouse)
+- [ ] Tests de charge (stress testing)
 
 ---
 
 ## 🔮 Futur (Post-v1.0)
 
-*   **Support Modèles Locaux** : Intégration d'Ollama pour tourner en local (privacy first).
-*   **Réalité Augmentée** : Projection de l'assistant dans l'espace (WebXR).
-*   **Marketplace** : Partage de personnalités et de prompts système par la communauté.
-*   **API Entreprise** : Connecteurs pour calendriers, emails et outils pro.
+### 🌟 Features Visionnaires
+
+#### 🔒 Privacy First
+- **Support Modèles Locaux** - Intégration d'Ollama pour tourner en local
+- **Chiffrement bout-en-bout** - Conversations privées
+- **Mode offline complet** - Fonctionnement sans connexion
+
+#### 🎮 Réalité Augmentée
+- **WebXR** - Projection de l'assistant dans l'espace
+- **Réalité Virtuelle** - Interface immersive 3D
+- **Hologrammes** - Visualisation 3D de l'assistant
+
+#### 🌍 Marketplace & Communauté
+- **Marketplace** - Partage de personnalités et de prompts système
+- **Système de notation** - Évaluation des personnalités
+- **Templates** - Personnalités pré-configurées par domaine
+- **API Entreprise** - Connecteurs pour calendriers, emails et outils pro
+
+#### 🤖 Intelligence Avancée
+- **Multi-agents** - Plusieurs assistants travaillant ensemble
+- **Apprentissage continu** - Amélioration basée sur les interactions
+- **Personnalisation adaptative** - L'IA s'adapte au style de l'utilisateur
+- **Émotions** - Détection et réponse aux émotions
+
+#### 🎨 Expérience Utilisateur
+- **Thèmes animés** - Transitions dynamiques entre thèmes
+- **Avatars 3D** - Représentation visuelle de l'assistant
+- **Gestes** - Contrôle par gestes (WebXR)
+- **Haptique** - Feedback tactile (mobile)
+
+---
+
+## 📝 Notes de développement
+
+### Priorités actuelles
+1. **Stabilité** - Améliorer la robustesse de la connexion
+2. **UX** - Raccourcis clavier et sélection de périphériques
+3. **Transcriptions** - Fonctionnalité essentielle pour l'accessibilité
+
+### Défis techniques
+- **Latence audio** - Optimisation continue nécessaire
+- **Gestion mémoire** - Nettoyage des ressources audio/vidéo
+- **Compatibilité navigateurs** - Support Safari limité pour certaines APIs
+
+### Contributions souhaitées
+- Tests unitaires et d'intégration
+- Amélioration de l'accessibilité
+- Documentation et tutoriels
+- Traductions (i18n)
+
+---
+
+## 🎯 Métriques de succès
+
+### v0.1.0
+- ✅ Taux de reconnexion automatique > 95%
+- ✅ Latence moyenne < 500ms
+- ✅ Couverture de tests > 50%
+
+### v0.2.0
+- ✅ Support de 5+ langues
+- ✅ Dashboard analytics fonctionnel
+- ✅ Marketplace avec 10+ personnalités
+
+### v1.0.0
+- ✅ PWA installable et fonctionnelle
+- ✅ Authentification utilisateur
+- ✅ Conformité RGPD
+- ✅ Couverture de tests > 80%
+- ✅ Performance Lighthouse > 90
+
+---
+
+<div align="center">
+**Cette roadmap est évolutive et peut être modifiée selon les retours de la communauté.**<br/>
+N'hésitez pas à proposer vos idées via les [Issues](https://github.com/votre-username/neuroChat-Live-Immersive-Pro/issues) !
+</div>
