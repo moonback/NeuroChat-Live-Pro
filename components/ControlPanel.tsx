@@ -170,7 +170,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Tooltip content={isScreenShareActive ? "Arrêter le partage" : "Partager l'écran"}>
                 <button
                 onClick={onToggleScreenShare}
-                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.02] overflow-hidden ${
+                className={`hidden md:flex group relative items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.02] overflow-hidden ${
                     isScreenShareActive 
                     ? 'border-indigo-500/50 text-indigo-200 hover:border-indigo-500/70' 
                     : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
