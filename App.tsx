@@ -3,8 +3,9 @@ import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
+import PersonalityEditor from './components/PersonalityEditor';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { ConnectionState, DEFAULT_AUDIO_CONFIG } from './types';
+import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
@@ -23,6 +24,10 @@ const App: React.FC = () => {
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [isVideoEnlarged, setIsVideoEnlarged] = useState(false);
+  
+  // Custom Personality State
+  const [currentPersonality, setCurrentPersonality] = useState<Personality>(DEFAULT_PERSONALITY);
+  const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
 
   // Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -42,13 +47,19 @@ const App: React.FC = () => {
   const isReconnectingRef = useRef<boolean>(false);
   const isIntentionalDisconnectRef = useRef<boolean>(false);
   const isScreenShareActiveRef = useRef(false); // Ref to track screen share state for closures
+  const currentPersonalityRef = useRef(DEFAULT_PERSONALITY); // Ref for seamless updates
+
+  // Sync ref with state
+  useEffect(() => {
+    currentPersonalityRef.current = currentPersonality;
+  }, [currentPersonality]);
 
   // Video Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
-  const frameIntervalRef = useRef<number | null>(null);
+  const frameIntervalRef = useRef<number | NodeJS.Timeout | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -63,6 +74,21 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  // Personality Management
+  const handlePersonalityChange = (newPersonality: Personality) => {
+    setCurrentPersonality(newPersonality);
+    addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}`);
+    
+    // If connected, we need to update the session (reconnect for now to apply system prompt)
+    if (connectionState === ConnectionState.CONNECTED) {
+        // In a real pro version, we might send a tool call to update prompt dynamically
+        // For now, a quick seamless reconnect is safer
+        disconnect();
+        setTimeout(() => {
+            connect();
+        }, 500);
+    }
+  };
   // Enumerate available cameras
   const enumerateCameras = async () => {
     try {
@@ -101,7 +127,8 @@ const App: React.FC = () => {
       
       // Stop frame transmission
       if (frameIntervalRef.current) {
-        window.clearInterval(frameIntervalRef.current);
+        clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
+        clearInterval(frameIntervalRef.current as number);
         frameIntervalRef.current = null;
       }
       
@@ -228,7 +255,8 @@ const App: React.FC = () => {
             
             // Only stop transmission if screen share is also not active
             if (!isScreenShareActive && frameIntervalRef.current) {
-                window.clearInterval(frameIntervalRef.current);
+                clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
+                clearInterval(frameIntervalRef.current as number);
                 frameIntervalRef.current = null;
             }
         }
@@ -237,41 +265,91 @@ const App: React.FC = () => {
   }, [isVideoActive, connectionState, isScreenShareActive]);
 
   const startFrameTransmission = () => {
-      if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
+      if (frameIntervalRef.current) {
+          clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
+          clearInterval(frameIntervalRef.current as number);
+      }
       
       const canvas = canvasRef.current;
       const video = videoRef.current;
       
       if (!canvas || !video) return;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: false });
       if (!ctx) return;
 
-      // Send frames at 1 FPS to save bandwidth but maintain context
-      frameIntervalRef.current = window.setInterval(async () => {
+      let lastFrameTime = 0;
+      const targetInterval = isScreenShareActiveRef.current ? 500 : 1000;
+      
+      // Optimized frame capture with downscaling for performance
+      const captureAndSend = async () => {
+          const now = Date.now();
+          if (now - lastFrameTime < targetInterval) {
+              frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval - (now - lastFrameTime));
+              return;
+          }
+          
+          lastFrameTime = now;
           const isScreenSharing = isScreenShareActiveRef.current;
           const currentStream = isScreenSharing ? screenStreamRef.current : videoStreamRef.current;
           
-          if (sessionRef.current && currentStream && video.readyState === 4) {
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              ctx.drawImage(video, 0, 0);
-              
-              // Quality adjusted for screen sharing (higher) vs camera (standard)
-              const quality = isScreenSharing ? 0.8 : 0.6;
-              const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
-              
-              try {
-                sessionRef.current.sendRealtimeInput({
-                    media: {
-                        mimeType: 'image/jpeg',
-                        data: base64
-                    }
-                });
-              } catch (e) {
-                  console.warn("Error sending frame", e);
-              }
+          if (!sessionRef.current || !currentStream || video.readyState !== 4) {
+              frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
+              return;
           }
-      }, isScreenShareActiveRef.current ? 500 : 1000); // Faster updates for screen share (2 FPS) 
+
+          try {
+              const sourceWidth = video.videoWidth;
+              const sourceHeight = video.videoHeight;
+              
+              if (sourceWidth === 0 || sourceHeight === 0) {
+                  frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
+                  return;
+              }
+
+              // Downscale for performance (max 1280px width for screen, 640px for camera)
+              const maxWidth = isScreenSharing ? 1280 : 640;
+              const scale = Math.min(1, maxWidth / sourceWidth);
+              const targetWidth = Math.floor(sourceWidth * scale);
+              const targetHeight = Math.floor(sourceHeight * scale);
+
+              // Only resize canvas if dimensions changed
+              if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+                  canvas.width = targetWidth;
+                  canvas.height = targetHeight;
+              }
+
+              // Draw with scaling for better performance
+              ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+              
+              // Use lower quality for faster encoding (still readable)
+              const quality = isScreenSharing ? 0.75 : 0.55;
+              
+              // Use setTimeout to defer heavy encoding off main thread
+              setTimeout(() => {
+                  try {
+                      const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+                      
+                      if (sessionRef.current) {
+                          sessionRef.current.sendRealtimeInput({
+                              media: {
+                                  mimeType: 'image/jpeg',
+                                  data: base64
+                              }
+                          });
+                      }
+                  } catch (e) {
+                      console.warn("Error encoding/sending frame", e);
+                  }
+              }, 0);
+              
+          } catch (e) {
+              console.warn("Error capturing frame", e);
+          }
+          
+          frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
+      };
+
+      captureAndSend();
   };
 
   useEffect(() => {
@@ -281,7 +359,8 @@ const App: React.FC = () => {
           videoStreamRef.current.getTracks().forEach(t => t.stop());
       }
       if (frameIntervalRef.current) {
-          window.clearInterval(frameIntervalRef.current);
+          clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
+          clearInterval(frameIntervalRef.current as number);
       }
     };
   }, []);
@@ -471,7 +550,7 @@ const App: React.FC = () => {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } }
           },
-          systemInstruction: buildSystemInstruction(DEFAULT_PERSONALITY.systemInstruction),
+          systemInstruction: buildSystemInstruction(currentPersonalityRef.current.systemInstruction),
         }
       });
 
@@ -528,7 +607,8 @@ const App: React.FC = () => {
     }
 
     if (frameIntervalRef.current) {
-        clearInterval(frameIntervalRef.current);
+        clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
+        clearInterval(frameIntervalRef.current as number);
         frameIntervalRef.current = null;
     }
 
@@ -617,11 +697,18 @@ const App: React.FC = () => {
       {/* Premium Visualizer */}
       <Visualizer 
         analyserRef={analyserRef} 
-        color={DEFAULT_PERSONALITY.themeColor} 
+        color={currentPersonality.themeColor} 
         isActive={isTalking || connectionState === ConnectionState.CONNECTED}
       />
       
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      <PersonalityEditor 
+        isOpen={isPersonalityEditorOpen}
+        onClose={() => setIsPersonalityEditorOpen(false)}
+        currentPersonality={currentPersonality}
+        onSave={handlePersonalityChange}
+      />
 
       {/* Hidden Video & Canvas for Computer Vision */}
       <video ref={videoRef} className="hidden" muted playsInline autoPlay />
@@ -768,7 +855,7 @@ const App: React.FC = () => {
         {/* Premium Header */}
         <Header 
             connectionState={connectionState}
-            currentPersonality={DEFAULT_PERSONALITY}
+            currentPersonality={currentPersonality}
             selectedVoice={selectedVoice}
             onVoiceChange={setSelectedVoice}
         />
@@ -776,7 +863,7 @@ const App: React.FC = () => {
         <main className="flex-grow flex flex-col justify-end pb-10">
           <ControlPanel 
             connectionState={connectionState}
-            currentPersonality={DEFAULT_PERSONALITY}
+            currentPersonality={currentPersonality}
             isVideoActive={isVideoActive}
             isScreenShareActive={isScreenShareActive}
             latencyMs={latency}
@@ -794,6 +881,7 @@ const App: React.FC = () => {
             onToggleVideo={() => setIsVideoActive(!isVideoActive)}
             onToggleScreenShare={toggleScreenShare}
             onCameraChange={changeCamera}
+            onEditPersonality={() => setIsPersonalityEditorOpen(true)}
           />
         </main>
       </div>
