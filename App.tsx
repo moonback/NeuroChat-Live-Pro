@@ -10,6 +10,7 @@ import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
 import { VideoContextAnalyzer } from './utils/videoContextAnalyzer';
+import { WakeWordDetector } from './utils/wakeWordDetector';
 
 const App: React.FC = () => {
   // State
@@ -50,10 +51,14 @@ const App: React.FC = () => {
   const isScreenShareActiveRef = useRef(false); // Ref to track screen share state for closures
   const currentPersonalityRef = useRef(DEFAULT_PERSONALITY); // Ref for seamless updates
 
-  // Sync ref with state
+  // Sync refs with state
   useEffect(() => {
     currentPersonalityRef.current = currentPersonality;
   }, [currentPersonality]);
+
+  useEffect(() => {
+    connectionStateRef.current = connectionState;
+  }, [connectionState]);
 
   // Video Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -62,6 +67,9 @@ const App: React.FC = () => {
   const screenStreamRef = useRef<MediaStream | null>(null);
   const frameIntervalRef = useRef<number | NodeJS.Timeout | null>(null);
   const videoContextAnalyzerRef = useRef<VideoContextAnalyzer | null>(null);
+  const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
+  const connectRef = useRef<(() => Promise<void>) | null>(null);
+  const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -398,6 +406,56 @@ const App: React.FC = () => {
       captureAndSend();
   };
 
+  // Wake Word Detection - Écoute pour "Neurochat"
+  useEffect(() => {
+    // Initialiser le détecteur de wake word
+    if (!wakeWordDetectorRef.current) {
+      wakeWordDetectorRef.current = new WakeWordDetector({
+        wakeWord: 'bonjour', // Supporte "Bonjour", "Neurochat", ou "Bonjour Neurochat"
+        lang: 'fr-FR',
+        continuous: true,
+        onWakeWordDetected: () => {
+          console.log('[App] Wake word détecté, tentative de connexion...');
+          // Déclencher la connexion si on n'est pas déjà connecté
+          const currentState = connectionStateRef.current;
+          console.log('[App] État actuel de la connexion:', currentState);
+          if (currentState === ConnectionState.DISCONNECTED || currentState === ConnectionState.ERROR) {
+            addToast('info', 'Wake Word Détecté', 'Connexion au chat en cours...');
+            isIntentionalDisconnectRef.current = false;
+            if (connectRef.current) {
+              console.log('[App] Appel de la fonction connect()...');
+              connectRef.current();
+            } else {
+              console.error('[App] Erreur: connectRef.current est null!');
+            }
+          } else {
+            console.log('[App] Déjà connecté, connexion ignorée');
+          }
+        },
+      });
+    }
+
+    // Démarrer l'écoute si on n'est pas connecté
+    if (connectionState === ConnectionState.DISCONNECTED || connectionState === ConnectionState.ERROR) {
+      if (wakeWordDetectorRef.current && !wakeWordDetectorRef.current.isActive()) {
+        wakeWordDetectorRef.current.start();
+      }
+    } else {
+      // Arrêter l'écoute si on est connecté
+      if (wakeWordDetectorRef.current && wakeWordDetectorRef.current.isActive()) {
+        wakeWordDetectorRef.current.stop();
+      }
+    }
+
+    // Cleanup au démontage
+    return () => {
+      if (wakeWordDetectorRef.current) {
+        wakeWordDetectorRef.current.destroy();
+        wakeWordDetectorRef.current = null;
+      }
+    };
+  }, [connectionState]);
+
   useEffect(() => {
     return () => {
       disconnect();
@@ -407,6 +465,9 @@ const App: React.FC = () => {
       if (frameIntervalRef.current) {
           clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
           clearInterval(frameIntervalRef.current as number);
+      }
+      if (wakeWordDetectorRef.current) {
+        wakeWordDetectorRef.current.destroy();
       }
     };
   }, []);
@@ -622,6 +683,11 @@ const App: React.FC = () => {
       }
     }
   }, [isVideoActive, selectedVoice]);
+
+  // Mettre à jour la ref pour le wake word detector
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = (shouldReload: boolean = false) => {
     if (sessionRef.current) {
