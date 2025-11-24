@@ -12,6 +12,7 @@ interface HeaderProps {
   onVoiceChange: (voice: string) => void;
   uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
+  onOpenHistory?: () => void;
 }
 
 const StatusPill: React.FC<{ connected: boolean }> = ({ connected }) => (
@@ -42,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({
   onVoiceChange,
   uploadedDocuments,
   onDocumentsChange,
+  onOpenHistory,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
@@ -77,6 +79,28 @@ const Header: React.FC<HeaderProps> = ({
         <div className="hidden md:flex flex-col items-center mx-2">
           <div className="h-7 w-px bg-white/10" />
         </div>
+
+        {/* Conversation History */}
+        {onOpenHistory && (
+          <>
+            <div className="relative">
+              <Tooltip content="Historique des conversations chiffrées">
+                <button
+                  onClick={onOpenHistory}
+                  className="p-2 rounded-lg glass-intense border border-white/10 hover:border-indigo-500/50 transition-all duration-300 hover:scale-105 active:scale-95 group"
+                >
+                  <svg className="w-5 h-5 text-white group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </Tooltip>
+            </div>
+
+            <div className="hidden md:flex flex-col items-center mx-2">
+              <div className="h-7 w-px bg-white/10" />
+            </div>
+          </>
+        )}
 
         {/* Document Uploader */}
         <div className="relative">

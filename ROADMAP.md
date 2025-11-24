@@ -161,10 +161,10 @@ La base solide du projet est déjà en place :
 - [ ] Rate limiting et protection DDoS
 
 ### 📱 Multi-plateforme
-- [ ] Adaptation mobile responsive parfaite
+- [X] Adaptation mobile responsive parfaite
 - [ ] Version Desktop (via Electron ou Tauri)
 - [ ] Application iOS/Android (React Native ou Capacitor)
-- [ ] Optimisation pour tablettes
+- [X] Optimisation pour tablettes
 
 ### 🚀 Performance & Scalabilité
 - [ ] Optimisation du bundle (tree-shaking, minification)
@@ -194,7 +194,7 @@ La base solide du projet est déjà en place :
 
 #### 🔒 Privacy First
 - **Support Modèles Locaux** - Intégration d'Ollama pour tourner en local
-- **Chiffrement bout-en-bout** - Conversations privées
+- [x] **Chiffrement bout-en-bout** - Conversations privées ✅
 - **Mode offline complet** - Fonctionnement sans connexion
 
 #### 🎮 Réalité Augmentée

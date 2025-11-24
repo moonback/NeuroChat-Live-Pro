@@ -6,7 +6,7 @@ import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import QuickStartGuide from './components/QuickStartGuide';
-import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from './types';
+import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality, ConversationMessage, ConversationSession, MessageType, TranscriptionState } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
@@ -15,6 +15,9 @@ import { WakeWordDetector } from './utils/wakeWordDetector';
 import DocumentUploader from './components/DocumentUploader';
 import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
+import ConversationHistory from './components/ConversationHistory';
+import { conversationStorage } from './utils/conversationStorage';
+import { EncryptionKeyManager } from './utils/encryption';
 
 const App: React.FC = () => {
   // State
@@ -59,6 +62,13 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('wakeWordEnabled');
     return saved !== null ? saved === 'true' : true;
   });
+
+  // Conversation Encryption State
+  const currentSessionIdRef = useRef<string | null>(null);
+  const conversationMessagesRef = useRef<ConversationMessage[]>([]);
+  const sessionStartTimeRef = useRef<Date | null>(null);
+  const userSpeechRecognitionRef = useRef<any>(null); // SpeechRecognition pour l'utilisateur
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -752,12 +762,28 @@ const App: React.FC = () => {
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
-          onopen: () => {
+          onopen: async () => {
             console.log('Gemini Live Session Opened');
             setConnectionState(ConnectionState.CONNECTED);
             addToast('success', 'Connecté', 'Session NeuroChat active');
             reconnectAttemptsRef.current = 0;
             isReconnectingRef.current = false;
+            
+            // Initialiser la session de conversation chiffrée
+            currentSessionIdRef.current = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            conversationMessagesRef.current = [];
+            sessionStartTimeRef.current = new Date();
+            
+            // Initialiser la clé de chiffrement si nécessaire
+            try {
+              await EncryptionKeyManager.getOrCreateKey();
+              console.log('[Conversation] Session chiffrée initialisée:', currentSessionIdRef.current);
+            } catch (error) {
+              console.error('[Conversation] Erreur lors de l\'initialisation du chiffrement:', error);
+            }
+            
+            // Démarrer la reconnaissance vocale pour capturer les messages utilisateur
+            startUserSpeechRecognition();
             
             if (isVideoActive) {
                 startFrameTransmission();
@@ -805,6 +831,24 @@ const App: React.FC = () => {
               for (const part of parts) {
                 const text = (part as any).text;
                 if (text && typeof text === 'string' && text.trim().length > 0) {
+                  // Capturer et stocker le message de l'assistant
+                  if (currentSessionIdRef.current) {
+                    const assistantMessage: ConversationMessage = {
+                      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                      type: MessageType.ASSISTANT,
+                      content: text.trim(),
+                      timestamp: new Date(),
+                      transcriptionState: TranscriptionState.FINAL,
+                      sessionId: currentSessionIdRef.current,
+                    };
+                    conversationMessagesRef.current.push(assistantMessage);
+                    
+                    // Sauvegarder de manière asynchrone
+                    saveConversationMessage(assistantMessage).catch(err => {
+                      console.error('[Conversation] Erreur lors de la sauvegarde du message:', err);
+                    });
+                  }
+                  
                   const textLower = text.toLowerCase().trim();
                   
                   // Phrases qui indiquent une demande de terminer la session
@@ -1485,18 +1529,188 @@ const App: React.FC = () => {
     }
   }, [isVideoActive, selectedVoice]);
 
+  // Fonction pour démarrer la reconnaissance vocale de l'utilisateur
+  const startUserSpeechRecognition = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('[Conversation] SpeechRecognition API non disponible');
+      return;
+    }
+
+    // Arrêter la reconnaissance précédente si elle existe
+    if (userSpeechRecognitionRef.current) {
+      try {
+        userSpeechRecognitionRef.current.stop();
+      } catch (e) {}
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'fr-FR';
+
+    recognition.onresult = (event: any) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const transcript = result[0].transcript;
+        const isFinal = result.isFinal;
+
+        if (transcript.trim().length > 0 && currentSessionIdRef.current) {
+          // Chercher si un message intermédiaire existe pour ce tour
+          const existingIntermediateIndex = conversationMessagesRef.current.findIndex(
+            msg => msg.type === MessageType.USER && 
+                   msg.transcriptionState === TranscriptionState.INTERMEDIATE &&
+                   msg.sessionId === currentSessionIdRef.current
+          );
+
+          const userMessage: ConversationMessage = {
+            id: existingIntermediateIndex >= 0 
+              ? conversationMessagesRef.current[existingIntermediateIndex].id
+              : `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: MessageType.USER,
+            content: transcript.trim(),
+            timestamp: new Date(),
+            transcriptionState: isFinal ? TranscriptionState.FINAL : TranscriptionState.INTERMEDIATE,
+            sessionId: currentSessionIdRef.current,
+          };
+
+          if (existingIntermediateIndex >= 0) {
+            // Mettre à jour le message intermédiaire
+            conversationMessagesRef.current[existingIntermediateIndex] = userMessage;
+          } else {
+            // Ajouter un nouveau message
+            conversationMessagesRef.current.push(userMessage);
+          }
+
+          // Sauvegarder uniquement les messages finaux
+          if (isFinal) {
+            saveConversationMessage(userMessage).catch(err => {
+              console.error('[Conversation] Erreur lors de la sauvegarde du message utilisateur:', err);
+            });
+          }
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      // Ignorer certaines erreurs normales
+      const ignorableErrors = ['no-speech', 'aborted', 'network'];
+      if (!ignorableErrors.includes(event.error)) {
+        console.warn('[Conversation] Erreur reconnaissance vocale utilisateur:', event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      // Redémarrer automatiquement si on est toujours connecté
+      if (connectionStateRef.current === ConnectionState.CONNECTED && !isIntentionalDisconnectRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          // Ignorer les erreurs de redémarrage
+        }
+      } else {
+        userSpeechRecognitionRef.current = null;
+      }
+    };
+
+    try {
+      recognition.start();
+      userSpeechRecognitionRef.current = recognition;
+      console.log('[Conversation] Reconnaissance vocale utilisateur démarrée');
+    } catch (e) {
+      console.warn('[Conversation] Impossible de démarrer la reconnaissance vocale utilisateur:', e);
+    }
+  }, []);
+
+  // Fonction pour sauvegarder un message dans la conversation
+  const saveConversationMessage = useCallback(async (message: ConversationMessage) => {
+    if (!currentSessionIdRef.current || !sessionStartTimeRef.current) return;
+
+    try {
+      const sessionMetadata: ConversationSession = {
+        id: currentSessionIdRef.current,
+        startTime: sessionStartTimeRef.current,
+        endTime: undefined,
+        personalityId: currentPersonalityRef.current.id,
+        personalityName: currentPersonalityRef.current.name,
+        isEncrypted: true,
+        messageCount: conversationMessagesRef.current.filter(m => 
+          m.transcriptionState === TranscriptionState.FINAL
+        ).length,
+      };
+
+      // Filtrer uniquement les messages finaux pour la sauvegarde
+      const finalMessages = conversationMessagesRef.current.filter(
+        m => m.transcriptionState === TranscriptionState.FINAL
+      );
+
+      await conversationStorage.saveConversation(
+        currentSessionIdRef.current,
+        finalMessages,
+        sessionMetadata
+      );
+    } catch (error) {
+      console.error('[Conversation] Erreur lors de la sauvegarde:', error);
+    }
+  }, []);
+
   // Mettre à jour la ref pour le wake word detector
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
-  const disconnect = (shouldReload: boolean = false) => {
+  const disconnect = async (shouldReload: boolean = false) => {
     // Arrêter la reconnaissance vocale du chatbot
     if (chatbotSpeechRecognitionRef.current) {
       try {
         chatbotSpeechRecognitionRef.current.stop();
         chatbotSpeechRecognitionRef.current = null;
       } catch (e) {}
+    }
+
+    // Arrêter la reconnaissance vocale de l'utilisateur
+    if (userSpeechRecognitionRef.current) {
+      try {
+        userSpeechRecognitionRef.current.stop();
+        userSpeechRecognitionRef.current = null;
+      } catch (e) {}
+    }
+
+    // Sauvegarder la conversation chiffrée avant de déconnecter
+    if (currentSessionIdRef.current && conversationMessagesRef.current.length > 0) {
+      try {
+        const finalMessages = conversationMessagesRef.current.filter(
+          m => m.transcriptionState === TranscriptionState.FINAL
+        );
+
+        if (finalMessages.length > 0 && sessionStartTimeRef.current) {
+          const sessionMetadata: ConversationSession = {
+            id: currentSessionIdRef.current,
+            startTime: sessionStartTimeRef.current,
+            endTime: new Date(),
+            personalityId: currentPersonalityRef.current.id,
+            personalityName: currentPersonalityRef.current.name,
+            isEncrypted: true,
+            messageCount: finalMessages.length,
+          };
+
+          await conversationStorage.saveConversation(
+            currentSessionIdRef.current,
+            finalMessages,
+            sessionMetadata
+          );
+
+          console.log(`[Conversation] Conversation sauvegardée: ${finalMessages.length} messages`);
+          addToast('info', 'Conversation sauvegardée', 'Votre conversation a été chiffrée et sauvegardée');
+        }
+      } catch (error) {
+        console.error('[Conversation] Erreur lors de la sauvegarde finale:', error);
+      }
+
+      // Réinitialiser les références
+      currentSessionIdRef.current = null;
+      conversationMessagesRef.current = [];
+      sessionStartTimeRef.current = null;
     }
 
     if (sessionRef.current) {
@@ -1656,6 +1870,11 @@ const App: React.FC = () => {
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <InstallPWA />
+
+      <ConversationHistory 
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+      />
       
       <QuickStartGuide
         connectionState={connectionState}
@@ -1820,6 +2039,7 @@ const App: React.FC = () => {
             onVoiceChange={setSelectedVoice}
             uploadedDocuments={uploadedDocuments}
             onDocumentsChange={handleDocumentsChange}
+            onOpenHistory={() => setIsHistoryOpen(true)}
         />
 
         <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-10 safe-area-bottom">
