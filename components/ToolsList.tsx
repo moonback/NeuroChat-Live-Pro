@@ -31,6 +31,9 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
     'Notes et mémos': functions.filter(f => 
       f.name.includes('note')
     ),
+    'Gestion d\'agenda': functions.filter(f => 
+      f.name.includes('event')
+    ),
     'Suivi des heures travaillées': functions.filter(f => 
       f.name.includes('work_hours')
     ),
@@ -68,6 +71,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
       'Calculatrice': '🔢',
       'Conversion d\'unités': '📏',
       'Notes et mémos': '📝',
+      'Gestion d\'agenda': '📅',
       'Suivi des heures travaillées': '⏱️',
       'Météo et informations': '🌤️',
       'Conversion de devises': '💱',

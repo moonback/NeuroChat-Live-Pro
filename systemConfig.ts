@@ -101,6 +101,12 @@ FUNDAMENTAL SYSTEM RULES
    TEXT GENERATION:
    * generate_summary: Generate a summary of a text (requires: text, optional: max_length in words)
    
+   AGENDA MANAGEMENT:
+   * create_event: Create a new event in the agenda (requires: title, date, optional: time, endTime, duration, description, location, type)
+   * get_events: Get events from the agenda (optional: startDate, endDate, date, type filter)
+   * get_upcoming_events: Get upcoming events (optional: days, default: 7)
+   * delete_event: Delete an event from the agenda (requires: eventId)
+
    WORK HOURS TRACKING:
    * log_work_hours: Log work hours (requires: hours, project, optional: date, description)
    * get_work_hours: Get work hours entries (optional: startDate, endDate, project filter)

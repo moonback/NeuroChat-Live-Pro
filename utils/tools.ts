@@ -253,6 +253,104 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
     }
   },
   
+  // Gestion d'agenda
+  create_event: {
+    name: 'create_event',
+    description: 'Crée un nouvel événement dans l\'agenda (ex: horaire de travail)',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Titre de l\'événement'
+        },
+        date: {
+          type: 'string',
+          description: 'Date de l\'événement (format: YYYY-MM-DD)'
+        },
+        time: {
+          type: 'string',
+          description: 'Heure de début (format: HH:MM, optionnel)'
+        },
+        endTime: {
+          type: 'string',
+          description: 'Heure de fin (format: HH:MM, optionnel)'
+        },
+        duration: {
+          type: 'number',
+          description: 'Durée en minutes (optionnel, utilisé si endTime non fourni)'
+        },
+        description: {
+          type: 'string',
+          description: 'Description de l\'événement (optionnel)'
+        },
+        location: {
+          type: 'string',
+          description: 'Lieu de l\'événement (optionnel)'
+        },
+        type: {
+          type: 'string',
+          description: 'Type d\'événement: work, meeting, personal, etc. (optionnel)'
+        }
+      },
+      required: ['title', 'date']
+    }
+  },
+  get_events: {
+    name: 'get_events',
+    description: 'Récupère les événements de l\'agenda',
+    parameters: {
+      type: 'object',
+      properties: {
+        startDate: {
+          type: 'string',
+          description: 'Date de début (format: YYYY-MM-DD, optionnel)'
+        },
+        endDate: {
+          type: 'string',
+          description: 'Date de fin (format: YYYY-MM-DD, optionnel)'
+        },
+        date: {
+          type: 'string',
+          description: 'Date spécifique (format: YYYY-MM-DD, optionnel)'
+        },
+        type: {
+          type: 'string',
+          description: 'Filtrer par type d\'événement (optionnel)'
+        }
+      },
+      required: []
+    }
+  },
+  get_upcoming_events: {
+    name: 'get_upcoming_events',
+    description: 'Récupère les prochains événements',
+    parameters: {
+      type: 'object',
+      properties: {
+        days: {
+          type: 'number',
+          description: 'Nombre de jours à venir (défaut: 7)'
+        }
+      },
+      required: []
+    }
+  },
+  delete_event: {
+    name: 'delete_event',
+    description: 'Supprime un événement de l\'agenda',
+    parameters: {
+      type: 'object',
+      properties: {
+        eventId: {
+          type: 'string',
+          description: 'ID de l\'événement à supprimer'
+        }
+      },
+      required: ['eventId']
+    }
+  },
+  
   // Suivi des heures travaillées
   log_work_hours: {
     name: 'log_work_hours',
@@ -847,8 +945,198 @@ export async function executeFunction(functionCall: FunctionCall): Promise<any> 
         count: count
       };
     
-    // Suivi des heures travaillées
-    case 'log_work_hours':
+     // Gestion d'agenda
+     case 'create_event':
+       try {
+         const title = args?.title || 'Événement sans titre';
+         const date = args?.date || new Date().toISOString().split('T')[0];
+         const time = args?.time || '09:00';
+         const endTime = args?.endTime;
+         const duration = args?.duration;
+         const description = args?.description || '';
+         const location = args?.location || '';
+         const type = args?.type || 'personal';
+         
+         // Calculer l'heure de fin si non fournie
+         let calculatedEndTime = endTime;
+         if (!calculatedEndTime && duration) {
+           const [hours, minutes] = time.split(':').map(Number);
+           const startMinutes = hours * 60 + minutes;
+           const endMinutes = startMinutes + duration;
+           const endHours = Math.floor(endMinutes / 60);
+           const endMins = endMinutes % 60;
+           calculatedEndTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+         } else if (!calculatedEndTime) {
+           // Par défaut, durée de 1 heure
+           const [hours, minutes] = time.split(':').map(Number);
+           const endHours = (hours + 1) % 24;
+           calculatedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+         }
+         
+         const event = {
+           id: Date.now().toString(),
+           title,
+           date,
+           time,
+           endTime: calculatedEndTime,
+           description,
+           location,
+           type,
+           createdAt: new Date().toISOString()
+         };
+         
+         const existingEvents = JSON.parse(localStorage.getItem('neurochat_events') || '[]');
+         existingEvents.push(event);
+         localStorage.setItem('neurochat_events', JSON.stringify(existingEvents));
+         
+         console.log(`[Tools] ✅ Événement créé: "${title}" le ${date} de ${time} à ${calculatedEndTime}`);
+         return {
+           result: 'ok',
+           message: `Événement "${title}" créé avec succès`,
+           eventId: event.id,
+           event: event
+         };
+       } catch (error) {
+         return {
+           result: 'error',
+           message: 'Erreur lors de la création de l\'événement'
+         };
+       }
+       
+     case 'get_events':
+       try {
+         const startDate = args?.startDate;
+         const endDate = args?.endDate;
+         const date = args?.date;
+         const type = args?.type;
+         
+         let events = JSON.parse(localStorage.getItem('neurochat_events') || '[]');
+         
+         // Filtrer par date spécifique
+         if (date) {
+           events = events.filter((event: any) => event.date === date);
+         }
+         // Filtrer par plage de dates
+         else if (startDate || endDate) {
+           events = events.filter((event: any) => {
+             const eventDate = event.date;
+             if (startDate && eventDate < startDate) return false;
+             if (endDate && eventDate > endDate) return false;
+             return true;
+           });
+         }
+         
+         // Filtrer par type
+         if (type) {
+           events = events.filter((event: any) => event.type === type);
+         }
+         
+         // Trier par date et heure
+         events.sort((a: any, b: any) => {
+           const dateCompare = a.date.localeCompare(b.date);
+           if (dateCompare !== 0) return dateCompare;
+           return a.time.localeCompare(b.time);
+         });
+         
+         console.log(`[Tools] ✅ ${events.length} événement(s) récupéré(s)`);
+         return {
+           result: 'ok',
+           events: events,
+           count: events.length
+         };
+       } catch (error) {
+         return {
+           result: 'error',
+           message: 'Erreur lors de la récupération des événements'
+         };
+       }
+       
+     case 'get_upcoming_events':
+       try {
+         const days = args?.days || 7;
+         const today = new Date();
+         today.setHours(0, 0, 0, 0);
+         const futureDate = new Date(today);
+         futureDate.setDate(today.getDate() + days);
+         
+         const todayStr = today.toISOString().split('T')[0];
+         const futureDateStr = futureDate.toISOString().split('T')[0];
+         
+         let events = JSON.parse(localStorage.getItem('neurochat_events') || '[]');
+         
+         // Filtrer les événements à venir
+         events = events.filter((event: any) => {
+           const eventDate = event.date;
+           // Inclure les événements d'aujourd'hui et futurs
+           if (eventDate >= todayStr && eventDate <= futureDateStr) {
+             // Si c'est aujourd'hui, vérifier l'heure
+             if (eventDate === todayStr) {
+               const [hours, minutes] = event.time.split(':').map(Number);
+               const eventTime = new Date();
+               eventTime.setHours(hours, minutes, 0, 0);
+               return eventTime >= new Date();
+             }
+             return true;
+           }
+           return false;
+         });
+         
+         // Trier par date et heure
+         events.sort((a: any, b: any) => {
+           const dateCompare = a.date.localeCompare(b.date);
+           if (dateCompare !== 0) return dateCompare;
+           return a.time.localeCompare(b.time);
+         });
+         
+         console.log(`[Tools] ✅ ${events.length} événement(s) à venir récupéré(s)`);
+         return {
+           result: 'ok',
+           events: events,
+           count: events.length,
+           period: `Prochains ${days} jours`
+         };
+       } catch (error) {
+         return {
+           result: 'error',
+           message: 'Erreur lors de la récupération des événements à venir'
+         };
+       }
+       
+     case 'delete_event':
+       try {
+         const eventId = args?.eventId;
+         if (!eventId) {
+           return {
+             result: 'error',
+             message: 'ID d\'événement requis'
+           };
+         }
+         
+         const events = JSON.parse(localStorage.getItem('neurochat_events') || '[]');
+         const filteredEvents = events.filter((e: any) => e.id !== eventId);
+         
+         if (events.length === filteredEvents.length) {
+           return {
+             result: 'error',
+             message: `Événement avec l'ID ${eventId} non trouvé`
+           };
+         }
+         
+         localStorage.setItem('neurochat_events', JSON.stringify(filteredEvents));
+         console.log(`[Tools] ✅ Événement supprimé: ${eventId}`);
+         return {
+           result: 'ok',
+           message: 'Événement supprimé avec succès'
+         };
+       } catch (error) {
+         return {
+           result: 'error',
+           message: 'Erreur lors de la suppression de l\'événement'
+         };
+       }
+     
+     // Suivi des heures travaillées
+     case 'log_work_hours':
       try {
         const date = args?.date || new Date().toISOString().split('T')[0];
         const hours = args?.hours || 0;
