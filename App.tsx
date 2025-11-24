@@ -12,6 +12,8 @@ import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 }
 import { buildSystemInstruction } from './systemConfig';
 import { VideoContextAnalyzer } from './utils/videoContextAnalyzer';
 import { WakeWordDetector } from './utils/wakeWordDetector';
+import DocumentUploader from './components/DocumentUploader';
+import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
 
 const App: React.FC = () => {
   // State
@@ -31,6 +33,24 @@ const App: React.FC = () => {
   // Custom Personality State
   const [currentPersonality, setCurrentPersonality] = useState<Personality>(DEFAULT_PERSONALITY);
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
+  
+  // Document Upload State
+  const [uploadedDocuments, setUploadedDocuments] = useState<ProcessedDocument[]>(() => {
+    // Charger les documents depuis localStorage
+    try {
+      const saved = localStorage.getItem('uploadedDocuments');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((doc: any) => ({
+          ...doc,
+          uploadedAt: new Date(doc.uploadedAt)
+        }));
+      }
+    } catch (e) {
+      console.warn('Erreur lors du chargement des documents:', e);
+    }
+    return [];
+  });
   
   // Wake Word Detection State
   const [isWakeWordEnabled, setIsWakeWordEnabled] = useState<boolean>(() => {
@@ -61,11 +81,16 @@ const App: React.FC = () => {
   const availableCamerasRef = useRef<MediaDeviceInfo[]>([]); // Ref to track cameras for closures
   const selectedCameraIdRef = useRef<string>(''); // Ref to track selected camera for closures
   const currentPersonalityRef = useRef(DEFAULT_PERSONALITY); // Ref for seamless updates
+  const uploadedDocumentsRef = useRef<ProcessedDocument[]>([]); // Ref for documents
 
   // Sync refs with state
   useEffect(() => {
     currentPersonalityRef.current = currentPersonality;
   }, [currentPersonality]);
+
+  useEffect(() => {
+    uploadedDocumentsRef.current = uploadedDocuments;
+  }, [uploadedDocuments]);
 
   useEffect(() => {
     isVideoActiveRef.current = isVideoActive;
@@ -218,6 +243,28 @@ const App: React.FC = () => {
         setTimeout(() => {
             connect();
         }, 500);
+    }
+  };
+
+  // Document Management
+  const handleDocumentsChange = (documents: ProcessedDocument[]) => {
+    setUploadedDocuments(documents);
+    // Sauvegarder dans localStorage
+    try {
+      localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
+    } catch (e) {
+      console.warn('Erreur lors de la sauvegarde des documents:', e);
+    }
+    
+    // Si connecté, reconnecter pour inclure les nouveaux documents
+    if (connectionState === ConnectionState.CONNECTED) {
+      addToast('info', 'Documents Mis à Jour', 'Reconnexion pour appliquer les changements...');
+      disconnect();
+      setTimeout(() => {
+        connect();
+      }, 500);
+    } else {
+      addToast('success', 'Documents Chargés', `${documents.length} document(s) prêt(s) à être utilisés`);
     }
   };
   // Enumerate available cameras
@@ -1405,7 +1452,12 @@ const App: React.FC = () => {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } }
           },
-          systemInstruction: buildSystemInstruction(currentPersonalityRef.current.systemInstruction),
+          systemInstruction: buildSystemInstruction(
+            currentPersonalityRef.current.systemInstruction,
+            uploadedDocumentsRef.current.length > 0 
+              ? formatDocumentForContext(uploadedDocumentsRef.current)
+              : undefined
+          ),
         }
       });
 
@@ -1763,6 +1815,8 @@ const App: React.FC = () => {
             currentPersonality={currentPersonality}
             selectedVoice={selectedVoice}
             onVoiceChange={setSelectedVoice}
+            uploadedDocuments={uploadedDocuments}
+            onDocumentsChange={handleDocumentsChange}
         />
 
         <main className="flex-grow flex flex-col justify-end pb-10">
