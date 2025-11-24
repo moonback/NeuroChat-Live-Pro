@@ -15,6 +15,7 @@ import { WakeWordDetector } from './utils/wakeWordDetector';
 import DocumentUploader from './components/DocumentUploader';
 import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
+import { buildToolsConfig, executeFunction } from './utils/tools';
 
 const App: React.FC = () => {
   // State
@@ -77,6 +78,16 @@ const App: React.FC = () => {
     // Charger la préférence depuis localStorage, par défaut activé
     const saved = localStorage.getItem('wakeWordEnabled');
     return saved !== null ? saved === 'true' : true;
+  });
+
+  // Tools State
+  const [isFunctionCallingEnabled, setIsFunctionCallingEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('functionCallingEnabled');
+    return saved !== null ? saved === 'true' : true; // Activé par défaut
+  });
+  const [isGoogleSearchEnabled, setIsGoogleSearchEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('googleSearchEnabled');
+    return saved !== null ? saved === 'true' : false; // Désactivé par défaut
   });
 
   // Refs
@@ -465,6 +476,33 @@ const App: React.FC = () => {
         setTimeout(() => {
             connect();
         }, 500);
+    }
+  };
+
+  // Tools Management
+  const handleFunctionCallingToggle = (enabled: boolean) => {
+    setIsFunctionCallingEnabled(enabled);
+    addToast('success', 'Appel de fonction', enabled ? 'Appel de fonction activé' : 'Appel de fonction désactivé');
+    
+    // Reconnecter si connecté pour appliquer les changements
+    if (connectionState === ConnectionState.CONNECTED) {
+      disconnect();
+      setTimeout(() => {
+        connect();
+      }, 500);
+    }
+  };
+
+  const handleGoogleSearchToggle = (enabled: boolean) => {
+    setIsGoogleSearchEnabled(enabled);
+    addToast('success', 'Google Search', enabled ? 'Google Search activé' : 'Google Search désactivé');
+    
+    // Reconnecter si connecté pour appliquer les changements
+    if (connectionState === ConnectionState.CONNECTED) {
+      disconnect();
+      setTimeout(() => {
+        connect();
+      }, 500);
     }
   };
 
@@ -893,6 +931,15 @@ const App: React.FC = () => {
     localStorage.setItem('wakeWordEnabled', isWakeWordEnabled.toString());
   }, [isWakeWordEnabled]);
 
+  // Sauvegarder les préférences des outils dans localStorage
+  useEffect(() => {
+    localStorage.setItem('functionCallingEnabled', isFunctionCallingEnabled.toString());
+  }, [isFunctionCallingEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('googleSearchEnabled', isGoogleSearchEnabled.toString());
+  }, [isGoogleSearchEnabled]);
+
   useEffect(() => {
     return () => {
       disconnect();
@@ -1019,6 +1066,79 @@ const App: React.FC = () => {
             processor.connect(inputAudioContextRef.current.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Gérer les appels d'outils (function calls)
+            if (message.toolCall && message.toolCall.functionCalls) {
+              console.log('[App] 🔧 Appel d\'outil détecté:', message.toolCall);
+              const functionCalls = message.toolCall.functionCalls;
+              const functionResponses = [];
+              
+              for (const functionCall of functionCalls) {
+                try {
+                  const functionId = functionCall.id || '';
+                  const functionName = functionCall.name || '';
+                  const functionArgs = functionCall.args || {};
+                  
+                  console.log(`[App] 🔧 Exécution de la fonction: ${functionName}`, functionArgs);
+                  
+                  // Exécuter la fonction
+                  const result = await executeFunction({
+                    id: functionId,
+                    name: functionName,
+                    args: functionArgs
+                  });
+                  
+                  // Créer la réponse avec le type du SDK
+                  const response = {
+                    id: functionId,
+                    name: functionName,
+                    response: result
+                  };
+                  functionResponses.push(response);
+                  
+                  // Afficher une notification
+                  addToast('info', 'Fonction exécutée', `Fonction ${functionName} exécutée avec succès`);
+                } catch (error) {
+                  console.error(`[App] ❌ Erreur lors de l'exécution de ${functionCall.name}:`, error);
+                  const errorResponse = {
+                    id: functionCall.id || '',
+                    name: functionCall.name || '',
+                    response: {
+                      result: 'error',
+                      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+                    }
+                  };
+                  functionResponses.push(errorResponse);
+                  addToast('error', 'Erreur', `Erreur lors de l'exécution de ${functionCall.name}`);
+                }
+              }
+              
+              // Envoyer les réponses à l'API
+              if (sessionRef.current && functionResponses.length > 0) {
+                try {
+                  await sessionRef.current.sendToolResponse({
+                    functionResponses: functionResponses
+                  });
+                  console.log('[App] ✅ Réponses aux outils envoyées');
+                } catch (error) {
+                  console.error('[App] ❌ Erreur lors de l\'envoi des réponses:', error);
+                }
+              }
+            }
+
+            // Gérer les résultats d'exécution de code (pour Google Search)
+            if (message.serverContent?.modelTurn) {
+              const parts = message.serverContent.modelTurn.parts || [];
+              for (const part of parts) {
+                // Vérifier s'il y a du code exécutable (Google Search utilise cela)
+                if ((part as any).executableCode) {
+                  console.log('[App] 🔍 Code exécutable détecté (Google Search):', (part as any).executableCode.code);
+                }
+                if ((part as any).codeExecutionResult) {
+                  console.log('[App] ✅ Résultat d\'exécution:', (part as any).codeExecutionResult.output);
+                }
+              }
+            }
+
             // Vérifier si le message contient du texte/transcription (seulement si texte présent)
             const modelTurn = message.serverContent?.modelTurn;
             if (modelTurn) {
@@ -1395,6 +1515,7 @@ const App: React.FC = () => {
               ? formatDocumentForContext(uploadedDocumentsRef.current)
               : undefined
           ),
+          tools: buildToolsConfig(isFunctionCallingEnabled, isGoogleSearchEnabled),
         }
       });
 
@@ -1813,6 +1934,26 @@ const App: React.FC = () => {
                   {isWakeWordEnabled ? 'Activé' : 'Désactivé'}
                 </span>
               </div>
+
+              {/* Function Calling Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs xl:text-sm text-slate-400 font-medium">Appel de fonction</span>
+                <span className={`text-xs xl:text-sm font-medium ${
+                  isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'
+                }`}>
+                  {isFunctionCallingEnabled ? 'Activé' : 'Désactivé'}
+                </span>
+              </div>
+
+              {/* Google Search Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs xl:text-sm text-slate-400 font-medium">Google Search</span>
+                <span className={`text-xs xl:text-sm font-medium ${
+                  isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'
+                }`}>
+                  {isGoogleSearchEnabled ? 'Activé' : 'Désactivé'}
+                </span>
+              </div>
             </div>
 
             
@@ -1865,6 +2006,10 @@ const App: React.FC = () => {
               onEditPersonality={() => setIsPersonalityEditorOpen(true)}
               isWakeWordEnabled={isWakeWordEnabled}
               onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
+              isFunctionCallingEnabled={isFunctionCallingEnabled}
+              isGoogleSearchEnabled={isGoogleSearchEnabled}
+              onToggleFunctionCalling={handleFunctionCallingToggle}
+              onToggleGoogleSearch={handleGoogleSearchToggle}
             />
           </main>
         </div>
