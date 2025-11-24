@@ -4,6 +4,7 @@ import Loader from './Loader';
 import Tooltip from './Tooltip';
 import LatencyIndicator from './LatencyIndicator';
 import AudioInputVisualizer from './AudioInputVisualizer';
+import PhotoCapture from './PhotoCapture';
 
 interface ControlPanelProps {
   connectionState: ConnectionState;
@@ -21,6 +22,7 @@ interface ControlPanelProps {
   onToggleScreenShare?: () => void;
   onCameraChange?: (cameraId: string) => void;
   onToggleWakeWord?: () => void;
+  onPhotoCapture?: (imageData: string) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -39,6 +41,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleScreenShare,
   onCameraChange,
   onToggleWakeWord,
+  onPhotoCapture,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -236,6 +239,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 )}
                 </button>
             </Tooltip>
+          )}
+
+          {/* Photo Capture - Visible seulement quand connecté */}
+          {isConnected && onPhotoCapture && (
+            <PhotoCapture
+              onPhotoCapture={onPhotoCapture}
+              disabled={false}
+              isConnected={isConnected}
+            />
           )}
 
           {/* Wake Word Toggle - Visible seulement quand déconnecté */}
