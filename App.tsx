@@ -5,6 +5,7 @@ import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
 import { ToastContainer, ToastMessage } from './components/Toast';
+import QuickStartGuide from './components/QuickStartGuide';
 import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
@@ -1600,6 +1601,12 @@ const App: React.FC = () => {
       />
       
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      <QuickStartGuide
+        connectionState={connectionState}
+        isWakeWordEnabled={isWakeWordEnabled}
+        onClose={() => {}}
+      />
       
       <PersonalityEditor 
         isOpen={isPersonalityEditorOpen}

@@ -44,10 +44,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
   return (
-    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 md:pb-16 space-y-4 md:space-y-8 w-full max-w-3xl mx-auto px-4 md:px-6 pointer-events-none">
+    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-4 sm:pb-6 md:pb-16 space-y-3 sm:space-y-4 md:space-y-8 w-full max-w-3xl mx-auto px-3 sm:px-4 md:px-6 pointer-events-none">
       
       {/* Premium Status & Personality Panel */}
-      <div className="pointer-events-auto glass-intense rounded-3xl p-6 md:p-8 w-full text-center transition-all duration-500 flex flex-col items-center animate-fade-in relative overflow-hidden group"
+      <div className="pointer-events-auto glass-intense rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full text-center transition-all duration-500 flex flex-col items-center animate-fade-in relative overflow-hidden group"
         style={{
           boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 80px ${currentPersonality.themeColor}15, inset 0 1px 0 rgba(255, 255, 255, 0.1)`
         }}>
@@ -64,8 +64,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none animate-shimmer"></div>
         
         {/* Premium Status Badge */}
-        <div className="flex items-center justify-center gap-4 mb-4 md:mb-6 relative z-10">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4 md:mb-6 relative z-10">
+          <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
                 <span className={`block w-3 h-3 rounded-full transition-all duration-300 ${
                   isConnected ? 'bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.8)]' : 
@@ -96,7 +96,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           
           {/* Live Latency & Input Viz */}
           {isConnected && (
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10 animate-slide-in-right">
+            <div className="flex items-center gap-2 sm:gap-3 sm:pl-4 sm:border-l border-white/10 animate-slide-in-right pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10 sm:border-l">
                 <Tooltip content="Latence de réponse">
                     <LatencyIndicator latencyMs={latencyMs} />
                 </Tooltip>
@@ -110,9 +110,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Elegant Assistant Display */}
-        <div className="relative mb-6 md:mb-8 w-full relative z-10">
+        <div className="relative mb-4 sm:mb-6 md:mb-8 w-full relative z-10">
           <h1 
-            className="text-4xl md:text-6xl font-display font-black tracking-tight mb-2 md:mb-3 relative transition-all duration-500 group-hover:scale-105"
+            className="text-3xl sm:text-4xl md:text-6xl font-display font-black tracking-tight mb-1.5 sm:mb-2 md:mb-3 relative transition-all duration-500 group-hover:scale-105"
             style={{ 
               color: currentPersonality.themeColor,
               textShadow: `0 0 40px ${currentPersonality.themeColor}60, 0 0 80px ${currentPersonality.themeColor}30`,
@@ -135,13 +135,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Premium Controls Row */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-6 md:mb-8 relative z-10">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 md:mb-8 relative z-10">
           {/* Camera Toggle (Premium design when connected) */}
           {isConnected && (
-            <Tooltip content={isVideoActive ? "Désactiver la caméra" : "Activer la caméra"}>
+            <Tooltip content={isVideoActive ? "Désactiver la caméra - L'IA ne verra plus votre environnement" : "Activer la caméra - Permet à l'IA de voir votre environnement"}>
                 <button
                 onClick={onToggleVideo}
-                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden ${
+                aria-label={isVideoActive ? "Désactiver la caméra" : "Activer la caméra"}
+                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 ${
                     isVideoActive 
                     ? 'border-red-500/50 text-red-200 hover:border-red-500/70' 
                     : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
@@ -183,7 +184,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <select
                   value={selectedCameraId}
                   onChange={(e) => onCameraChange && onCameraChange(e.target.value)}
-                  className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl glass border border-white/10 font-body text-xs font-semibold text-slate-300 transition-all duration-300 hover:border-white/30 hover:text-white cursor-pointer appearance-none pr-8 bg-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
+                  className="group relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl glass border border-white/10 font-body text-[10px] sm:text-xs font-semibold text-slate-300 transition-all duration-300 hover:border-white/30 hover:text-white cursor-pointer appearance-none pr-6 sm:pr-8 bg-transparent focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   {availableCameras.map((camera, index) => (
                     <option key={camera.deviceId} value={camera.deviceId} className="bg-slate-900 text-white">
@@ -200,10 +201,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           {/* Screen Share Toggle */}
           {isConnected && onToggleScreenShare && (
-            <Tooltip content={isScreenShareActive ? "Arrêter le partage" : "Partager l'écran"}>
+            <Tooltip content={isScreenShareActive ? "Arrêter le partage d'écran" : "Partager votre écran - L'IA pourra voir ce que vous affichez"}>
                 <button
                 onClick={onToggleScreenShare}
-                className={`hidden md:flex group relative items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden ${
+                aria-label={isScreenShareActive ? "Arrêter le partage d'écran" : "Partager l'écran"}
+                className={`hidden sm:flex group relative items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl glass border font-body text-[10px] sm:text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 ${
                     isScreenShareActive 
                     ? 'border-indigo-500/50 text-indigo-200 hover:border-indigo-500/70' 
                     : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
@@ -238,10 +240,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           {/* Wake Word Toggle - Visible seulement quand déconnecté */}
           {!isConnected && onToggleWakeWord && (
-            <Tooltip content={isWakeWordEnabled ? "Désactiver la détection vocale 'Bonjour'" : "Activer la détection vocale 'Bonjour'"}>
+            <Tooltip content={
+              isWakeWordEnabled 
+                ? "Désactiver la détection vocale - Dites 'Bonjour' pour démarrer automatiquement" 
+                : "Activer la détection vocale - Dites 'Bonjour' pour démarrer automatiquement"
+            }>
                 <button
                 onClick={onToggleWakeWord}
-                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden ${
+                aria-label={isWakeWordEnabled ? "Désactiver la détection vocale" : "Activer la détection vocale"}
+                className={`group relative flex items-center gap-2 px-5 py-2.5 rounded-xl glass border font-body text-xs font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 ${
                     isWakeWordEnabled 
                     ? 'border-emerald-500/50 text-emerald-200 hover:border-emerald-500/70' 
                     : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
@@ -282,7 +289,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               onClick={onConnect}
               disabled={isConnecting}
-              className="group relative w-full max-w-sm px-6 py-4 md:px-10 md:py-5 rounded-2xl font-display font-black text-base md:text-lg tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden"
+              aria-label={isConnecting ? "Connexion en cours..." : "Activer NeuroChat"}
+              className="group relative w-full max-w-sm px-4 sm:px-6 md:px-10 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-display font-black text-sm sm:text-base md:text-lg tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden focus:outline-none focus:ring-4 focus:ring-white/30"
               style={{
                 background: isConnecting 
                   ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(226, 232, 240, 0.8))'
@@ -330,7 +338,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           ) : (
             <button
               onClick={onDisconnect}
-              className="group relative w-full max-w-sm px-6 py-4 md:px-10 md:py-5 glass-intense rounded-2xl font-display font-bold text-base md:text-lg tracking-wide text-red-400 border-2 border-red-500/40 transition-all duration-300 hover:scale-[1.03] hover:border-red-500/60 active:scale-[0.97] overflow-hidden"
+              aria-label="Terminer la session"
+              className="group relative w-full max-w-sm px-4 sm:px-6 md:px-10 py-3 sm:py-4 md:py-5 glass-intense rounded-xl sm:rounded-2xl font-display font-bold text-sm sm:text-base md:text-lg tracking-wide text-red-400 border-2 border-red-500/40 transition-all duration-300 hover:scale-[1.03] hover:border-red-500/60 active:scale-[0.97] overflow-hidden focus:outline-none focus:ring-4 focus:ring-red-500/30"
               style={{
                 boxShadow: '0 8px 32px rgba(239, 68, 68, 0.2), 0 0 60px rgba(239, 68, 68, 0.15)'
               }}
