@@ -267,32 +267,6 @@ const App: React.FC = () => {
       addToast('success', 'Documents Chargés', `${documents.length} document(s) prêt(s) à être utilisés`);
     }
   };
-
-  // Photo Capture Management
-  const handlePhotoCapture = useCallback((imageData: string) => {
-    if (!sessionRef.current) {
-      addToast('error', 'Erreur', 'Vous devez être connecté pour envoyer une photo');
-      return;
-    }
-
-    try {
-      console.log('[App] 📸 Envoi d\'une photo au chatbot...');
-      
-      // Envoyer l'image à Gemini Live API
-      const input: any = {
-        media: {
-          mimeType: 'image/jpeg',
-          data: imageData
-        }
-      };
-
-      sessionRef.current.sendRealtimeInput(input);
-      addToast('success', 'Photo Envoyée', 'La photo a été envoyée au chatbot. Posez-lui vos questions !');
-    } catch (error) {
-      console.error('[App] Erreur lors de l\'envoi de la photo:', error);
-      addToast('error', 'Erreur', 'Impossible d\'envoyer la photo. Réessayez.');
-    }
-  }, []);
   // Enumerate available cameras
   const enumerateCameras = async () => {
     try {
@@ -1871,7 +1845,6 @@ const App: React.FC = () => {
             onEditPersonality={() => setIsPersonalityEditorOpen(true)}
             isWakeWordEnabled={isWakeWordEnabled}
             onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
-            onPhotoCapture={handlePhotoCapture}
           />
         </main>
       </div>
