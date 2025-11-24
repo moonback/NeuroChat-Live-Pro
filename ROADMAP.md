@@ -147,7 +147,7 @@ La base solide du projet est déjà en place :
 ### 🏗️ Architecture
 - [ ] Migration vers une architecture modulaire stricte
 - [ ] State Management global (Zustand ou Redux Toolkit)
-- [ ] **PWA (Progressive Web App)** - Installation sur mobile/desktop
+- [x] **PWA (Progressive Web App)** - Installation sur mobile/desktop
 - [ ] Service Worker pour fonctionnement hors-ligne
 - [ ] Cache intelligent des ressources
 - [ ] Code splitting avancé
