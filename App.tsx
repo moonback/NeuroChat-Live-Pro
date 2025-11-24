@@ -94,6 +94,7 @@ const App: React.FC = () => {
   const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
   const chatbotSpeechRecognitionRef = useRef<any>(null); // SpeechRecognition API
   const beepAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextActivatedRef = useRef<boolean>(false);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setToasts(prev => [...prev, {
@@ -107,6 +108,39 @@ const App: React.FC = () => {
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
+
+  // Activer le contexte audio lors de la première interaction utilisateur
+  const activateAudioContext = useCallback(() => {
+    if (audioContextActivatedRef.current) return;
+    
+    try {
+      // Créer un contexte audio silencieux pour activer le contexte
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      gainNode.gain.value = 0; // Son silencieux
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.001);
+      
+      // Marquer comme activé
+      audioContextActivatedRef.current = true;
+      
+      // Précharger l'audio maintenant que le contexte est activé
+      if (!beepAudioRef.current) {
+        const audio = new Audio('/bip.mp3');
+        audio.volume = 0.7;
+        audio.preload = 'auto';
+        audio.load();
+        beepAudioRef.current = audio;
+      }
+    } catch (error) {
+      console.warn('[App] Impossible d\'activer le contexte audio:', error);
+    }
+  }, []);
 
   // Précharger le fichier audio du bip
   useEffect(() => {
@@ -128,7 +162,7 @@ const App: React.FC = () => {
   }, []);
 
   // Fonction pour émettre un bip sonore depuis un fichier audio
-  const playBeep = () => {
+  const playBeep = useCallback(() => {
     try {
       // Utiliser l'instance préchargée si disponible
       if (beepAudioRef.current) {
@@ -141,17 +175,13 @@ const App: React.FC = () => {
         if (playPromise !== undefined) {
           playPromise
             .then(() => {
-              console.log('[App] ✅ Bip joué avec succès');
+              // Succès silencieux - pas besoin de log
             })
             .catch(error => {
-              console.warn('[App] Erreur lors de la lecture du bip:', error);
-              // Si l'erreur est due au contexte audio, créer une nouvelle instance
-              if (error.name === 'NotAllowedError' || error.name === 'NotSupportedError') {
-                const newAudio = new Audio('/bip.mp3');
-                newAudio.volume = 0.7;
-                newAudio.play().catch(e => {
-                  console.warn('[App] Impossible de jouer le bip (nouvelle instance):', e);
-                });
+              // Ignorer silencieusement les erreurs NotAllowedError
+              // C'est normal si l'utilisateur n'a pas encore interagi avec la page
+              if (error.name !== 'NotAllowedError') {
+                console.warn('[App] Erreur lors de la lecture du bip:', error);
               }
             });
         }
@@ -160,13 +190,19 @@ const App: React.FC = () => {
         const audio = new Audio('/bip.mp3');
         audio.volume = 0.7;
         audio.play().catch(error => {
-          console.warn('[App] Impossible de jouer le bip (fallback):', error);
+          // Ignorer silencieusement les erreurs NotAllowedError
+          if (error.name !== 'NotAllowedError') {
+            console.warn('[App] Impossible de jouer le bip (fallback):', error);
+          }
         });
       }
     } catch (error) {
-      console.warn('[App] Erreur lors de la création du bip:', error);
+      // Ignorer silencieusement les erreurs
+      if ((error as any).name !== 'NotAllowedError') {
+        console.warn('[App] Erreur lors de la création du bip:', error);
+      }
     }
-  };
+  }, []);
 
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
@@ -509,6 +545,24 @@ const App: React.FC = () => {
       captureAndSend();
   };
 
+  // Activer le contexte audio au premier clic sur la page
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      activateAudioContext();
+      // Retirer les listeners après la première activation
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, [activateAudioContext]);
+
   // Wake Word Detection - Écoute pour "Neurochat"
   useEffect(() => {
     // Initialiser le détecteur de wake word
@@ -519,6 +573,8 @@ const App: React.FC = () => {
         continuous: true,
         onWakeWordDetected: () => {
           console.log('[App] Wake word détecté, tentative de connexion...');
+          // Activer le contexte audio si ce n'est pas déjà fait
+          activateAudioContext();
           // Émettre un bip pour signaler qu'on peut parler
           playBeep();
           
@@ -1476,9 +1532,9 @@ const App: React.FC = () => {
       
       {/* Primary Ambient Glow - Center */}
       <div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vh] h-[90vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vh] h-[90vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0 animate-float"
         style={{ 
-          background: `radial-gradient(circle, ${DEFAULT_PERSONALITY.themeColor}25, ${DEFAULT_PERSONALITY.themeColor}10 40%, transparent 70%)`,
+          background: `radial-gradient(circle, ${currentPersonality.themeColor}25, ${currentPersonality.themeColor}10 40%, transparent 70%)`,
           filter: 'blur(80px)',
           animation: 'pulse-glow 8s ease-in-out infinite'
         }}
@@ -1488,9 +1544,9 @@ const App: React.FC = () => {
       <div 
         className="absolute top-[15%] right-[15%] w-[60vh] h-[60vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
         style={{ 
-          background: `radial-gradient(circle, ${DEFAULT_PERSONALITY.themeColor}15, transparent 60%)`,
+          background: `radial-gradient(circle, ${currentPersonality.themeColor}15, transparent 60%)`,
           filter: 'blur(100px)',
-          animation: 'pulse-glow 10s ease-in-out infinite reverse'
+          animation: 'pulse-glow 10s ease-in-out infinite reverse, float 12s ease-in-out infinite'
         }}
       />
 
@@ -1498,15 +1554,38 @@ const App: React.FC = () => {
       <div 
         className="absolute bottom-[10%] left-[20%] w-[50vh] h-[50vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
         style={{ 
-          background: `radial-gradient(circle, ${DEFAULT_PERSONALITY.themeColor}12, transparent 60%)`,
+          background: `radial-gradient(circle, ${currentPersonality.themeColor}12, transparent 60%)`,
           filter: 'blur(90px)',
-          animation: 'pulse-glow 12s ease-in-out infinite'
+          animation: 'pulse-glow 12s ease-in-out infinite, float 10s ease-in-out infinite reverse'
         }}
       />
 
+      {/* Additional Dynamic Glow - Responsive to connection state */}
+      {(isTalking || connectionState === ConnectionState.CONNECTED) && (
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vh] rounded-full pointer-events-none z-0 transition-opacity duration-1000"
+          style={{ 
+            background: `radial-gradient(circle, ${currentPersonality.themeColor}20, transparent 50%)`,
+            filter: 'blur(120px)',
+            animation: 'pulse-glow 6s ease-in-out infinite',
+            opacity: isTalking ? 0.8 : 0.4
+          }}
+        />
+      )}
+
       {/* Sophisticated Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0 pointer-events-none transition-opacity duration-1000" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent z-0 pointer-events-none transition-opacity duration-1000" />
+      
+      {/* Animated mesh gradient overlay for depth */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none opacity-30"
+        style={{
+          background: `linear-gradient(135deg, ${currentPersonality.themeColor}05 0%, transparent 50%, ${currentPersonality.themeColor}05 100%)`,
+          backgroundSize: '200% 200%',
+          animation: 'gradient-shift 15s ease infinite'
+        }}
+      />
       
       {/* Screen Share Overlay Border */}
       {isScreenShareActive && (
@@ -1691,6 +1770,8 @@ const App: React.FC = () => {
             selectedCameraId={selectedCameraId}
             onConnect={() => {
                 isIntentionalDisconnectRef.current = false;
+                // Activer le contexte audio lors de la première interaction
+                activateAudioContext();
                 connect();
             }}
             onDisconnect={() => {
