@@ -114,7 +114,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         <button
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className="group relative flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20"
+          className="group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[44px]"
           style={{
             boxShadow: documents.length > 0 
               ? '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
@@ -147,7 +147,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           
           {/* Panel */}
           <div 
-            className="absolute top-full mt-2 right-0 w-80 md:w-96 glass-intense rounded-2xl border border-white/10 overflow-hidden z-50 animate-scale-in"
+            className="absolute top-full mt-2 right-0 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] sm:max-w-none glass-intense rounded-2xl border border-white/10 overflow-hidden z-50 animate-scale-in"
             style={{
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2)'
             }}

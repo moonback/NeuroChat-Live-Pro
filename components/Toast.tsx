@@ -74,11 +74,11 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   return (
     <div 
       className={`
-        relative flex items-start gap-3 p-4 mb-3 rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98]
+        relative flex items-start gap-2 sm:gap-3 p-3 sm:p-4 mb-2 sm:mb-3 rounded-lg sm:rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] touch-manipulation sm:max-w-[400px]
         ${getStyles()}
         ${isExiting ? 'opacity-0 translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}
       `}
-      style={{ minWidth: '300px', maxWidth: '400px' }}
+      style={{ minWidth: '280px', maxWidth: 'calc(100vw - 2rem)' }}
       onClick={handleClose}
       role="alert"
       aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
@@ -90,15 +90,17 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       }}
     >
       <div className="flex-shrink-0 mt-0.5">
-        {getIcon()}
+        <div className="w-4 h-4 sm:w-5 sm:h-5">
+          {getIcon()}
+        </div>
       </div>
-      <div className="flex-1">
-        <h3 className="font-display text-sm font-bold text-white mb-0.5">{toast.title}</h3>
-        <p className="font-body text-xs text-slate-300 leading-relaxed">{toast.message}</p>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-display text-xs sm:text-sm font-bold text-white mb-0.5">{toast.title}</h3>
+        <p className="font-body text-[10px] sm:text-xs text-slate-300 leading-relaxed break-words">{toast.message}</p>
       </div>
       <button 
         onClick={handleClose}
-        className="flex-shrink-0 text-slate-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 rounded p-0.5"
+        className="flex-shrink-0 text-slate-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 rounded p-1 sm:p-1.5 touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
         aria-label="Fermer la notification"
         tabIndex={0}
       >
