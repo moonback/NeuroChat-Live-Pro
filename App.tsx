@@ -14,6 +14,7 @@ import { VideoContextAnalyzer } from './utils/videoContextAnalyzer';
 import { WakeWordDetector } from './utils/wakeWordDetector';
 import DocumentUploader from './components/DocumentUploader';
 import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
+import InstallPWA from './components/InstallPWA';
 
 const App: React.FC = () => {
   // State
@@ -1653,6 +1654,8 @@ const App: React.FC = () => {
       />
       
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      <InstallPWA />
       
       <QuickStartGuide
         connectionState={connectionState}
