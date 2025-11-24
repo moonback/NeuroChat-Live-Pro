@@ -14,6 +14,27 @@ interface HeaderProps {
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
 }
 
+const StatusPill: React.FC<{ connected: boolean }> = ({ connected }) => (
+  <span
+    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium
+      ${
+        connected
+          ? "bg-green-600/30 text-green-200 border border-green-400/30"
+          : "bg-slate-700/30 text-slate-400 border border-slate-400/20"
+      } transition-all duration-300 shadow-sm`}
+    title={connected ? "Connecté" : "Déconnecté"}
+  >
+    <span
+      className={`inline-block w-2 h-2 rounded-full ${
+        connected
+          ? "bg-green-400 animate-pulse shadow-[0_0_6px_2px_rgb(34,197,94,0.3)]"
+          : "bg-slate-500"
+      }`}
+    />
+    {connected ? 'Connecté' : 'Déconnecté'}
+  </span>
+);
+
 const Header: React.FC<HeaderProps> = ({
   connectionState,
   currentPersonality,
@@ -25,76 +46,67 @@ const Header: React.FC<HeaderProps> = ({
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
   return (
-    <header className="absolute top-0 left-0 w-full p-4 md:p-8 flex justify-between items-start md:items-center pointer-events-none z-50 transition-all duration-300">
-      
+    <header className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start md:items-center pointer-events-none z-50 transition-all duration-300 bg-gradient-to-b from-[#131c24cc] via-[#1722337a] to-transparent backdrop-blur-lg border-b border-white/10">
       {/* Left: Brand & Identity */}
-      <div className="flex items-center gap-3 md:gap-4 pointer-events-auto group">
-        <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-2xl glass-intense border border-white/10 flex items-center justify-center shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:border-white/20 group-hover:shadow-[0_0_40px_rgba(99,102,241,0.3)] animate-float"
-          style={{
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px ${currentPersonality.themeColor}10, inset 0 1px 0 rgba(255, 255, 255, 0.1)`
-          }}>
-            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                background: `radial-gradient(circle at center, ${currentPersonality.themeColor}30, transparent 70%)`
-              }}></div>
-            
-            {/* Animated glow ring */}
-            <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-white/20 transition-all duration-500"></div>
-            
-            <svg className="w-5 h-5 md:w-7 md:h-7 text-white relative z-10 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-        </div>
-        
-        <div className="flex flex-col">
-            <h1 className="font-display text-lg md:text-2xl font-bold tracking-tight text-white leading-none mb-0.5 md:mb-1 transition-all duration-300 group-hover:tracking-normal group-hover:scale-105"
-              style={{
-                textShadow: `0 0 30px ${currentPersonality.themeColor}40`
-              }}>
-              NEUROCHAT <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300 animate-gradient">PRO</span>
-            </h1>
-            <div className="flex items-center gap-2">
-              <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-sky-500 animate-pulse relative">
-                <span className="absolute inset-0 rounded-full bg-sky-500 animate-ping opacity-75"></span>
+      <div className="flex items-center gap-4 pointer-events-auto group select-none">
+        <div className="flex flex-col justify-center">
+          <h1
+            className="font-display text-xl md:text-3xl font-bold tracking-tighter text-white leading-none mb-1 transition-all duration-300 group-hover:scale-105 group-hover:tracking-normal"
+            style={{
+              textShadow: `0 0 36px ${currentPersonality.themeColor}50, 0 1px 0 #000a`
+            }}>
+            <span className="inline-flex items-center gap-1">
+              
+              NEUROCHAT{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300 animate-gradient drop-shadow-lg">
+                PRO
               </span>
-              <p className="font-body text-[9px] md:text-[10px] text-slate-400 font-medium tracking-[0.1em] md:tracking-[0.15em] uppercase leading-none transition-colors duration-300 group-hover:text-slate-300">
-                Professional AI Interface
-              </p>
-            </div>
+            </span>
+          </h1>
+          <div className="flex items-center gap-2 mt-0.5 md:mt-1">
+            <StatusPill connected={isConnected} />
+            <span className="font-body text-[9.3px] md:text-[10.5px] text-slate-400 font-medium tracking-[0.11em] md:tracking-[0.14em] uppercase leading-none px-1">
+              Assistant IA Professionnel
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Right: Controls & Status */}
-      <div className="flex flex-col md:flex-row items-end md:items-center gap-2 md:gap-3 pointer-events-auto">
-        
-        
-
-        <div className="h-6 w-px bg-white/10 hidden md:block mx-1"></div>
+      <div className="flex flex-row items-center gap-2 md:gap-4 pointer-events-auto">
+        <div className="hidden md:flex flex-col items-center mx-2">
+          <div className="h-7 w-px bg-white/10" />
+        </div>
 
         {/* Document Uploader */}
         <div className="relative">
-          <DocumentUploader
-            documents={uploadedDocuments}
-            onDocumentsChange={onDocumentsChange}
-            disabled={isConnected}
-          />
+          <Tooltip content="Ajouter des documents contextuels pour l'IA">
+            <div>
+              <DocumentUploader
+                documents={uploadedDocuments}
+                onDocumentsChange={onDocumentsChange}
+                disabled={isConnected}
+              />
+            </div>
+          </Tooltip>
         </div>
 
-        <div className="h-6 w-px bg-white/10 hidden md:block mx-1"></div>
+        <div className="hidden md:flex flex-col items-center mx-2">
+          <div className="h-7 w-px bg-white/10" />
+        </div>
 
         {/* Voice Selector */}
         <div className="relative">
-            <Tooltip content={isConnected ? "Voix verrouillée pendant la session" : "Changer la voix de l'IA"}>
-                <div>
-                    <VoiceSelector
-                        currentVoice={selectedVoice}
-                        onVoiceChange={onVoiceChange}
-                        disabled={isConnected}
-                    />
-                </div>
-            </Tooltip>
+          <Tooltip content={isConnected ? "Voix verrouillée pendant la session" : "Changer la voix de l'IA"}>
+            <div>
+              <VoiceSelector
+                currentVoice={selectedVoice}
+                onVoiceChange={onVoiceChange}
+                disabled={isConnected}
+              />
+            </div>
+          </Tooltip>
         </div>
-
       </div>
     </header>
   );
