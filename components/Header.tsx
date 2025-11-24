@@ -46,16 +46,16 @@ const Header: React.FC<HeaderProps> = ({
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
   return (
-    <header className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start md:items-center pointer-events-none z-50 transition-all duration-300 bg-gradient-to-b from-[#131c24cc] via-[#1722337a] to-transparent backdrop-blur-lg border-b border-white/10">
+    <header className="absolute top-0 left-0 w-full p-4 md:p-6 lg:p-6 xl:p-8 flex justify-between items-start md:items-center pointer-events-none z-50 transition-all duration-300 bg-gradient-to-b from-[#131c24cc] via-[#1722337a] to-transparent backdrop-blur-lg border-b border-white/10">
       {/* Left: Brand & Identity */}
-      <div className="flex items-center gap-4 pointer-events-auto group select-none">
+      <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 pointer-events-auto group select-none">
         <div className="flex flex-col justify-center">
           <h1
-            className="font-display text-xl md:text-3xl font-bold tracking-tighter text-white leading-none mb-1 transition-all duration-300 group-hover:scale-105 group-hover:tracking-normal"
+            className="font-display text-xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tighter text-white leading-none mb-1 transition-all duration-300 group-hover:scale-105 group-hover:tracking-normal"
             style={{
               textShadow: `0 0 36px ${currentPersonality.themeColor}50, 0 1px 0 #000a`
             }}>
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 lg:gap-2">
               
               NEUROCHAT{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300 animate-gradient drop-shadow-lg">
@@ -63,9 +63,9 @@ const Header: React.FC<HeaderProps> = ({
               </span>
             </span>
           </h1>
-          <div className="flex items-center gap-2 mt-0.5 md:mt-1">
+          <div className="flex items-center gap-2 lg:gap-3 mt-0.5 md:mt-1">
             <StatusPill connected={isConnected} />
-            <span className="font-body text-[9.3px] md:text-[10.5px] text-slate-400 font-medium tracking-[0.11em] md:tracking-[0.14em] uppercase leading-none px-1">
+            <span className="font-body text-[9.3px] md:text-[10.5px] lg:text-xs xl:text-sm text-slate-400 font-medium tracking-[0.11em] md:tracking-[0.14em] lg:tracking-[0.15em] uppercase leading-none px-1">
               Assistant IA Professionnel
             </span>
           </div>
@@ -73,9 +73,9 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Controls & Status */}
-      <div className="flex flex-row items-center gap-2 md:gap-4 pointer-events-auto">
-        <div className="hidden md:flex flex-col items-center mx-2">
-          <div className="h-7 w-px bg-white/10" />
+      <div className="flex flex-row items-center gap-2 md:gap-4 lg:gap-6 xl:gap-8 pointer-events-auto">
+        <div className="hidden md:flex flex-col items-center mx-2 lg:mx-3">
+          <div className="h-7 lg:h-8 w-px bg-white/10" />
         </div>
 
         {/* Document Uploader */}
@@ -91,8 +91,8 @@ const Header: React.FC<HeaderProps> = ({
           </Tooltip>
         </div>
 
-        <div className="hidden md:flex flex-col items-center mx-2">
-          <div className="h-7 w-px bg-white/10" />
+        <div className="hidden md:flex flex-col items-center mx-2 lg:mx-3">
+          <div className="h-7 lg:h-8 w-px bg-white/10" />
         </div>
 
         {/* Voice Selector */}

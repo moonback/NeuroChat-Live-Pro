@@ -304,3 +304,55 @@ button, a, input[type="button"], input[type="submit"], select {
   }
 }
 
+/* Desktop Optimizations */
+@media (min-width: 1024px) {
+  /* Better scrolling for desktop sidebar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.3) rgba(15, 23, 42, 0.5);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
+  }
+
+  /* Improved hover effects for desktop */
+  button:hover,
+  a:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Better spacing for desktop layouts */
+  .desktop-spacing {
+    padding: 2rem;
+  }
+
+  /* Enhanced glass effect for desktop */
+  .glass-desktop {
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+  }
+}
+
+/* Large Desktop (1440px+) */
+@media (min-width: 1440px) {
+  /* Even more generous spacing */
+  .desktop-spacing {
+    padding: 3rem;
+  }
+}
+

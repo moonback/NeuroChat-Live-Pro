@@ -1708,7 +1708,7 @@ const App: React.FC = () => {
       {(isVideoActive || isScreenShareActive) && !isVideoEnlarged && (
          <div 
            onClick={() => setIsVideoEnlarged(true)}
-           className="absolute top-16 sm:top-20 right-3 sm:right-4 md:top-8 md:right-8 z-40 w-48 sm:w-32 md:w-56 aspect-video rounded-xl sm:rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation"
+           className="absolute top-16 sm:top-20 right-3 sm:right-4 md:top-8 md:right-8 lg:top-24 lg:right-8 xl:top-28 xl:right-12 z-40 w-48 sm:w-32 md:w-56 lg:w-72 xl:w-80 aspect-video rounded-xl sm:rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation"
            style={{
              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
            }}>
@@ -1841,7 +1841,7 @@ const App: React.FC = () => {
       )}
 
       {/* Main Layout */}
-      <div className="relative z-10 w-full h-full flex flex-col">
+      <div className="relative z-10 w-full h-full flex flex-col lg:flex-row">
         {/* Premium Header */}
         <Header 
             connectionState={connectionState}
@@ -1852,34 +1852,116 @@ const App: React.FC = () => {
             onDocumentsChange={handleDocumentsChange}
         />
 
-        <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-10 safe-area-bottom">
-          <ControlPanel 
-            connectionState={connectionState}
-            currentPersonality={currentPersonality}
-            isVideoActive={isVideoActive}
-            isScreenShareActive={isScreenShareActive}
-            latencyMs={latency}
-            inputAnalyser={inputAnalyserRef.current}
-            availableCameras={availableCameras}
-            selectedCameraId={selectedCameraId}
-            onConnect={() => {
-                isIntentionalDisconnectRef.current = false;
-                // Activer le contexte audio lors de la première interaction
-                activateAudioContext();
-                connect();
-            }}
-            onDisconnect={() => {
-                isIntentionalDisconnectRef.current = true;
-                disconnect(true);
-            }}
-            onToggleVideo={() => setIsVideoActive(!isVideoActive)}
-            onToggleScreenShare={toggleScreenShare}
-            onCameraChange={changeCamera}
-            onEditPersonality={() => setIsPersonalityEditorOpen(true)}
-            isWakeWordEnabled={isWakeWordEnabled}
-            onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
-          />
-        </main>
+        {/* Desktop Layout: Sidebar + Main Content */}
+        <div className="flex-grow flex flex-col lg:flex-row lg:pt-20 xl:pt-24">
+          {/* Desktop Sidebar - Contrôles et informations */}
+          <aside className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 lg:border-r lg:border-white/10 lg:bg-black/20 lg:backdrop-blur-sm lg:p-6 xl:p-8 lg:gap-6 xl:gap-8 lg:overflow-y-auto custom-scrollbar">
+            {/* Status Panel */}
+            <div className="glass-intense rounded-2xl p-5 xl:p-6 space-y-4">
+              <h3 className="text-sm xl:text-base font-display font-bold text-white uppercase tracking-wider mb-4">
+                État du Système
+              </h3>
+              
+              {/* Connection Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs xl:text-sm text-slate-400 font-medium">Connexion</span>
+                <div className="flex items-center gap-2">
+                  <span className={`block w-2.5 h-2.5 rounded-full ${
+                    connectionState === ConnectionState.CONNECTED ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 
+                    connectionState === ConnectionState.CONNECTING ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-pulse' : 
+                    'bg-slate-500'
+                  }`}></span>
+                  <span className="text-xs xl:text-sm font-medium text-white">
+                    {connectionState === ConnectionState.CONNECTED ? 'Actif' : 
+                    connectionState === ConnectionState.CONNECTING ? 'Connexion...' : 'Veille'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Latency */}
+              {connectionState === ConnectionState.CONNECTED && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs xl:text-sm text-slate-400 font-medium">Latence</span>
+                  <span className="text-xs xl:text-sm font-bold text-white">
+                    {latency > 0 ? `${latency}ms` : '---'}
+                  </span>
+                </div>
+              )}
+
+              {/* Video Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs xl:text-sm text-slate-400 font-medium">Vision</span>
+                <span className={`text-xs xl:text-sm font-medium ${
+                  isVideoActive || isScreenShareActive ? 'text-red-400' : 'text-slate-500'
+                }`}>
+                  {isScreenShareActive ? 'Partage d\'écran' : isVideoActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              {/* Wake Word Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs xl:text-sm text-slate-400 font-medium">Wake Word</span>
+                <span className={`text-xs xl:text-sm font-medium ${
+                  isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'
+                }`}>
+                  {isWakeWordEnabled ? 'Activé' : 'Désactivé'}
+                </span>
+              </div>
+            </div>
+
+            
+
+            {/* Quick Actions */}
+            {connectionState === ConnectionState.DISCONNECTED && (
+              <div className="glass-intense rounded-2xl p-5 xl:p-6 space-y-3">
+                <h3 className="text-sm xl:text-base font-display font-bold text-white uppercase tracking-wider mb-4">
+                  Actions Rapides
+                </h3>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setIsPersonalityEditorOpen(true)}
+                    className="w-full px-4 py-2.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modifier la personnalité
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* Main Content Area */}
+          <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-10 safe-area-bottom lg:px-8 xl:px-12">
+            <ControlPanel 
+              connectionState={connectionState}
+              currentPersonality={currentPersonality}
+              isVideoActive={isVideoActive}
+              isScreenShareActive={isScreenShareActive}
+              latencyMs={latency}
+              inputAnalyser={inputAnalyserRef.current}
+              availableCameras={availableCameras}
+              selectedCameraId={selectedCameraId}
+              onConnect={() => {
+                  isIntentionalDisconnectRef.current = false;
+                  // Activer le contexte audio lors de la première interaction
+                  activateAudioContext();
+                  connect();
+              }}
+              onDisconnect={() => {
+                  isIntentionalDisconnectRef.current = true;
+                  disconnect(true);
+              }}
+              onToggleVideo={() => setIsVideoActive(!isVideoActive)}
+              onToggleScreenShare={toggleScreenShare}
+              onCameraChange={changeCamera}
+              onEditPersonality={() => setIsPersonalityEditorOpen(true)}
+              isWakeWordEnabled={isWakeWordEnabled}
+              onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
+            />
+          </main>
+        </div>
       </div>
     </div>
   );
