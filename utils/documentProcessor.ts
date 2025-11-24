@@ -20,18 +20,6 @@ export async function extractTextFromFile(file: File): Promise<string> {
   const fileName = file.name.toLowerCase();
 
   try {
-    // Images PNG et JPG
-    if (
-      fileType === 'image/png' || 
-      fileType === 'image/jpeg' || 
-      fileType === 'image/jpg' ||
-      fileName.endsWith('.png') ||
-      fileName.endsWith('.jpg') ||
-      fileName.endsWith('.jpeg')
-    ) {
-      return await extractTextFromImage(file);
-    }
-
     // Fichier texte
     if (fileType.startsWith('text/') || fileName.endsWith('.txt')) {
       return await file.text();
@@ -86,27 +74,6 @@ export async function extractTextFromFile(file: File): Promise<string> {
     console.error('Erreur lors de l\'extraction du texte:', error);
     throw new Error(`Impossible d'extraire le texte du fichier: ${file.name}`);
   }
-}
-
-/**
- * Convertit une image en base64 pour l'inclure dans le contexte
- */
-async function extractTextFromImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    
-    reader.onload = () => {
-      const base64String = reader.result as string;
-      // Format: data:image/png;base64,...
-      resolve(base64String);
-    };
-    
-    reader.onerror = () => {
-      reject(new Error('Impossible de lire le fichier image'));
-    };
-    
-    reader.readAsDataURL(file);
-  });
 }
 
 /**
@@ -167,16 +134,8 @@ export function formatDocumentForContext(documents: ProcessedDocument[]): string
   context += 'L\'utilisateur a fourni les documents suivants. Utilise ces informations pour répondre à ses questions.\n\n';
 
   documents.forEach((doc, index) => {
-    const isImage = doc.type.startsWith('image/') || doc.content.startsWith('data:image/');
-    
-    if (isImage) {
-      context += `--- Image ${index + 1}: ${doc.name} (${doc.type}, ${formatFileSize(doc.size)}) ---\n\n`;
-      context += `L'utilisateur a fourni une image. Voici les données de l'image en base64:\n${doc.content}\n\n`;
-      context += 'Tu peux analyser cette image et répondre aux questions de l\'utilisateur en te basant sur son contenu visuel.\n\n';
-    } else {
-      context += `--- Document ${index + 1}: ${doc.name} (${doc.type}, ${formatFileSize(doc.size)}) ---\n\n`;
-      context += `${doc.content}\n\n`;
-    }
+    context += `--- Document ${index + 1}: ${doc.name} (${doc.type}, ${formatFileSize(doc.size)}) ---\n\n`;
+    context += `${doc.content}\n\n`;
   });
 
   context += '=== FIN DES DOCUMENTS ===\n\n';
@@ -214,16 +173,12 @@ export function isValidFileType(file: File): boolean {
     'text/javascript',
     'application/xml',
     'text/xml',
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
   ];
 
   const validExtensions = [
     '.txt', '.md', '.pdf', '.json', '.csv',
     '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.cpp', '.c',
-    '.html', '.css', '.xml', '.yml', '.yaml',
-    '.png', '.jpg', '.jpeg'
+    '.html', '.css', '.xml', '.yml', '.yaml'
   ];
 
   if (validTypes.includes(file.type)) {
