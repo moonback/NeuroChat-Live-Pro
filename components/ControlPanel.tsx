@@ -15,6 +15,8 @@ interface ControlPanelProps {
   availableCameras?: MediaDeviceInfo[];
   selectedCameraId?: string;
   isWakeWordEnabled?: boolean;
+  isFunctionCallingEnabled?: boolean;
+  isGoogleSearchEnabled?: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
   onToggleVideo: () => void;
@@ -22,6 +24,8 @@ interface ControlPanelProps {
   onCameraChange?: (cameraId: string) => void;
   onToggleWakeWord?: () => void;
   onEditPersonality?: () => void;
+  onToggleFunctionCalling?: (enabled: boolean) => void;
+  onToggleGoogleSearch?: (enabled: boolean) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -34,6 +38,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   availableCameras = [],
   selectedCameraId = '',
   isWakeWordEnabled = true,
+  isFunctionCallingEnabled = true,
+  isGoogleSearchEnabled = false,
   onConnect,
   onDisconnect,
   onToggleVideo,
@@ -41,6 +47,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onCameraChange,
   onToggleWakeWord,
   onEditPersonality,
+  onToggleFunctionCalling,
+  onToggleGoogleSearch,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -303,6 +311,97 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <span className="relative z-10 hidden sm:inline">Modifier</span>
                 </button>
             </Tooltip>
+          )}
+
+          {/* Tools Toggle Buttons - Visible seulement quand déconnecté */}
+          {!isConnected && (
+            <>
+              {/* Function Calling Toggle */}
+              {onToggleFunctionCalling && (
+                <Tooltip content={
+                  isFunctionCallingEnabled 
+                    ? "Désactiver l'appel de fonction - L'IA pourra appeler des fonctions personnalisées" 
+                    : "Activer l'appel de fonction - L'IA pourra appeler des fonctions personnalisées"
+                }>
+                  <button
+                    onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                    aria-label={isFunctionCallingEnabled ? "Désactiver l'appel de fonction" : "Activer l'appel de fonction"}
+                    className={`group relative flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 px-3 sm:px-4 md:px-5 lg:px-6 xl:px-7 py-2 sm:py-2.5 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl glass border font-body text-[10px] sm:text-xs lg:text-sm xl:text-base font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 touch-manipulation ${
+                      isFunctionCallingEnabled 
+                        ? 'border-blue-500/50 text-blue-200 hover:border-blue-500/70' 
+                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                    }`}
+                    style={{
+                      boxShadow: isFunctionCallingEnabled ? '0 0 30px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {isFunctionCallingEnabled && (
+                      <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
+                    {isFunctionCallingEnabled ? (
+                      <>
+                        <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        <span className="relative z-10 hidden sm:inline">Fonctions</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        <span className="relative z-10 hidden sm:inline">Fonctions</span>
+                      </>
+                    )}
+                  </button>
+                </Tooltip>
+              )}
+
+              {/* Google Search Toggle */}
+              {onToggleGoogleSearch && (
+                <Tooltip content={
+                  isGoogleSearchEnabled 
+                    ? "Désactiver Google Search - L'IA pourra rechercher des informations en temps réel" 
+                    : "Activer Google Search - L'IA pourra rechercher des informations en temps réel"
+                }>
+                  <button
+                    onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                    aria-label={isGoogleSearchEnabled ? "Désactiver Google Search" : "Activer Google Search"}
+                    className={`group relative flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 px-3 sm:px-4 md:px-5 lg:px-6 xl:px-7 py-2 sm:py-2.5 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl glass border font-body text-[10px] sm:text-xs lg:text-sm xl:text-base font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 touch-manipulation ${
+                      isGoogleSearchEnabled 
+                        ? 'border-green-500/50 text-green-200 hover:border-green-500/70' 
+                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                    }`}
+                    style={{
+                      boxShadow: isGoogleSearchEnabled ? '0 0 30px rgba(34, 197, 94, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {isGoogleSearchEnabled && (
+                      <div className="absolute inset-0 bg-green-500/10 animate-pulse"></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
+                    {isGoogleSearchEnabled ? (
+                      <>
+                        <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span className="relative z-10 hidden sm:inline">Search</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span className="relative z-10 hidden sm:inline">Search</span>
+                      </>
+                    )}
+                  </button>
+                </Tooltip>
+              )}
+            </>
           )}
         </div>
 
