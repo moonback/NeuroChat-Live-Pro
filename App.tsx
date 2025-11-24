@@ -92,7 +92,7 @@ const App: React.FC = () => {
   const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
   const connectRef = useRef<(() => Promise<void>) | null>(null);
   const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
-  const chatbotSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
+  const chatbotSpeechRecognitionRef = useRef<any>(null); // SpeechRecognition API
   const beepAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
@@ -728,10 +728,11 @@ const App: React.FC = () => {
                   
                   if (shouldEndSession) {
                     console.log('[App] ✅ Demande de terminer la session détectée dans le texte:', text);
-                    addToast('info', 'Fin de session', 'Redémarrage de l\'application...');
+                    console.log('[App] 🔄 Redémarrage complet de l\'application...');
+                    addToast('info', 'Fin de session', 'Redémarrage complet de l\'application...');
                     isIntentionalDisconnectRef.current = true;
                     
-                    // Arrêter la reconnaissance vocale si active
+                    // Arrêter immédiatement tous les processus
                     if (chatbotSpeechRecognitionRef.current) {
                       try {
                         chatbotSpeechRecognitionRef.current.stop();
@@ -739,9 +740,8 @@ const App: React.FC = () => {
                       } catch (e) {}
                     }
                     
-                    setTimeout(() => {
+                    // Nettoyer et redémarrer immédiatement
                       disconnect(true);
-                    }, 1000);
                     return;
                   }
                   
@@ -973,7 +973,7 @@ const App: React.FC = () => {
                   recognition.interimResults = true;
                   recognition.lang = 'fr-FR';
                   
-                  recognition.onresult = (event: SpeechRecognitionEvent) => {
+                  recognition.onresult = (event: any) => {
                     for (let i = event.resultIndex; i < event.results.length; i++) {
                       const result = event.results[i];
                       const transcript = result[0].transcript.toLowerCase().trim();
@@ -1058,8 +1058,8 @@ const App: React.FC = () => {
                         
                         if (shouldEndSession) {
                           console.log('[App] ✅✅✅ DEMANDE DE TERMINER LA SESSION DÉTECTÉE:', transcript);
-                          console.log('[App] 🚀 Déclenchement du redémarrage...');
-                          addToast('info', 'Fin de session', 'Redémarrage de l\'application...');
+                          console.log('[App] 🔄 Redémarrage complet de l\'application...');
+                          addToast('info', 'Fin de session', 'Redémarrage complet de l\'application...');
                           isIntentionalDisconnectRef.current = true;
                           
                           // Arrêter la reconnaissance
@@ -1071,10 +1071,8 @@ const App: React.FC = () => {
                           }
                           
                           // Redémarrer immédiatement
-                          setTimeout(() => {
-                            console.log('[App] 🔄 Appel de disconnect(true) pour redémarrer...');
+                          console.log('[App] 🔄 Appel de disconnect(true) pour redémarrer complètement...');
                             disconnect(true);
-                          }, 500);
                           return;
                         }
                         
@@ -1447,12 +1445,20 @@ const App: React.FC = () => {
     setConnectionState(ConnectionState.DISCONNECTED);
     setIsTalking(false);
     
-    // Rafraîchir la page uniquement si demandé explicitement (clic sur bouton)
+    // Rafraîchir la page uniquement si demandé explicitement (clic sur bouton ou commande vocale)
     if (shouldReload) {
-        addToast('info', 'Déconnexion', 'Session terminée.');
+        console.log('[App] 🔄 Redémarrage complet de l\'application...');
+        addToast('info', 'Déconnexion', 'Redémarrage en cours...');
+        
+        // Nettoyer le localStorage si nécessaire (optionnel)
+        // localStorage.clear(); // Décommenter si vous voulez tout effacer
+        
+        // Redémarrer immédiatement avec un reload complet
         setTimeout(() => {
+            console.log('[App] 🔄 Rechargement complet de l\'application...');
+            // Rechargement complet de l'application (force reload)
             window.location.reload();
-        }, 800);
+        }, 500);
     }
   };
 
