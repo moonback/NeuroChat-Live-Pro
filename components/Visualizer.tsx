@@ -16,6 +16,10 @@ interface Particle {
   opacity: number;
   rotation: number;
   rotationSpeed: number;
+  orbitRadius?: number;
+  orbitAngle?: number;
+  orbitSpeed?: number;
+  distance?: number;
 }
 
 const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive }) => {
@@ -50,6 +54,10 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
     // Premium Particles System
     let particles: Particle[] = [];
     const particleCount = 200;
+    const orbitParticleCount = 30; // Particules qui orbitent autour de la sphère
+    
+    // Calculer baseRadius pour les particules orbitales
+    const baseRadiusForParticles = Math.min(canvas.width, canvas.height) / 7;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -64,6 +72,32 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         rotationSpeed: (Math.random() - 0.5) * 0.02
       });
     }
+
+    // Particules orbitales autour de la sphère
+    for (let i = 0; i < orbitParticleCount; i++) {
+      const orbitRadius = baseRadiusForParticles + 80 + Math.random() * 200;
+      const orbitAngle = (Math.PI * 2 / orbitParticleCount) * i;
+      particles.push({
+        x: 0, // Sera calculé dynamiquement
+        y: 0, // Sera calculé dynamiquement
+        size: Math.random() * 1.5 + 0.8,
+        speedX: 0,
+        speedY: 0,
+        angle: 0,
+        opacity: Math.random() * 0.4 + 0.2,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.03,
+        orbitRadius: orbitRadius,
+        orbitAngle: orbitAngle,
+        orbitSpeed: (Math.random() * 0.01 + 0.005) * (Math.random() > 0.5 ? 1 : -1),
+        distance: orbitRadius
+      });
+    }
+
+    // Variables pour la rotation 3D de la sphère
+    let sphereRotationX = 0;
+    let sphereRotationY = 0;
+    let sphereRotationZ = 0;
 
     // Helper: Parse hex color to RGB
     const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
@@ -131,30 +165,156 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       // Multi-layered Core with Depth
       const coreRadius = baseRadius + (lowFreqAvg * 1.2);
 
-      // Outer Glow Layer
-      const outerGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius * 2.5);
-      outerGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
-      outerGlow.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08)`);
+      // Animation de rotation 3D de la sphère
+      const time = Date.now() / 1000;
+      sphereRotationX += 0.002;
+      sphereRotationY += 0.003;
+      sphereRotationZ += 0.0015;
+      
+      // Influence audio sur la rotation
+      if (currentIsActive) {
+        sphereRotationX += (midFreqAvg / 1000);
+        sphereRotationY += (highFreqAvg / 1200);
+      }
+
+      // Outer Glow Layer (amélioré)
+      const outerGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius * 3);
+      outerGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentIsActive ? 0.25 : 0.15})`);
+      outerGlow.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentIsActive ? 0.12 : 0.08})`);
+      outerGlow.addColorStop(0.6, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.05)`);
       outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = outerGlow;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Main Core Gradient (Premium look)
-      const coreGradient = ctx.createRadialGradient(
-        centerX, centerY, coreRadius * 0.1,
-        centerX, centerY, coreRadius
-      );
-      coreGradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-      coreGradient.addColorStop(0.2, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)`);
-      coreGradient.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`);
-      coreGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
+      // Sphère 3D avec effet de profondeur amélioré
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
+
+      // Calcul des points 3D pour la grille de la sphère
+      const gridDetail = 20;
+      const points3D: { x: number; y: number; z: number; brightness: number }[] = [];
+      
+      for (let lat = 0; lat <= gridDetail; lat++) {
+        for (let lon = 0; lon <= gridDetail; lon++) {
+          const theta = (lat / gridDetail) * Math.PI;
+          const phi = (lon / gridDetail) * Math.PI * 2;
+          
+          // Rotation 3D
+          let x = Math.sin(theta) * Math.cos(phi);
+          let y = Math.cos(theta);
+          let z = Math.sin(theta) * Math.sin(phi);
+          
+          // Rotation autour de X
+          let y1 = y * Math.cos(sphereRotationX) - z * Math.sin(sphereRotationX);
+          let z1 = y * Math.sin(sphereRotationX) + z * Math.cos(sphereRotationX);
+          
+          // Rotation autour de Y
+          let x1 = x * Math.cos(sphereRotationY) + z1 * Math.sin(sphereRotationY);
+          z = -x * Math.sin(sphereRotationY) + z1 * Math.cos(sphereRotationY);
+          
+          // Rotation autour de Z
+          x = x1 * Math.cos(sphereRotationZ) - y1 * Math.sin(sphereRotationZ);
+          y = x1 * Math.sin(sphereRotationZ) + y1 * Math.cos(sphereRotationZ);
+          
+          // Calcul de la luminosité basée sur la position Z (profondeur)
+          const brightness = (z + 1) / 2; // Normaliser entre 0 et 1
+          
+          points3D.push({ x, y, z, brightness });
+        }
+      }
+
+      // Dessiner la grille de la sphère
+      ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
+      ctx.lineWidth = 0.5;
+      
+      for (let lat = 0; lat < gridDetail; lat++) {
+        ctx.beginPath();
+        let first = true;
+        for (let lon = 0; lon <= gridDetail; lon++) {
+          const idx = lat * (gridDetail + 1) + lon;
+          const point = points3D[idx];
+          const screenX = centerX + point.x * coreRadius;
+          const screenY = centerY + point.y * coreRadius;
+          
+          if (first) {
+            ctx.moveTo(screenX, screenY);
+            first = false;
+          } else {
+            ctx.lineTo(screenX, screenY);
+          }
+        }
+        ctx.stroke();
+      }
+      
+      for (let lon = 0; lon < gridDetail; lon++) {
+        ctx.beginPath();
+        let first = true;
+        for (let lat = 0; lat <= gridDetail; lat++) {
+          const idx = lat * (gridDetail + 1) + lon;
+          const point = points3D[idx];
+          const screenX = centerX + point.x * coreRadius;
+          const screenY = centerY + point.y * coreRadius;
+          
+          if (first) {
+            ctx.moveTo(screenX, screenY);
+            first = false;
+          } else {
+            ctx.lineTo(screenX, screenY);
+          }
+        }
+        ctx.stroke();
+      }
+
+      // Points lumineux sur la sphère
+      for (let i = 0; i < points3D.length; i += 2) {
+        const point = points3D[i];
+        if (point.z > -0.3) { // Seulement les points visibles
+          const screenX = centerX + point.x * coreRadius;
+          const screenY = centerY + point.y * coreRadius;
+          const pointBrightness = point.brightness * 0.8 + 0.2;
+          
+          const pointGlow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 3);
+          pointGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pointBrightness * 0.6})`);
+          pointGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          
+          ctx.fillStyle = pointGlow;
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Main Core Gradient (Premium look avec effet 3D)
+      const coreGradient = ctx.createRadialGradient(
+        centerX, centerY, coreRadius * 0.1,
+        centerX, centerY, coreRadius * 1.2
+      );
+      coreGradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      coreGradient.addColorStop(0.15, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`);
+      coreGradient.addColorStop(0.4, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`);
+      coreGradient.addColorStop(0.7, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`);
+      coreGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
       ctx.fillStyle = coreGradient;
       ctx.beginPath();
       ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
       ctx.fill();
+
+      // Highlight (reflet lumineux) pour effet 3D
+      const highlightOffset = coreRadius * 0.3;
+      const highlightX = centerX - highlightOffset * Math.cos(sphereRotationY);
+      const highlightY = centerY - highlightOffset * Math.sin(sphereRotationX);
+      const highlightGradient = ctx.createRadialGradient(
+        highlightX, highlightY, 0,
+        highlightX, highlightY, coreRadius * 0.4
+      );
+      highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+      highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = highlightGradient;
+      ctx.beginPath();
+      ctx.arc(highlightX, highlightY, coreRadius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
 
       // Geometric Rings (Futuristic)
@@ -189,15 +349,27 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       particles.forEach((p, index) => {
         const audioInfluence = currentIsActive ? (1 + frequencyAvg / 50) : 1;
         
-        p.x += p.speedX * audioInfluence;
-        p.y += p.speedY * audioInfluence;
+        // Gérer les particules orbitales
+        if (p.orbitRadius !== undefined && p.orbitAngle !== undefined && p.orbitSpeed !== undefined) {
+          p.orbitAngle += p.orbitSpeed * audioInfluence;
+          const baseOrbitRadius = p.orbitRadius;
+          const dynamicRadius = baseOrbitRadius + (midFreqAvg * 0.5);
+          p.x = centerX + Math.cos(p.orbitAngle) * dynamicRadius;
+          p.y = centerY + Math.sin(p.orbitAngle) * dynamicRadius;
+          p.distance = dynamicRadius;
+        } else {
+          // Particules libres
+          p.x += p.speedX * audioInfluence;
+          p.y += p.speedY * audioInfluence;
+          
+          // Elegant screen wrap
+          if (p.x < -50) p.x = canvas.width + 50;
+          if (p.x > canvas.width + 50) p.x = -50;
+          if (p.y < -50) p.y = canvas.height + 50;
+          if (p.y > canvas.height + 50) p.y = -50;
+        }
+        
         p.rotation += p.rotationSpeed;
-
-        // Elegant screen wrap
-        if (p.x < -50) p.x = canvas.width + 50;
-        if (p.x > canvas.width + 50) p.x = -50;
-        if (p.y < -50) p.y = canvas.height + 50;
-        if (p.y > canvas.height + 50) p.y = -50;
 
         const dist = Math.hypot(p.x - centerX, p.y - centerY);
         const maxConnectionDist = coreRadius + 150;
@@ -236,21 +408,38 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
 
-        // Particle with glow
-        const particleGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 3);
-        particleGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${p.opacity})`);
-        particleGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${p.opacity * 0.3})`);
+        // Particules orbitales plus brillantes
+        const isOrbital = p.orbitRadius !== undefined;
+        const particleOpacity = isOrbital ? p.opacity * 1.2 : p.opacity;
+        const particleSize = isOrbital ? p.size * 1.3 : p.size;
+
+        // Particle with enhanced glow
+        const particleGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, particleSize * 4);
+        particleGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * (isOrbital ? 0.8 : 0.6)})`);
+        particleGlow.addColorStop(0.4, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.4})`);
+        particleGlow.addColorStop(0.7, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.15})`);
         particleGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.fillStyle = particleGlow;
         ctx.beginPath();
-        ctx.arc(0, 0, p.size * 3, 0, Math.PI * 2);
+        ctx.arc(0, 0, particleSize * 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core particle avec effet amélioré
+        const coreParticleGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, particleSize * 1.5);
+        coreParticleGlow.addColorStop(0, `rgba(255, 255, 255, ${particleOpacity * 0.95})`);
+        coreParticleGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.7})`);
+        coreParticleGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = coreParticleGlow;
+        ctx.beginPath();
+        ctx.arc(0, 0, particleSize * 1.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Core particle
-        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.8})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${particleOpacity * 0.9})`;
         ctx.beginPath();
-        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+        ctx.arc(0, 0, particleSize, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
