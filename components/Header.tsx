@@ -2,12 +2,16 @@ import React from 'react';
 import { ConnectionState, Personality } from '../types';
 import VoiceSelector from './VoiceSelector';
 import Tooltip from './Tooltip';
+import DocumentUploader from './DocumentUploader';
+import { ProcessedDocument } from '../utils/documentProcessor';
 
 interface HeaderProps {
   connectionState: ConnectionState;
   currentPersonality: Personality;
   selectedVoice: string;
   onVoiceChange: (voice: string) => void;
+  uploadedDocuments: ProcessedDocument[];
+  onDocumentsChange: (documents: ProcessedDocument[]) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -15,6 +19,8 @@ const Header: React.FC<HeaderProps> = ({
   currentPersonality,
   selectedVoice,
   onVoiceChange,
+  uploadedDocuments,
+  onDocumentsChange,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
@@ -65,6 +71,17 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-white/10 hidden md:block mx-1"></div>
 
+        {/* Document Uploader */}
+        <div className="relative">
+          <DocumentUploader
+            documents={uploadedDocuments}
+            onDocumentsChange={onDocumentsChange}
+            disabled={isConnected}
+          />
+        </div>
+
+        <div className="h-6 w-px bg-white/10 hidden md:block mx-1"></div>
+
         {/* Voice Selector */}
         <div className="relative">
             <Tooltip content={isConnected ? "Voix verrouillée pendant la session" : "Changer la voix de l'IA"}>
@@ -77,8 +94,6 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
             </Tooltip>
         </div>
-
-        
 
       </div>
     </header>

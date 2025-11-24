@@ -58,10 +58,17 @@ Maintenant, agis selon ta personnalité tout en respectant ces règles:
 /**
  * Combine les instructions système de base avec les instructions de personnalité
  * @param personalityInstruction - Instructions spécifiques à la personnalité
+ * @param documentsContext - Contexte des documents uploadés (optionnel)
  * @returns Instructions combinées
  */
-export function buildSystemInstruction(personalityInstruction: string): string {
-  return `${BASE_SYSTEM_RULES}\n\n${personalityInstruction}`;
+export function buildSystemInstruction(personalityInstruction: string, documentsContext?: string): string {
+  let instruction = `${BASE_SYSTEM_RULES}\n\n${personalityInstruction}`;
+  
+  if (documentsContext && documentsContext.trim().length > 0) {
+    instruction += `\n\n${documentsContext}`;
+  }
+  
+  return instruction;
 }
 
 /**
