@@ -136,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({
       {/* Left: Brand & Identity */}
       <div className="flex items-center gap-3 lg:gap-4 xl:gap-6 pointer-events-auto group select-none relative z-10">
         <h1
-          className="font-display text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-1"
+          className="font-display text-lg md:text-xl lg:text-2xl xl:text-2xl font-bold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-1"
           style={{
             textShadow: `0 0 24px ${currentPersonality.themeColor}40, 0 2px 4px rgba(0,0,0,0.18), 0 1px 0 #0007`,
             filter: isConnected ? `drop-shadow(0 0 6px ${currentPersonality.themeColor}30)` : undefined
@@ -151,14 +151,27 @@ const Header: React.FC<HeaderProps> = ({
             >NEUROCHAT</span>
           </span>
           <span
-            className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-400 animate-gradient font-black drop-shadow relative ml-1"
+            className="font-extrabold relative ml-1 px-2 py-0.5 rounded-lg shadow-lg bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-300 bg-clip-text text-transparent border border-sky-600/30"
             style={{
-              backgroundSize: '200% 200%',
-              animation: 'gradient-shift 3s linear infinite'
+              backgroundSize: '250% 250%',
+              animation: 'gradient-shift 4s ease-in-out infinite',
+              textShadow: `0 2px 24px ${currentPersonality.themeColor}55, 0 2px 8px rgba(14,165,233,0.22), 0 3px 16px #0ea5e980`,
+              letterSpacing: '0.12em',
+              filter: 'drop-shadow(0 4px 24px rgba(14,165,233,0.12))'
             }}
-          >PRO</span>
+            title="Version professionnelle avancée"
+          >
+            <span 
+              className="animate-[gradient-glow_2s_ease-in-out_infinite] inline-block tracking-widest"
+              style={{
+                animationDelay: '0.05s'
+              }}
+            >
+              PRO
+            </span>
+          </span>
         </h1>
-        <div className="flex items-center gap-2 lg:gap-2 mt-0.5 md:mt-1 flex-wrap">
+        {/* <div className="flex items-center gap-2 lg:gap-2 mt-0.5 md:mt-1 flex-wrap">
           <StatusPill connectionState={connectionState} />
           {uploadedDocuments.length > 0 && (
             <span 
@@ -171,69 +184,133 @@ const Header: React.FC<HeaderProps> = ({
               {uploadedDocuments.length}
             </span>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Right: Controls & Status */}
-      <div className="flex flex-row items-center gap-2 md:gap-4 lg:gap-6 xl:gap-8 pointer-events-auto relative z-10">
-        {/* Separator */}
-        <div className="hidden md:flex flex-col items-center mx-2 lg:mx-3">
-          <div className={`h-7 lg:h-8 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent transition-opacity duration-500 ${
-            isConnected ? 'opacity-100' : 'opacity-50'
-          }`} />
+      <div className="flex flex-row items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 pointer-events-auto relative z-10">
+        {/* Status Pill - Moved to right side */}
+        <div className="hidden sm:block">
+          <StatusPill connectionState={connectionState} />
         </div>
 
-        {/* Document Uploader */}
-        <div className="relative group">
-          <Tooltip 
-            content={
-              uploadedDocuments.length > 0 
-                ? `${uploadedDocuments.length} document(s) chargé(s) - Cliquez pour gérer`
-                : "Ajouter des documents contextuels pour l'IA"
-            }
-          >
-            <div className="relative">
-              <DocumentUploader
-                documents={uploadedDocuments}
-                onDocumentsChange={onDocumentsChange}
-                disabled={isConnected}
-              />
-              {/* Notification badge */}
-              {uploadedDocuments.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full border-2 border-[#131c24] flex items-center justify-center animate-pulse">
-                  <span className="w-2 h-2 bg-white rounded-full" />
-                </span>
-              )}
-            </div>
-          </Tooltip>
-        </div>
-
-        {/* Separator */}
-        <div className="hidden md:flex flex-col items-center mx-2 lg:mx-3">
-          <div className={`h-7 lg:h-8 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent transition-opacity duration-500 ${
-            isConnected ? 'opacity-100' : 'opacity-50'
-          }`} />
-        </div>
-
-        {/* Voice Selector */}
-        <div className="relative group">
-          <Tooltip 
-            content={
+        {/* Separator with enhanced design */}
+        <div className="hidden sm:flex flex-col items-center mx-1 md:mx-2">
+          <div 
+            className={`h-8 md:h-10 w-px transition-all duration-500 ${
               isConnected 
-                ? "Voix verrouillée pendant la session active" 
+                ? 'bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent opacity-100' 
                 : isConnecting
-                ? "Connexion en cours..."
-                : `Voix actuelle: ${selectedVoice} - Cliquez pour changer`
-            }
-          >
-            <div className={`transition-all duration-300 ${isConnected ? 'opacity-60' : 'opacity-100'}`}>
-              <VoiceSelector
-                currentVoice={selectedVoice}
-                onVoiceChange={onVoiceChange}
-                disabled={isConnected}
-              />
-            </div>
-          </Tooltip>
+                ? 'bg-gradient-to-b from-transparent via-amber-400/40 to-transparent opacity-100'
+                : 'bg-gradient-to-b from-transparent via-white/15 to-transparent opacity-40'
+            }`}
+            style={{
+              boxShadow: isConnected 
+                ? '0 0 8px rgba(34, 197, 94, 0.3)' 
+                : isConnecting
+                ? '0 0 8px rgba(251, 191, 36, 0.3)'
+                : undefined
+            }}
+          />
+        </div>
+
+        {/* Controls Container with glassmorphism */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-xl glass-intense border border-white/10 backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:shadow-lg"
+          style={{
+            boxShadow: isConnected 
+              ? `0 4px 20px rgba(0, 0, 0, 0.3), 0 0 40px ${currentPersonality.themeColor}10`
+              : '0 4px 20px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          {/* Document Uploader with enhanced design */}
+          <div className="relative group">
+            <Tooltip 
+              content={
+                uploadedDocuments.length > 0 
+                  ? `${uploadedDocuments.length} document(s) chargé(s) - Cliquez pour gérer`
+                  : "Ajouter des documents contextuels pour l'IA"
+              }
+            >
+              <div className="relative">
+                <div className={`
+                  relative p-1.5 sm:p-2 rounded-lg transition-all duration-300
+                  ${isConnected 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'opacity-100 hover:bg-white/5 active:scale-95 cursor-pointer'
+                  }
+                `}>
+                  <DocumentUploader
+                    documents={uploadedDocuments}
+                    onDocumentsChange={onDocumentsChange}
+                    disabled={isConnected}
+                  />
+                  
+                  {/* Enhanced notification badge */}
+                  {uploadedDocuments.length > 0 && (
+                    <span 
+                      className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full border-2 border-[#131c24] flex items-center justify-center text-[10px] font-bold text-white shadow-lg animate-pulse"
+                      style={{
+                        boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3)'
+                      }}
+                    >
+                      {uploadedDocuments.length}
+                    </span>
+                  )}
+                  
+                  {/* Hover glow effect */}
+                  {!isConnected && (
+                    <div className="absolute inset-0 rounded-lg bg-indigo-500/0 group-hover:bg-indigo-500/10 transition-colors duration-300 pointer-events-none" />
+                  )}
+                </div>
+              </div>
+            </Tooltip>
+          </div>
+
+          {/* Mini separator between controls */}
+          <div className="h-6 w-px bg-white/10 mx-1" />
+
+          {/* Voice Selector with enhanced design */}
+          <div className="relative group">
+            <Tooltip 
+              content={
+                isConnected 
+                  ? "Voix verrouillée pendant la session active" 
+                  : isConnecting
+                  ? "Connexion en cours..."
+                  : `Voix actuelle: ${selectedVoice} - Cliquez pour changer`
+              }
+            >
+              <div className={`
+                relative transition-all duration-300
+                ${isConnected 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'opacity-100 hover:scale-105 active:scale-95'
+                }
+              `}>
+                <div className="p-1 rounded-lg group-hover:bg-white/5 transition-colors duration-300">
+                  <VoiceSelector
+                    currentVoice={selectedVoice}
+                    onVoiceChange={onVoiceChange}
+                    disabled={isConnected}
+                  />
+                </div>
+                
+                {/* Lock indicator when connected */}
+                {isConnected && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg 
+                      className="w-3 h-3 text-slate-500 opacity-60" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </header>
