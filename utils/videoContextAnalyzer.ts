@@ -218,17 +218,28 @@ function estimateTextRegions(imageData: ImageData): number {
 
   for (let y = 0; y < imageData.height - gridSize; y += gridSize) {
     for (let x = 0; x < imageData.width - gridSize; x += gridSize) {
+      // Extraire une région carrée de gridSize x gridSize
+      const regionData = new Uint8ClampedArray(gridSize * gridSize * 4);
+      let regionIndex = 0;
+      
+      for (let ry = 0; ry < gridSize; ry++) {
+        const sourceY = y + ry;
+        if (sourceY >= imageData.height) break;
+        
+        for (let rx = 0; rx < gridSize; rx++) {
+          const sourceX = x + rx;
+          if (sourceX >= imageData.width) break;
+          
+          const sourceIndex = (sourceY * imageData.width + sourceX) * 4;
+          regionData[regionIndex++] = imageData.data[sourceIndex];     // R
+          regionData[regionIndex++] = imageData.data[sourceIndex + 1]; // G
+          regionData[regionIndex++] = imageData.data[sourceIndex + 2]; // B
+          regionData[regionIndex++] = imageData.data[sourceIndex + 3]; // A
+        }
+      }
+      
       // Calculer le contraste local
-      const localRegion = new ImageData(
-        new Uint8ClampedArray(
-          imageData.data.slice(
-            (y * imageData.width + x) * 4,
-            ((y + gridSize) * imageData.width + (x + gridSize)) * 4
-          )
-        ),
-        gridSize,
-        gridSize
-      );
+      const localRegion = new ImageData(regionData, gridSize, gridSize);
 
       const localContrast = calculateContrast(localRegion);
       if (localContrast > contrastThreshold) {
