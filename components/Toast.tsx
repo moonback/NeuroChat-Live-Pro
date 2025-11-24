@@ -74,11 +74,20 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   return (
     <div 
       className={`
-        relative flex items-start gap-3 p-4 mb-3 rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300
+        relative flex items-start gap-3 p-4 mb-3 rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98]
         ${getStyles()}
-        ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}
+        ${isExiting ? 'opacity-0 translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}
       `}
       style={{ minWidth: '300px', maxWidth: '400px' }}
+      onClick={handleClose}
+      role="alert"
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClose();
+        }
+      }}
     >
       <div className="flex-shrink-0 mt-0.5">
         {getIcon()}
@@ -89,7 +98,9 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       </div>
       <button 
         onClick={handleClose}
-        className="flex-shrink-0 text-slate-400 hover:text-white transition-colors"
+        className="flex-shrink-0 text-slate-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 rounded p-0.5"
+        aria-label="Fermer la notification"
+        tabIndex={0}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
