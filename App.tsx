@@ -1708,7 +1708,7 @@ const App: React.FC = () => {
       {(isVideoActive || isScreenShareActive) && !isVideoEnlarged && (
          <div 
            onClick={() => setIsVideoEnlarged(true)}
-           className="absolute top-16 sm:top-20 right-3 sm:right-4 md:top-8 md:right-8 z-40 w-24 sm:w-32 md:w-56 aspect-video rounded-xl sm:rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation"
+           className="absolute top-16 sm:top-20 right-3 sm:right-4 md:top-8 md:right-8 z-40 w-48 sm:w-32 md:w-56 aspect-video rounded-xl sm:rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation"
            style={{
              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
            }}>
