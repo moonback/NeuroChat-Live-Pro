@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Personality } from '../types';
+import { DEFAULT_PERSONALITY } from '../constants';
 
 interface PersonalityEditorProps {
     isOpen: boolean;
@@ -69,8 +70,40 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
 
                 {/* Body */}
                 <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 sm:space-y-5">
+                    {/* Info de persistance */}
+                    <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-start gap-3">
+                            <svg className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-indigo-300 mb-1">
+                                    Personnalité persistante
+                                </p>
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    Ces modifications seront sauvegardées automatiquement et conservées jusqu'à ce que vous les modifiez à nouveau ou réinitialisiez à la personnalité par défaut.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
-                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Instructions Système (Prompt)</label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                Instructions Système (Prompt)
+                            </label>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Êtes-vous sûr de vouloir réinitialiser à la personnalité par défaut ? Vos modifications actuelles seront perdues.')) {
+                                        setInstructions(DEFAULT_PERSONALITY.systemInstruction);
+                                    }
+                                }}
+                                className="text-xs text-slate-400 hover:text-indigo-400 transition-colors px-2 py-1 rounded hover:bg-indigo-500/10"
+                                title="Réinitialiser à la personnalité par défaut"
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
                         <textarea 
                             value={instructions}
                             onChange={(e) => setInstructions(e.target.value)}
@@ -78,7 +111,7 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                             placeholder="Tu es un expert en..."
                         />
                         <p className="mt-2 text-xs text-slate-500">
-                            Ces instructions définissent comment l'IA se comporte, son ton et ses connaissances.
+                            Ces instructions définissent comment l'IA se comporte, son ton et ses connaissances. Elles sont appliquées à chaque nouvelle connexion.
                         </p>
                     </div>
                 </div>

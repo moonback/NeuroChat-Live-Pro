@@ -31,8 +31,27 @@ const App: React.FC = () => {
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [isVideoEnlarged, setIsVideoEnlarged] = useState(false);
   
-  // Custom Personality State
-  const [currentPersonality, setCurrentPersonality] = useState<Personality>(DEFAULT_PERSONALITY);
+  // Custom Personality State - Charger depuis localStorage ou utiliser la par défaut
+  const loadSavedPersonality = (): Personality => {
+    try {
+      const saved = localStorage.getItem('currentPersonality');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Vérifier que toutes les propriétés requises sont présentes
+        if (parsed && parsed.id && parsed.systemInstruction) {
+          console.log('[App] Personnalité chargée depuis localStorage:', parsed.name);
+          return parsed as Personality;
+        }
+      }
+    } catch (e) {
+      console.warn('Erreur lors du chargement de la personnalité:', e);
+    }
+    // Retourner la personnalité par défaut si aucune sauvegarde
+    console.log('[App] Utilisation de la personnalité par défaut');
+    return DEFAULT_PERSONALITY;
+  };
+
+  const [currentPersonality, setCurrentPersonality] = useState<Personality>(loadSavedPersonality);
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
   
   // Document Upload State
@@ -81,12 +100,15 @@ const App: React.FC = () => {
   const isVideoActiveRef = useRef(false); // Ref to track video state for closures
   const availableCamerasRef = useRef<MediaDeviceInfo[]>([]); // Ref to track cameras for closures
   const selectedCameraIdRef = useRef<string>(''); // Ref to track selected camera for closures
-  const currentPersonalityRef = useRef(DEFAULT_PERSONALITY); // Ref for seamless updates
+  // Initialiser la ref avec la personnalité chargée (pas la par défaut)
+  const initialPersonality = loadSavedPersonality();
+  const currentPersonalityRef = useRef(initialPersonality); // Ref for seamless updates
   const uploadedDocumentsRef = useRef<ProcessedDocument[]>([]); // Ref for documents
 
   // Sync refs with state
   useEffect(() => {
     currentPersonalityRef.current = currentPersonality;
+    console.log('[App] Ref personnalité mise à jour:', currentPersonality.name);
   }, [currentPersonality]);
 
   useEffect(() => {
@@ -233,8 +255,16 @@ const App: React.FC = () => {
 
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
+    // Sauvegarder la personnalité dans localStorage pour la persistance
+    try {
+      localStorage.setItem('currentPersonality', JSON.stringify(newPersonality));
+      console.log('[App] Personnalité sauvegardée dans localStorage');
+    } catch (e) {
+      console.warn('Erreur lors de la sauvegarde de la personnalité:', e);
+    }
+    
     setCurrentPersonality(newPersonality);
-    addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}`);
+    addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}. La personnalité sera conservée jusqu'à modification.`);
     
     // If connected, we need to update the session (reconnect for now to apply system prompt)
     if (connectionState === ConnectionState.CONNECTED) {
