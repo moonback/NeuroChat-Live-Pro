@@ -158,6 +158,197 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  // Fonction utilitaire pour normaliser le texte et améliorer la détection
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
+      .replace(/[^\w\s]/g, ' ') // Remplacer la ponctuation par des espaces
+      .replace(/\s+/g, ' '); // Normaliser les espaces multiples
+  };
+
+  // Fonction améliorée pour détecter les commandes de vision (plus permissive)
+  const detectVisionCommand = (text: string): 'activate' | 'deactivate' | null => {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      return null;
+    }
+    
+    const normalized = normalizeText(text);
+    console.log('[App] 🔍 Analyse de la commande vision - Texte original:', text);
+    console.log('[App] 🔍 Texte normalisé:', normalized);
+    
+    // Mots-clés d'activation simples (sans contexte requis)
+    const simpleActivateKeywords = [
+      'active vision', 'activer vision', 'active camera', 'activer camera',
+      'active video', 'activer video', 'allume vision', 'allumer vision',
+      'allume camera', 'allumer camera', 'ouvre vision', 'ouvrir vision',
+      'ouvre camera', 'ouvrir camera', 'demarre vision', 'demarrer vision',
+      'demarre camera', 'demarrer camera', 'lance vision', 'lancer vision',
+      'mets vision', 'met vision', 'metre vision', 'active la vision',
+      'activer la vision', 'active la camera', 'activer la camera',
+      'allume la vision', 'allumer la vision', 'allume la camera', 'allumer la camera'
+    ];
+    
+    // Mots-clés d'activation avec contexte requis (plus permissifs)
+    const activateKeywords = [
+      'active', 'activer', 'allume', 'allumer', 'ouvre', 'ouvrir', 
+      'demarre', 'demarrer', 'lance', 'lancer', 'mets', 'met', 'metre',
+      'peux tu activer', 'peux-tu activer', 'tu peux activer',
+      'je veux activer', 'je voudrais activer', 'j aimerais activer',
+      'peux tu allumer', 'peux-tu allumer', 'tu peux allumer'
+    ];
+    
+    // Mots-clés de désactivation simples (sans contexte requis)
+    const simpleDeactivateKeywords = [
+      'desactive vision', 'desactiver vision', 'desactive camera', 'desactiver camera',
+      'arrete vision', 'arreter vision', 'arrete camera', 'arreter camera',
+      'ferme vision', 'fermer vision', 'ferme camera', 'fermer camera',
+      'eteint vision', 'eteindre vision', 'eteint camera', 'eteindre camera',
+      'coupe vision', 'couper vision', 'coupe camera', 'couper camera',
+      'stop vision', 'stop camera', 'stoppe vision', 'stopper vision',
+      'stoppe camera', 'stopper camera', 'desactive la vision',
+      'desactiver la vision', 'desactive la camera', 'desactiver la camera',
+      'arrete la vision', 'arreter la vision', 'arrete la camera', 'arreter la camera'
+    ];
+    
+    // Mots-clés de désactivation avec contexte requis
+    const deactivateKeywords = [
+      'desactive', 'desactiver', 'arrete', 'arreter', 'ferme', 'fermer',
+      'eteint', 'eteindre', 'coupe', 'couper', 'stop', 'stoppe', 'stopper'
+    ];
+    
+    // Préfixes négatifs à exclure
+    const negativePrefixes = ['ne ', 'non ', 'pas ', 'jamais ', 'plus ', 'n '];
+    const pastContextPrefixes = [
+      'viens de', 'vient de', 'venait de', 'venais de', 'venaient de',
+      'ai ', 'as ', 'a ', 'avons ', 'avez ', 'ont ', 'avait ', 'avais ',
+      'aviez ', 'avaient ', 'etait ', 'etais ', 'etiez ', 'etaient ',
+      'venait d', 'venais d', 'venaient d'
+    ];
+    
+    // Vérifier d'abord les phrases complètes (plus fiables)
+    for (const phrase of simpleActivateKeywords) {
+      if (normalized.includes(phrase)) {
+        const index = normalized.indexOf(phrase);
+        const beforeContext = normalized.substring(Math.max(0, index - 20), index).trim();
+        
+        const hasNegative = negativePrefixes.some(prefix => 
+          beforeContext.endsWith(prefix) || beforeContext.includes(' ' + prefix)
+        );
+        
+        const hasPastContext = pastContextPrefixes.some(prefix => 
+          beforeContext.includes(prefix) || beforeContext.endsWith(prefix)
+        );
+        
+        if (!hasNegative && !hasPastContext) {
+          console.log('[App] ✅ Commande d\'activation détectée (phrase complète):', phrase, 'dans:', text);
+          return 'activate';
+        }
+      }
+    }
+    
+    // Vérifier les mots-clés simples avec contexte (plus permissif)
+    for (const keyword of activateKeywords) {
+      const index = normalized.indexOf(keyword);
+      if (index !== -1) {
+        const beforeContext = normalized.substring(Math.max(0, index - 50), index).trim();
+        const afterContext = normalized.substring(index, Math.min(normalized.length, index + keyword.length + 50)).trim();
+        const fullContext = beforeContext + ' ' + afterContext;
+        
+        // Vérifier qu'il n'y a pas de préfixe négatif
+        const hasNegative = negativePrefixes.some(prefix => 
+          beforeContext.endsWith(prefix) || beforeContext.includes(' ' + prefix) ||
+          fullContext.includes(' ne ' + keyword) || fullContext.includes(' pas ' + keyword) ||
+          fullContext.includes(' non ' + keyword)
+        );
+        
+        // Vérifier qu'il n'y a pas de contexte passé
+        const hasPastContext = pastContextPrefixes.some(prefix => 
+          beforeContext.includes(prefix) || beforeContext.endsWith(prefix)
+        );
+        
+        // Vérifier qu'il y a un indicateur de vision/caméra dans le contexte (plus large)
+        const visionIndicators = ['vision', 'camera', 'video', 'caméra', 'vidéo', 'webcam', 'web cam', 'webcam', 'webcam'];
+        const keywordHasVision = visionIndicators.some(indicator => keyword.includes(indicator));
+        const hasVisionContext = keywordHasVision || visionIndicators.some(indicator => 
+          fullContext.includes(indicator)
+        );
+        
+        // Si le mot-clé est dans une phrase de demande explicite, on accepte même sans contexte vision
+        const requestPhrases = ['peux tu', 'peux-tu', 'tu peux', 'je veux', 'je voudrais', 'j aimerais', 'pourrais tu', 'pourrais-tu'];
+        const isExplicitRequest = requestPhrases.some(phrase => beforeContext.includes(phrase));
+        
+        // Si c'est un verbe d'action simple (active, allume, etc.) et qu'il n'y a pas de contexte négatif,
+        // on accepte même sans contexte vision explicite (plus permissif)
+        const simpleActionVerbs = ['active', 'activer', 'allume', 'allumer', 'ouvre', 'ouvrir', 'demarre', 'demarrer', 'lance', 'lancer'];
+        const isSimpleAction = simpleActionVerbs.some(verb => keyword.includes(verb));
+        
+        // Accepter si :
+        // 1. Il y a un contexte vision explicite, OU
+        // 2. C'est une demande explicite (peux-tu, je veux, etc.), OU
+        // 3. C'est un verbe d'action simple sans contexte négatif/passé
+        if (!hasNegative && !hasPastContext && (hasVisionContext || isExplicitRequest || isSimpleAction)) {
+          console.log('[App] ✅ Commande d\'activation détectée:', keyword, 'dans:', text, {
+            hasVisionContext,
+            isExplicitRequest,
+            isSimpleAction,
+            hasNegative,
+            hasPastContext
+          });
+          return 'activate';
+        }
+      }
+    }
+    
+    // Détection supplémentaire : chercher "vision" ou "camera" suivi d'un verbe d'action
+    const visionFirstPattern = /(vision|camera|video|caméra|vidéo)\s+(active|activer|allume|allumer|ouvre|ouvrir|demarre|demarrer|lance|lancer)/i;
+    if (visionFirstPattern.test(normalized)) {
+      const beforeMatch = normalized.substring(0, normalized.search(visionFirstPattern)).trim();
+      const hasNegative = negativePrefixes.some(prefix => beforeMatch.includes(prefix));
+      const hasPastContext = pastContextPrefixes.some(prefix => beforeMatch.includes(prefix));
+      
+      if (!hasNegative && !hasPastContext) {
+        console.log('[App] ✅ Commande d\'activation détectée (pattern vision d\'abord):', text);
+        return 'activate';
+      }
+    }
+    
+    // Vérifier la désactivation (phrases complètes d'abord)
+    for (const phrase of simpleDeactivateKeywords) {
+      if (normalized.includes(phrase)) {
+        console.log('[App] ✅ Commande de désactivation détectée (phrase complète):', phrase, 'dans:', text);
+        return 'deactivate';
+      }
+    }
+    
+    // Vérifier les mots-clés de désactivation avec contexte
+    for (const keyword of deactivateKeywords) {
+      const index = normalized.indexOf(keyword);
+      if (index !== -1) {
+        const beforeContext = normalized.substring(Math.max(0, index - 40), index).trim();
+        const afterContext = normalized.substring(index, Math.min(normalized.length, index + keyword.length + 40)).trim();
+        const fullContext = beforeContext + ' ' + afterContext;
+        
+        // Vérifier qu'il y a un indicateur de vision/caméra dans le contexte
+        const visionIndicators = ['vision', 'camera', 'video', 'caméra', 'vidéo', 'webcam', 'web cam'];
+        const keywordHasVision = visionIndicators.some(indicator => keyword.includes(indicator));
+        const hasVisionContext = keywordHasVision || visionIndicators.some(indicator => 
+          fullContext.includes(indicator)
+        );
+        
+        if (hasVisionContext) {
+          console.log('[App] ✅ Commande de désactivation détectée:', keyword, 'dans:', text);
+          return 'deactivate';
+        }
+      }
+    }
+    
+    console.log('[App] ❌ Aucune commande de vision détectée dans:', text);
+    return null;
+  };
+
   // Activer le contexte audio lors de la première interaction utilisateur
   const activateAudioContext = useCallback(() => {
     if (audioContextActivatedRef.current) return;
@@ -880,70 +1071,12 @@ const App: React.FC = () => {
                     return;
                   }
                   
-                  // Phrases qui indiquent une demande d'activation de la vision
-                  const activateVisionPhrases = [
-                    'active la vision',
-                    'activer la vision',
-                    'active vision',
-                    'activer vision',
-                    'active la caméra',
-                    'activer la caméra',
-                    'active caméra',
-                    'activer caméra',
-                    'active la vidéo',
-                    'activer la vidéo',
-                    'active vidéo',
-                    'activer vidéo',
-                    'allume la caméra',
-                    'allumer la caméra',
-                    'allume caméra',
-                    'allumer caméra',
-                    'allume la vision',
-                    'allumer la vision',
-                    'ouvre la caméra',
-                    'ouvrir la caméra',
-                    'ouvre caméra',
-                    'ouvrir caméra',
-                    'démarre la caméra',
-                    'démarrer la caméra',
-                    'démarre caméra',
-                    'démarrer caméra',
-                    'peux-tu activer la vision',
-                    'peux tu activer la vision',
-                    'peux-tu activer la caméra',
-                    'peux tu activer la caméra',
-                    'tu peux activer la vision',
-                    'tu peux activer la caméra',
-                    'j\'aimerais activer la vision',
-                    'j aimerais activer la vision',
-                    'je veux activer la vision',
-                    'je voudrais activer la vision'
-                  ];
+                  // Détecter les commandes de vision avec la fonction améliorée
+                  const visionCommand = detectVisionCommand(text);
                   
-                  // Vérifier les phrases d'activation, mais exclure les négations et les contextes passés
-                  const negativePrefixes = ['dés', 'des', 'non', 'pas', 'arrêt', 'arrêter', 'ferm', 'fermer', 'stop'];
-                  const pastContextPrefixes = ['viens d\'', 'viens d', 'vient d\'', 'vient d', 'ai ', 'as ', 'a ', 'avons ', 'avez ', 'ont ', 'venait de', 'venais de', 'venaient de', 'venions de', 'veniez de'];
-                  
-                  const shouldActivateVision = activateVisionPhrases.some(phrase => {
-                    const index = textLower.indexOf(phrase);
-                    if (index === -1) return false;
-                    
-                    // Vérifier qu'il n'y a pas de préfixe négatif avant la phrase
-                    const beforePhrase = textLower.substring(Math.max(0, index - 15), index).trim();
-                    const hasNegativePrefix = negativePrefixes.some(prefix => 
-                      beforePhrase.endsWith(prefix) || textLower.substring(Math.max(0, index - prefix.length - 2), index).includes(prefix)
-                    );
-                    
-                    // Vérifier qu'il n'y a pas de contexte passé (ex: "je viens d'activer")
-                    const hasPastContext = pastContextPrefixes.some(prefix => 
-                      beforePhrase.includes(prefix) || textLower.substring(Math.max(0, index - 20), index).includes(prefix)
-                    );
-                    
-                    return !hasNegativePrefix && !hasPastContext;
-                  });
-                  
-                  if (shouldActivateVision && !isVideoActiveRef.current) {
-                    console.log('[App] ✅ Demande d\'activation de la vision détectée dans le texte:', text);
+                  if (visionCommand === 'activate' && !isVideoActiveRef.current) {
+                    console.log('[App] ✅✅✅ DEMANDE D\'ACTIVATION DE LA VISION DÉTECTÉE:', text);
+                    console.log('[App] 🚀 Activation de la caméra...');
                     
                     // Vérifier qu'une caméra est disponible
                     if (availableCamerasRef.current.length === 0) {
@@ -972,70 +1105,9 @@ const App: React.FC = () => {
                       addToast('success', 'Activation Vision', 'Activation de la caméra...');
                       setIsVideoActive(true);
                     }
-                  }
-                  
-                  // Phrases qui indiquent une demande de désactivation de la vision
-                  const deactivateVisionPhrases = [
-                    'désactive la vision',
-                    'désactiver la vision',
-                    'désactive vision',
-                    'désactiver vision',
-                    'désactive la caméra',
-                    'désactiver la caméra',
-                    'désactive caméra',
-                    'désactiver caméra',
-                    'arrête la vision',
-                    'arrêter la vision',
-                    'arrête vision',
-                    'arrêter vision',
-                    'arrête la caméra',
-                    'arrêter la caméra',
-                    'arrête caméra',
-                    'arrêter caméra',
-                    'ferme la vision',
-                    'fermer la vision',
-                    'ferme vision',
-                    'fermer vision',
-                    'ferme la caméra',
-                    'fermer la caméra',
-                    'ferme caméra',
-                    'fermer caméra',
-                    'éteint la vision',
-                    'éteindre la vision',
-                    'éteint vision',
-                    'éteindre vision',
-                    'éteint la caméra',
-                    'éteindre la caméra',
-                    'éteint caméra',
-                    'éteindre caméra',
-                    'coupe la vision',
-                    'couper la vision',
-                    'coupe vision',
-                    'couper vision',
-                    'coupe la caméra',
-                    'couper la caméra',
-                    'coupe caméra',
-                    'couper caméra',
-                    'stop la vision',
-                    'stop vision',
-                    'stop la caméra',
-                    'stop caméra',
-                    'stoppe la vision',
-                    'stopper la vision',
-                    'stoppe vision',
-                    'stopper vision',
-                    'stoppe la caméra',
-                    'stopper la caméra',
-                    'stoppe caméra',
-                    'stopper caméra'
-                  ];
-                  
-                  const shouldDeactivateVision = deactivateVisionPhrases.some(phrase => 
-                    textLower.includes(phrase)
-                  );
-                  
-                  if (shouldDeactivateVision && isVideoActiveRef.current) {
-                    console.log('[App] ✅ Demande de désactivation de la vision détectée dans le texte:', text);
+                  } else if (visionCommand === 'deactivate' && isVideoActiveRef.current) {
+                    console.log('[App] ✅✅✅ DEMANDE DE DÉSACTIVATION DE LA VISION DÉTECTÉE:', text);
+                    console.log('[App] 🛑 Désactivation de la caméra...');
                     console.log('[App] 📊 État actuel de la vision avant désactivation:', isVideoActiveRef.current);
                     addToast('info', 'Désactivation Vision', 'Désactivation de la caméra...');
                     setIsVideoActive(false);
@@ -1119,9 +1191,57 @@ const App: React.FC = () => {
                         console.log(`[App] Transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
                       }
                       
-                      if (isFinal && transcript.length > 0) {
-                        console.log('[App] 🔍 Analyse de la transcription finale:', transcript);
+                      // Analyser aussi les transcriptions intermédiaires pour une détection plus rapide
+                      if (transcript.length > 0) {
+                        console.log(`[App] 🔍 Analyse de la transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
                         
+                        // Détecter les commandes de vision (même dans les transcriptions intermédiaires)
+                        const visionCommand = detectVisionCommand(transcript);
+                        
+                        if (visionCommand === 'activate' && !isVideoActiveRef.current) {
+                          console.log('[App] ✅✅✅ DEMANDE D\'ACTIVATION DE LA VISION DÉTECTÉE:', transcript);
+                          console.log('[App] 🚀 Activation de la caméra...');
+                          console.log('[App] 📊 État actuel de la vision:', isVideoActiveRef.current);
+                          
+                          // Vérifier qu'une caméra est disponible
+                          if (availableCamerasRef.current.length === 0) {
+                            console.log('[App] ⚠️ Aucune caméra disponible, énumération des caméras...');
+                            enumerateCameras().then(() => {
+                              // Après l'énumération, vérifier à nouveau
+                              setTimeout(() => {
+                                if (availableCamerasRef.current.length > 0) {
+                                  if (!selectedCameraIdRef.current) {
+                                    setSelectedCameraId(availableCamerasRef.current[0].deviceId);
+                                  }
+                                  setIsVideoActive(true);
+                                  addToast('success', 'Activation Vision', 'Activation de la caméra...');
+                                } else {
+                                  addToast('error', 'Erreur', 'Aucune caméra disponible');
+                                }
+                              }, 100);
+                            });
+                          } else {
+                            // S'assurer qu'une caméra est sélectionnée
+                            if (!selectedCameraIdRef.current && availableCamerasRef.current.length > 0) {
+                              setSelectedCameraId(availableCamerasRef.current[0].deviceId);
+                            }
+                            addToast('success', 'Activation Vision', 'Activation de la caméra...');
+                            setIsVideoActive(true);
+                          }
+                          return;
+                        } else if (visionCommand === 'deactivate' && isVideoActiveRef.current) {
+                          console.log('[App] ✅✅✅ DEMANDE DE DÉSACTIVATION DE LA VISION DÉTECTÉE:', transcript);
+                          console.log('[App] 🛑 Désactivation de la caméra...');
+                          console.log('[App] 📊 État actuel de la vision avant désactivation:', isVideoActiveRef.current);
+                          addToast('info', 'Désactivation Vision', 'Désactivation de la caméra...');
+                          setIsVideoActive(false);
+                          console.log('[App] 🛑 setIsVideoActive(false) appelé');
+                          return;
+                        }
+                      }
+                      
+                      // Vérifier les commandes de fin de session uniquement dans les transcriptions finales
+                      if (isFinal && transcript.length > 0) {
                         // Mots-clés qui indiquent une demande de terminer la session (détection flexible)
                         const endSessionKeywords = [
                           'terminer',
@@ -1207,222 +1327,8 @@ const App: React.FC = () => {
                           
                           // Redémarrer immédiatement
                           console.log('[App] 🔄 Appel de disconnect(true) pour redémarrer complètement...');
-                            disconnect(true);
+                          disconnect(true);
                           return;
-                        }
-                        
-                        // Phrases qui indiquent une demande d'activation de la vision
-                        const activateVisionPhrases = [
-                          'active la vision',
-                          'activer la vision',
-                          'active vision',
-                          'activer vision',
-                          'active la caméra',
-                          'activer la caméra',
-                          'active caméra',
-                          'activer caméra',
-                          'active la vidéo',
-                          'activer la vidéo',
-                          'active vidéo',
-                          'activer vidéo',
-                          'allume la caméra',
-                          'allumer la caméra',
-                          'allume caméra',
-                          'allumer caméra',
-                          'allume la vision',
-                          'allumer la vision',
-                          'ouvre la caméra',
-                          'ouvrir la caméra',
-                          'ouvre caméra',
-                          'ouvrir caméra',
-                          'démarre la caméra',
-                          'démarrer la caméra',
-                          'démarre caméra',
-                          'démarrer caméra',
-                          'peux-tu activer la vision',
-                          'peux tu activer la vision',
-                          'peux-tu activer la caméra',
-                          'peux tu activer la caméra',
-                          'tu peux activer la vision',
-                          'tu peux activer la caméra',
-                          'j\'aimerais activer la vision',
-                          'j aimerais activer la vision',
-                          'je veux activer la vision',
-                          'je voudrais activer la vision'
-                        ];
-                        
-                        // Mots-clés pour l'activation de vision
-                        const activateVisionKeywords = [
-                          'active',
-                          'activer',
-                          'allume',
-                          'allumer',
-                          'ouvre',
-                          'ouvrir',
-                          'démarre',
-                          'démarrer'
-                        ];
-                        
-                        // Vérifier d'abord les phrases complètes, en excluant les négations et les contextes passés
-                        const negativePrefixes = ['dés', 'des', 'non', 'pas', 'arrêt', 'arrêter', 'ferm', 'fermer', 'stop'];
-                        const pastContextPrefixes = ['viens d\'', 'viens d', 'vient d\'', 'vient d', 'ai ', 'as ', 'a ', 'avons ', 'avez ', 'ont ', 'venait de', 'venais de', 'venaient de', 'venions de', 'veniez de'];
-                        
-                        let shouldActivateVision = activateVisionPhrases.some(phrase => {
-                          const index = transcript.indexOf(phrase);
-                          if (index === -1) return false;
-                          
-                          // Vérifier qu'il n'y a pas de préfixe négatif avant la phrase
-                          const beforePhrase = transcript.substring(Math.max(0, index - 15), index).trim();
-                          const hasNegativePrefix = negativePrefixes.some(prefix => 
-                            beforePhrase.endsWith(prefix) || transcript.substring(Math.max(0, index - prefix.length - 2), index).includes(prefix)
-                          );
-                          
-                          // Vérifier qu'il n'y a pas de contexte passé (ex: "je viens d'activer")
-                          const hasPastContext = pastContextPrefixes.some(prefix => 
-                            beforePhrase.includes(prefix) || transcript.substring(Math.max(0, index - 20), index).includes(prefix)
-                          );
-                          
-                          if (!hasNegativePrefix && !hasPastContext) {
-                            console.log('[App] ✅ Phrase d\'activation vision détectée:', phrase, 'dans:', transcript);
-                            return true;
-                          }
-                          return false;
-                        });
-                        
-                        // Si pas de phrase complète, vérifier les mots-clés avec contexte
-                        if (!shouldActivateVision) {
-                          shouldActivateVision = activateVisionKeywords.some(keyword => {
-                            const keywordIndex = transcript.indexOf(keyword);
-                            if (keywordIndex !== -1) {
-                              // Vérifier le contexte autour du mot-clé (20 caractères avant et après)
-                              const contextStart = Math.max(0, keywordIndex - 20);
-                              const contextEnd = Math.min(transcript.length, keywordIndex + keyword.length + 20);
-                              const context = transcript.substring(contextStart, contextEnd);
-                              
-                              // Vérifier qu'il n'y a pas de contexte passé
-                              const beforeKeyword = transcript.substring(Math.max(0, keywordIndex - 15), keywordIndex);
-                              const hasPastContext = pastContextPrefixes.some(prefix => 
-                                beforeKeyword.includes(prefix) || context.includes(prefix)
-                              );
-                              
-                              // Vérifier si le contexte suggère une activation de vision
-                              const contextIndicators = ['vision', 'caméra', 'camera', 'vidéo', 'video'];
-                              const hasContext = contextIndicators.some(indicator => context.includes(indicator));
-                              
-                              if (hasContext && !hasPastContext) {
-                                console.log('[App] ✅ Mot-clé d\'activation vision avec contexte détecté:', keyword, 'dans:', transcript);
-                                return true;
-                              }
-                            }
-                            return false;
-                          });
-                        }
-                        
-                        if (shouldActivateVision && !isVideoActiveRef.current) {
-                          console.log('[App] ✅✅✅ DEMANDE D\'ACTIVATION DE LA VISION DÉTECTÉE:', transcript);
-                          console.log('[App] 🚀 Activation de la caméra...');
-                          console.log('[App] 📊 État actuel de la vision:', isVideoActiveRef.current);
-                          
-                          // Vérifier qu'une caméra est disponible
-                          if (availableCamerasRef.current.length === 0) {
-                            console.log('[App] ⚠️ Aucune caméra disponible, énumération des caméras...');
-                            enumerateCameras().then(() => {
-                              // Après l'énumération, vérifier à nouveau
-                              setTimeout(() => {
-                                if (availableCamerasRef.current.length > 0) {
-                                  if (!selectedCameraIdRef.current) {
-                                    setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                                  }
-                                  setIsVideoActive(true);
-                                  addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                        } else {
-                                  addToast('error', 'Erreur', 'Aucune caméra disponible');
-                                }
-                              }, 100);
-                            });
-                          } else {
-                            // S'assurer qu'une caméra est sélectionnée
-                            if (!selectedCameraIdRef.current && availableCamerasRef.current.length > 0) {
-                              setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                            }
-                            addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                            setIsVideoActive(true);
-                          }
-                          return;
-                        }
-                        
-                        // Phrases qui indiquent une demande de désactivation de la vision
-                        const deactivateVisionPhrases = [
-                          'désactive la vision',
-                          'désactiver la vision',
-                          'désactive vision',
-                          'désactiver vision',
-                          'désactive la caméra',
-                          'désactiver la caméra',
-                          'désactive caméra',
-                          'désactiver caméra',
-                          'arrête la vision',
-                          'arrêter la vision',
-                          'arrête vision',
-                          'arrêter vision',
-                          'arrête la caméra',
-                          'arrêter la caméra',
-                          'arrête caméra',
-                          'arrêter caméra',
-                          'ferme la vision',
-                          'fermer la vision',
-                          'ferme vision',
-                          'fermer vision',
-                          'ferme la caméra',
-                          'fermer la caméra',
-                          'ferme caméra',
-                          'fermer caméra',
-                          'éteint la vision',
-                          'éteindre la vision',
-                          'éteint vision',
-                          'éteindre vision',
-                          'éteint la caméra',
-                          'éteindre la caméra',
-                          'éteint caméra',
-                          'éteindre caméra',
-                          'coupe la vision',
-                          'couper la vision',
-                          'coupe vision',
-                          'couper vision',
-                          'coupe la caméra',
-                          'couper la caméra',
-                          'coupe caméra',
-                          'couper caméra',
-                          'stop la vision',
-                          'stop vision',
-                          'stop la caméra',
-                          'stop caméra',
-                          'stoppe la vision',
-                          'stopper la vision',
-                          'stoppe vision',
-                          'stopper vision',
-                          'stoppe la caméra',
-                          'stopper la caméra',
-                          'stoppe caméra',
-                          'stopper caméra'
-                        ];
-                        
-                        const shouldDeactivateVision = deactivateVisionPhrases.some(phrase => 
-                          transcript.includes(phrase)
-                        );
-                        
-                        if (shouldDeactivateVision && isVideoActiveRef.current) {
-                          console.log('[App] ✅✅✅ DEMANDE DE DÉSACTIVATION DE LA VISION DÉTECTÉE:', transcript);
-                          console.log('[App] 🛑 Désactivation de la caméra...');
-                          console.log('[App] 📊 État actuel de la vision avant désactivation:', isVideoActiveRef.current);
-                          addToast('info', 'Désactivation Vision', 'Désactivation de la caméra...');
-                          setIsVideoActive(false);
-                          console.log('[App] 🛑 setIsVideoActive(false) appelé');
-                          return;
-                        }
-                        
-                        if (!shouldEndSession && !shouldActivateVision && !shouldDeactivateVision) {
-                          console.log('[App] ❌ Aucune commande détectée dans:', transcript);
                         }
                       }
                     }
