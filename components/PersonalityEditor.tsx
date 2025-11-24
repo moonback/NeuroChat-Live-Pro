@@ -14,16 +14,12 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
     currentPersonality, 
     onSave 
 }) => {
-    const [name, setName] = useState(currentPersonality.name);
-    const [description, setDescription] = useState(currentPersonality.description);
     const [instructions, setInstructions] = useState(currentPersonality.systemInstruction);
     const [isSaving, setIsSaving] = useState(false);
 
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            setName(currentPersonality.name);
-            setDescription(currentPersonality.description);
             setInstructions(currentPersonality.systemInstruction);
         }
     }, [isOpen, currentPersonality]);
@@ -38,8 +34,6 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
         setTimeout(() => {
             onSave({
                 ...currentPersonality,
-                name,
-                description,
                 systemInstruction: instructions
             });
             setIsSaving(false);
@@ -76,33 +70,11 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                 {/* Body */}
                 <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 sm:space-y-5">
                     <div>
-                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Nom de l'Assistant</label>
-                        <input 
-                            type="text" 
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-                            placeholder="Ex: Expert Python"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Description Courte</label>
-                        <input 
-                            type="text" 
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-                            placeholder="Ex: Spécialiste en optimisation de code"
-                        />
-                    </div>
-
-                    <div>
                         <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Instructions Système (Prompt)</label>
                         <textarea 
                             value={instructions}
                             onChange={(e) => setInstructions(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all min-h-[120px] font-mono text-sm leading-relaxed"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all min-h-[200px] sm:min-h-[250px] font-mono text-sm leading-relaxed"
                             placeholder="Tu es un expert en..."
                         />
                         <p className="mt-2 text-xs text-slate-500">
