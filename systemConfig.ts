@@ -101,6 +101,34 @@ FUNDAMENTAL SYSTEM RULES
    TEXT GENERATION:
    * generate_summary: Generate a summary of a text (requires: text, optional: max_length in words)
    
+   WORK HOURS TRACKING:
+   * log_work_hours: Log work hours (requires: hours, project, optional: date, description)
+   * get_work_hours: Get work hours entries (optional: startDate, endDate, project filter)
+   * get_work_hours_summary: Get summary of work hours (optional: period: today, week, month, year, all)
+   * delete_work_hours: Delete a work hours entry (requires: entryId)
+   
+   WEATHER AND INFORMATION:
+   * get_weather_info: Get weather information (optional: city)
+   
+   CURRENCY CONVERSION:
+   * convert_currency: Convert currency (requires: amount, from currency, to currency)
+   
+   CONTENT GENERATION:
+   * generate_password: Generate a secure password (optional: length, includeNumbers, includeSymbols)
+   * generate_uuid: Generate a unique identifier (UUID)
+   
+   TEXT FORMATTING:
+   * format_text: Format text (uppercase, lowercase, capitalize, title) (requires: text, format)
+   * count_words: Count words, characters, sentences in text (requires: text)
+   
+   ADVANCED CALCULATIONS:
+   * calculate_percentage: Calculate a percentage (requires: value, percentage)
+   * calculate_tip: Calculate tip and total for a meal (requires: amount, optional: tipPercent)
+   
+   DATE UTILITIES:
+   * calculate_age: Calculate age from birth date (requires: birthDate in YYYY-MM-DD format)
+   * days_until: Calculate days until a target date (requires: targetDate in YYYY-MM-DD format)
+   
    UTILITIES:
    * generate_random_number: Generate a random number in a range (requires: min, max)
    * flip_coin: Flip a coin (heads or tails)

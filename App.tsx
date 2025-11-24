@@ -16,6 +16,9 @@ import DocumentUploader from './components/DocumentUploader';
 import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
+import NotesViewer from './components/NotesViewer';
+import ToolsList from './components/ToolsList';
+import TasksViewer from './components/TasksViewer';
 
 const App: React.FC = () => {
   // State
@@ -54,6 +57,9 @@ const App: React.FC = () => {
 
   const [currentPersonality, setCurrentPersonality] = useState<Personality>(loadSavedPersonality);
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
+  const [isNotesViewerOpen, setIsNotesViewerOpen] = useState(false);
+  const [isToolsListOpen, setIsToolsListOpen] = useState(false);
+  const [isTasksViewerOpen, setIsTasksViewerOpen] = useState(false);
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useState<ProcessedDocument[]>(() => {
@@ -1727,6 +1733,27 @@ const App: React.FC = () => {
         onSave={handlePersonalityChange}
       />
 
+      <NotesViewer
+        isOpen={isNotesViewerOpen}
+        onClose={() => setIsNotesViewerOpen(false)}
+        onNotesChange={() => {
+          // Rafraîchir si nécessaire
+        }}
+      />
+
+      <ToolsList
+        isOpen={isToolsListOpen}
+        onClose={() => setIsToolsListOpen(false)}
+      />
+
+      <TasksViewer
+        isOpen={isTasksViewerOpen}
+        onClose={() => setIsTasksViewerOpen(false)}
+        onTasksChange={() => {
+          // Rafraîchir si nécessaire
+        }}
+      />
+
       {/* Hidden Video & Canvas for Computer Vision */}
       <video ref={videoRef} className="hidden" muted playsInline autoPlay />
       <canvas ref={canvasRef} className="hidden" />
@@ -1973,6 +2000,84 @@ const App: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Modifier la personnalité
+                  </button>
+                  
+                  <button
+                    onClick={() => handleFunctionCallingToggle(!isFunctionCallingEnabled)}
+                    className={`w-full px-4 py-2.5 rounded-lg glass border font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2 ${
+                      isFunctionCallingEnabled 
+                        ? 'border-blue-500/50 text-blue-300 hover:border-blue-500/70' 
+                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    {isFunctionCallingEnabled ? 'Désactiver' : 'Activer'} Appel de fonction
+                  </button>
+                  
+                  <button
+                    onClick={() => handleGoogleSearchToggle(!isGoogleSearchEnabled)}
+                    className={`w-full px-4 py-2.5 rounded-lg glass border font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2 ${
+                      isGoogleSearchEnabled 
+                        ? 'border-green-500/50 text-green-300 hover:border-green-500/70' 
+                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {isGoogleSearchEnabled ? 'Désactiver' : 'Activer'} Google Search
+                  </button>
+                  
+                  <button
+                    onClick={() => setIsToolsListOpen(true)}
+                    className="w-full px-4 py-2.5 rounded-lg glass border border-blue-500/30 text-blue-300 hover:border-blue-500/50 hover:text-blue-200 font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    Voir les fonctions disponibles
+                  </button>
+                  
+                  <button
+                    onClick={() => setIsNotesViewerOpen(true)}
+                    className="w-full px-4 py-2.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Voir mes notes
+                  </button>
+                  
+                  <button
+                    onClick={() => setIsTasksViewerOpen(true)}
+                    className="w-full px-4 py-2.5 rounded-lg glass border border-emerald-500/30 text-emerald-300 hover:border-emerald-500/50 hover:text-emerald-200 font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Voir mes heures travaillées
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      const notes = JSON.parse(localStorage.getItem('neurochat_notes') || '[]');
+                      if (notes.length > 0) {
+                        if (confirm(`Êtes-vous sûr de vouloir supprimer toutes les ${notes.length} note(s) ?`)) {
+                          localStorage.setItem('neurochat_notes', JSON.stringify([]));
+                          addToast('success', 'Notes supprimées', 'Toutes les notes ont été supprimées');
+                        }
+                      } else {
+                        addToast('info', 'Notes', 'Aucune note à supprimer');
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 rounded-lg glass border border-red-500/30 text-red-300 hover:border-red-500/50 hover:text-red-200 font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Supprimer toutes les notes
                   </button>
                 </div>
               </div>
