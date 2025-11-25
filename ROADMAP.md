@@ -1,269 +1,148 @@
-# 🗺️ Roadmap - NeuroChat Pro
+# 🗺️ Roadmap NeuroChat Pro
 
-Ce document détaille l'évolution prévue du projet **NeuroChat Pro**, des fonctionnalités actuelles (MVP) aux versions futures.
-
----
-
-## 📊 Vue d'ensemble
-
-| Version | Statut | Date cible | Description |
-|:---:|:---:|:---:|:---|
-| **MVP** | ✅ **Actuel** | Déc 2024 | Version fonctionnelle de base (Audio/Vision/UI) |
-| **v0.1.0** | 🔄 **En cours** | Q1 2025 | Améliorations UX, Stabilité et Performance |
-| **v0.2.0** | 📋 **Planifié** | Q2 2025 | Intelligence avancée et nouvelles Features |
-| **v1.0.0** | 🎯 **Futur** | Q3 2025 | Version Stable "Production-Ready" |
+Document vivant décrivant la trajectoire du produit, des fondations MVP vers une version 1 prête production puis les paris long terme.
 
 ---
 
-## ✅ MVP (Version actuelle)
+## Vue d’ensemble
 
-La base solide du projet est déjà en place :
-
-### 🎯 Fonctionnalités Core
-- ✅ **Connexion Gemini Live API** - Session WebSocket stable
-- ✅ **Conversation bidirectionnelle** en temps réel
-- ✅ **Gestion audio** - Traitement PCM 16kHz/24kHz
-- ✅ **Interruption naturelle** - Possibilité d'interrompre l'IA
-- ✅ **Buffer audio intelligent** - Lecture fluide sans coupures
-
-### 👁️ Vision par ordinateur
-- ✅ **Analyse flux caméra** - Envoi de frames à 1 FPS
-- ✅ **Partage d'écran** - Analyse du contenu à 0.5 FPS
-- ✅ **Preview Picture-in-Picture** - Aperçu avec indicateur visuel
-- ✅ **Vue agrandie** - Mode plein écran
-- ✅ **Sélection de caméra** - Choix parmi les périphériques
-
-### 🎨 Interface utilisateur
-- ✅ **Design Glassmorphism** - Effets de flou et transparence
-- ✅ **Visualiseur audio** - Particules animées et analyse fréquentielle
-- ✅ **Thèmes adaptatifs** - Couleurs selon la personnalité
-- ✅ **Mode sombre premium** - Effets de lueur et gradients
-- ✅ **Responsive design** - Optimisé desktop et mobile
-
-### 🎭 Personnalisation
-- ✅ **Système de personnalités** - Éditeur intégré
-- ✅ **6 voix disponibles** - Puck, Charon, Kore, Fenrir, Zephyr, Aoede
-- ✅ **Instructions système** - Personnalisables par personnalité
-- ✅ **Persistance locale** - Sauvegarde dans localStorage
-
-### 🔧 Stabilité
-- ✅ **Reconnexion automatique** - Backoff exponentiel (5 tentatives max)
-- ✅ **Gestion d'erreurs** - Retry automatique
-- ✅ **Indicateur de latence** - Feedback en temps réel
-- ✅ **Système de notifications** - Toast pour le feedback utilisateur
+| Phase | Objectif | Statut | Jalons cibles |
+| --- | --- | --- | --- |
+| **MVP** | Expérience immersif audio/vision + UI premium | ✅ livrée | Déc. 2024 |
+| **v0.1 – Hardening** | Stabilité, UX clavier/périphériques, couverture tests | 🔄 en cours | Q1 2025 |
+| **v0.2 – Intelligence** | Transcriptions, mémoire, analytics, i18n | 📋 planifiée | Q2 2025 |
+| **v1.0 – Production** | Sécurité, architecture modulaire, multi-plateforme | 🎯 futur | Q3 2025 |
+| **Futur+** | Extensions visionnaires (offline, XR, multi-agents) | 💡 backlog | Post v1 |
 
 ---
 
-## 🔄 v0.1.0 - Améliorations UX et Stabilité (Q1 2025)
+## Phase 1 — MVP (déployé)
 
-*Objectif : Consolider l'existant et rendre l'expérience utilisateur irréprochable.*
+### Livrables clés
+- Session Gemini Live WebSocket fiable (audio downlink 24 kHz, uplink 16 kHz).
+- Visualiseur audio premium, design glassmorphism responsive, mode sombre.
+- Contrôles vision : caméra/screen share, PiP, vue plein écran, sélection périphériques.
+- Système de personnalités (6 voix, thèmes dynamiques, instructions système, persistance locale).
+- Résilience : reconnexion automatique, indicateur de latence, toasts et nettoyage mémoire.
 
-### 🛠️ Technique & Stabilité
-- [x] Gestion d'erreurs robuste (Retry automatique, reconnexion WS)
-- [x] Optimisation latence audio
-- [x] Indicateur de latence en temps réel
-- [ ] Tests unitaires sur les utilitaires audio (`utils/audioUtils.ts`)
-- [ ] Tests d'intégration pour les composants principaux
-- [ ] Refactoring du composant `App.tsx` (séparation de la logique)
-- [ ] Optimisation des performances (memoization, lazy loading)
-- [ ] Gestion mémoire améliorée (cleanup des ressources)
-
-### 🎨 Expérience Utilisateur
-- [x] Feedback visuel d'état (connexion, écoute, parole)
-- [x] Indicateur de latence (ping) en temps réel
-- [ ] Raccourcis clavier (ex: Espace pour Push-to-Talk)
-- [ ] Sélection des périphériques d'entrée/sortie (Micro/Casque)
-- [ ] Contrôle du volume de sortie
-- [ ] Mode silencieux (mute microphone)
-- [ ] Animation de transition entre personnalités
-- [ ] Amélioration de l'accessibilité (ARIA labels, navigation clavier)
-
-### 📝 Fonctionnalités Transcriptions
-- [ ] **Transcriptions bidirectionnelles** - Affichage en temps réel
-- [ ] Export des conversations (TXT/JSON/Markdown)
-- [ ] Historique persistant (IndexedDB)
-- [ ] Recherche textuelle dans l'historique
-- [ ] Modal dédié avec historique des dernières interactions
-- [ ] Marquage final/intermédiaire pour distinguer les transcriptions
-
-### 🎯 Améliorations Audio
-- [ ] Détection de voix (VAD) améliorée
-- [ ] Réduction du bruit de fond
-- [ ] Normalisation automatique du volume
-- [ ] Égaliseur audio (basses, médiums, aigus)
-
-### 🎨 Améliorations Visuelles
-- [ ] Thèmes personnalisables (couleurs, effets)
-- [ ] Mode clair/sombre avec transition
-- [ ] Animations de chargement améliorées
-- [ ] Effets visuels supplémentaires (particules, gradients)
+### Dette résiduelle
+- Tests automatisés minimaux.
+- Processus de déploiement/monitoring encore manuels.
 
 ---
 
-## 📋 v0.2.0 - Intelligence & Features Avancées (Q2 2025)
+## Phase 2 — v0.1 Hardening (Q1 2025)
 
-*Objectif : Étendre les capacités cognitives et interactives.*
+**Objectif : fiabiliser l’existant pour préparer les fonctionnalités avancées.**
 
-### 🧠 Intelligence Artificielle
-- [ ] **Mémoire Long Terme** - Capacité à se souvenir des conversations passées
-- [x] **Context Awareness** - Analyse plus fine du contexte vidéo
-- [ ] **Multi-modèles** - Possibilité de switcher (Gemini Pro vs Flash)
-- [ ] **RAG (Retrieval Augmented Generation)** - Intégration de documents
-- [ ] **Tool Calling** - Exécution d'actions (recherche web, calculs, etc.)
-- [ ] **Streaming amélioré** - Réponses plus fluides et naturelles
+### Technique & qualité
+- [ ] Séparer la logique métier de `App.tsx` (hooks dédiés audio, vision, statut).
+- [ ] Tests unitaires `utils/audioUtils.ts` + snapshots des composants critiques.
+- [ ] Tests d’intégration (connexion Gemini mockée, flux audio simulé).
+- [ ] Optimisations performance : memoization, lazy loading, cleanup ressources vision.
 
-### 🌐 Internationalisation & Accessibilité
-- [ ] Support multilingue complet (Interface + IA)
-- [ ] Mode "Sous-titres" temps réel amélioré
-- [ ] Contrôle vocal de l'interface ("Neuro, passe en mode sombre")
-- [ ] Support des lecteurs d'écran
-- [ ] Navigation complète au clavier
+### Expérience utilisateur
+- [ ] Raccourcis clavier (push-to-talk, mute, toggle caméra/écran).
+- [ ] Sélection détaillée des périphériques I/O + sauvegarde des préférences.
+- [ ] Contrôle volume de sortie + mode silencieux.
+- [ ] Accessibilité (ARIA, focus management, navigation clavier complète).
+- [ ] Animations de transition entre personnalités.
 
-### 📊 Analytics & Insights
-- [ ] Dashboard d'utilisation (durée sessions, tokens utilisés)
-- [ ] Analyse de sentiment des conversations
-- [ ] Statistiques de performance (latence moyenne, taux d'erreur)
-- [ ] Graphiques de visualisation des données
-- [ ] Export des statistiques
+### Transcriptions & historique
+- [ ] Transcriptions bidirectionnelles en temps réel (statut intermediaire/final).
+- [ ] Historique persistant (IndexedDB) + recherche.
+- [ ] Export conversation (TXT / JSON / Markdown).
 
-### 🎨 Personnalisation Avancée
-- [ ] Marketplace de personnalités (partage communautaire)
-- [ ] Import/Export de personnalités (JSON)
-- [ ] Personnalités pré-configurées supplémentaires
-- [ ] Système de plugins pour étendre les fonctionnalités
-
-### 🔗 Intégrations
-- [ ] **Webhooks** - Notifications pour événements
-- [ ] **API REST** - Accès programmatique aux fonctionnalités
-- [ ] **Intégration calendrier** - Rappels et rendez-vous
-- [ ] **Intégration notes** - Sauvegarde automatique des conversations importantes
+### Indicateurs de réussite
+- Latence moyenne < 500 ms.
+- Crash rate < 1 % session.
+- >50 % couverture tests ciblés.
 
 ---
 
-## 🎯 v1.0.0 - Production Ready (Q3 2025)
+## Phase 3 — v0.2 Intelligence augmentée (Q2 2025)
 
-*Objectif : Une application robuste, sécurisée et déployable à grande échelle.*
+**Objectif : enrichir la valeur métier via mémoire, insights et internationalisation.**
 
-### 🏗️ Architecture
-- [ ] Migration vers une architecture modulaire stricte
-- [ ] State Management global (Zustand ou Redux Toolkit)
-- [x] **PWA (Progressive Web App)** - Installation sur mobile/desktop
-- [ ] Service Worker pour fonctionnement hors-ligne
-- [ ] Cache intelligent des ressources
-- [ ] Code splitting avancé
+### IA & multimodal
+- [ ] Mémoire long terme (stockage conversationnel + rappel contextuel).
+- [ ] Tool calling (recherche web, calculs, intégrations internes).
+- [ ] Mode multi-modèles (Gemini Flash vs Pro selon usage).
+- [ ] RAG simple (documents uploadés ou URL).
 
-### 🔐 Sécurité
-- [ ] Gestion sécurisée des clés API (Proxy Backend ou Serverless Functions)
-- [ ] Authentification utilisateur (Firebase/Supabase)
-- [ ] Chiffrement des données sensibles
-- [ ] Conformité RGPD (gestion des données personnelles)
-- [ ] Audit de sécurité complet
-- [ ] Rate limiting et protection DDoS
+### Accessibilité & i18n
+- [ ] Interface multilingue (FR/EN en priorité) + réglage dynamique.
+- [ ] Sous-titres améliorés, mode transcription-only pour environnement silencieux.
+- [ ] Commandes vocales (“Passe en mode sombre”, “Active la caméra”).
 
-### 📱 Multi-plateforme
-- [ ] Adaptation mobile responsive parfaite
-- [ ] Version Desktop (via Electron ou Tauri)
-- [ ] Application iOS/Android (React Native ou Capacitor)
-- [ ] Optimisation pour tablettes
+### Analytics produit
+- [ ] Dashboard : durée moyenne, tokens, latence moyenne, erreurs.
+- [ ] Analyse de sentiment & tags automatiques.
+- [ ] Export des métriques (CSV/JSON) + Webhooks.
 
-### 🚀 Performance & Scalabilité
-- [ ] Optimisation du bundle (tree-shaking, minification)
-- [ ] Lazy loading des composants lourds
-- [ ] Compression des assets (images, audio)
-- [ ] CDN pour les ressources statiques
-- [ ] Monitoring et alertes (Sentry, LogRocket)
+### Personnalisation avancée
+- [ ] Import/export de personnalités (JSON) + marketplace interne.
+- [ ] Système de plugins UI (cards custom, actions rapides).
 
-### 📚 Documentation
-- [ ] Documentation API complète
-- [ ] Guide de déploiement détaillé
-- [ ] Tutoriels vidéo
-- [ ] Documentation développeur (JSDoc)
-- [ ] Wiki avec FAQ
-
-### 🧪 Tests
-- [ ] Couverture de tests > 80%
-- [ ] Tests E2E (Playwright ou Cypress)
-- [ ] Tests de performance (Lighthouse)
-- [ ] Tests de charge (stress testing)
+### KPIs
+- Support 5 langues.
+- Dashboard analytics utilisé par 80 % des sessions internes.
 
 ---
 
-## 🔮 Futur (Post-v1.0)
+## Phase 4 — v1.0 Production Ready (Q3 2025)
 
-### 🌟 Features Visionnaires
+**Objectif : industrialiser le produit (sécurité, scalabilité, multi-plateforme).**
 
-#### 🔒 Privacy First
-- **Support Modèles Locaux** - Intégration d'Ollama pour tourner en local
-- **Chiffrement bout-en-bout** - Conversations privées
-- **Mode offline complet** - Fonctionnement sans connexion
+### Architecture & infra
+- [ ] Gestion d’état globale (Zustand / Redux Toolkit) + séparation stricte UI/logic.
+- [ ] Pipeline CI/CD (lint, tests, build, qualité).
+- [ ] Code splitting avancé, optimisation bundle, monitoring (Sentry/LogRocket).
+- [ ] Proxy backend ou functions serverless pour sécuriser la clé Gemini.
 
-#### 🎮 Réalité Augmentée
-- **WebXR** - Projection de l'assistant dans l'espace
-- **Réalité Virtuelle** - Interface immersive 3D
-- **Hologrammes** - Visualisation 3D de l'assistant
+### Sécurité & conformité
+- [ ] Authentification (OAuth/Firebase/Supabase).
+- [ ] Chiffrement des données sensibles, gestion RGPD (opt-in, purge).
+- [ ] Rate limiting, audit sécurité, politique de logs.
 
-#### 🌍 Marketplace & Communauté
-- **Marketplace** - Partage de personnalités et de prompts système
-- **Système de notation** - Évaluation des personnalités
-- **Templates** - Personnalités pré-configurées par domaine
-- **API Entreprise** - Connecteurs pour calendriers, emails et outils pro
+### Multi-plateforme
+- [ ] PWA complète (offline + cache intelligent).
+- [ ] Packager desktop (Electron/Tauri) & mobile (React Native/Capacitor).
+- [ ] Optimisation tablette & grands écrans.
 
-#### 🤖 Intelligence Avancée
-- **Multi-agents** - Plusieurs assistants travaillant ensemble
-- **Apprentissage continu** - Amélioration basée sur les interactions
-- **Personnalisation adaptative** - L'IA s'adapte au style de l'utilisateur
-- **Émotions** - Détection et réponse aux émotions
+### Documentation & support
+- [ ] Guide de déploiement infra.
+- [ ] Documentation API/SDK.
+- [ ] Wiki + FAQ + vidéos onboarding.
 
-#### 🎨 Expérience Utilisateur
-- **Thèmes animés** - Transitions dynamiques entre thèmes
-- **Avatars 3D** - Représentation visuelle de l'assistant
-- **Gestes** - Contrôle par gestes (WebXR)
-- **Haptique** - Feedback tactile (mobile)
+### KPIs
+- Score Lighthouse > 90 (Performance / Accessibilité / Best Practices).
+- Couverture tests > 80 %.
+- MTTR < 1 h grâce au monitoring.
 
 ---
 
-## 📝 Notes de développement
+## Backlog stratégique (Post-v1)
 
-### Priorités actuelles
-1. **Stabilité** - Améliorer la robustesse de la connexion
-2. **UX** - Raccourcis clavier et sélection de périphériques
-3. **Transcriptions** - Fonctionnalité essentielle pour l'accessibilité
-
-### Défis techniques
-- **Latence audio** - Optimisation continue nécessaire
-- **Gestion mémoire** - Nettoyage des ressources audio/vidéo
-- **Compatibilité navigateurs** - Support Safari limité pour certaines APIs
-
-### Contributions souhaitées
-- Tests unitaires et d'intégration
-- Amélioration de l'accessibilité
-- Documentation et tutoriels
-- Traductions (i18n)
+| Thématique | Idées |
+| --- | --- |
+| **Privacy & offline** | Modèles locaux (Ollama), chiffrement E2E, mode offline complet |
+| **XR & immersion** | WebXR, avatars 3D, contrôle gestuel, expérience VR |
+| **Communauté & écosystème** | Marketplace publique de personnalités/prompts, notation, API entreprise (calendrier, CRM) |
+| **Multi-agents & émotion** | Agents spécialisés collaboratifs, détection + réponse émotionnelle, apprentissage continu |
+| **Expérience sensorielle** | Thèmes animés dynamiques, haptique mobile, feedback lumineux IoT |
 
 ---
 
-## 🎯 Métriques de succès
+## Suivi & collaboration
 
-### v0.1.0
-- ✅ Taux de reconnexion automatique > 95%
-- ✅ Latence moyenne < 500ms
-- ✅ Couverture de tests > 50%
-
-### v0.2.0
-- ✅ Support de 5+ langues
-- ✅ Dashboard analytics fonctionnel
-- ✅ Marketplace avec 10+ personnalités
-
-### v1.0.0
-- ✅ PWA installable et fonctionnelle
-- ✅ Authentification utilisateur
-- ✅ Conformité RGPD
-- ✅ Couverture de tests > 80%
-- ✅ Performance Lighthouse > 90
+- Les issues GitHub sont taguées `phase:mvp | phase:v0.1 | phase:v0.2 | phase:v1 | future`.
+- Chaque feature majeure doit référencer cette roadmap et proposer critères d’acceptation + métriques.
+- Revues de roadmap à chaque fin de sprint (ou mensuellement) pour ajuster priorités.
 
 ---
 
 <div align="center">
-**Cette roadmap est évolutive et peut être modifiée selon les retours de la communauté.**<br/>
-N'hésitez pas à proposer vos idées via les [Issues](https://github.com/votre-username/neuroChat-Live-Immersive-Pro/issues) !
+💡 Cette roadmap évolue selon les retours utilisateurs et les contraintes techniques.  
+Partagez vos propositions via les <a href="https://github.com/votre-username/neuroChat-Live-Immersive-Pro/issues">Issues GitHub</a>.
 </div>
