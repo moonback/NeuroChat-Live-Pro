@@ -26,6 +26,7 @@ interface ControlPanelProps {
   onEditPersonality?: () => void;
   onToggleFunctionCalling?: (enabled: boolean) => void;
   onToggleGoogleSearch?: (enabled: boolean) => void;
+  onOpenMobileActions?: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -49,6 +50,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onEditPersonality,
   onToggleFunctionCalling,
   onToggleGoogleSearch,
+  onOpenMobileActions,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -310,6 +312,27 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </svg>
                 <span className="relative z-10 hidden sm:inline">Modifier</span>
                 </button>
+            </Tooltip>
+          )}
+
+          {/* Mobile Actions Button - Visible seulement sur mobile et quand déconnecté */}
+          {!isConnected && onOpenMobileActions && (
+            <Tooltip content="Ouvrir les actions rapides">
+              <button
+                onClick={onOpenMobileActions}
+                aria-label="Ouvrir les actions rapides"
+                className="lg:hidden group relative flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 px-3 sm:px-4 md:px-5 lg:px-6 xl:px-7 py-2 sm:py-2.5 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-[10px] sm:text-xs lg:text-sm xl:text-base font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 touch-manipulation"
+                style={{
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
+                <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span className="relative z-10 hidden sm:inline">Actions</span>
+              </button>
             </Tooltip>
           )}
 
