@@ -210,14 +210,8 @@ const App: React.FC = () => {
     
     // Mots-clés d'activation simples (sans contexte requis)
     const simpleActivateKeywords = [
-      'active vision', 'activer vision', 'active camera', 'activer camera',
-      'active video', 'activer video', 'allume vision', 'allumer vision',
-      'allume camera', 'allumer camera', 'ouvre vision', 'ouvrir vision',
-      'ouvre camera', 'ouvrir camera', 'demarre vision', 'demarrer vision',
-      'demarre camera', 'demarrer camera', 'lance vision', 'lancer vision',
-      'mets vision', 'met vision', 'metre vision', 'active la vision',
+      
       'activer la vision', 'active la camera', 'activer la camera',
-      'allume la vision', 'allumer la vision', 'allume la camera', 'allumer la camera'
     ];
     
     // Mots-clés d'activation avec contexte requis (plus permissifs)
@@ -231,15 +225,9 @@ const App: React.FC = () => {
     
     // Mots-clés de désactivation simples (sans contexte requis)
     const simpleDeactivateKeywords = [
-      'desactive vision', 'desactiver vision', 'desactive camera', 'desactiver camera',
-      'arrete vision', 'arreter vision', 'arrete camera', 'arreter camera',
-      'ferme vision', 'fermer vision', 'ferme camera', 'fermer camera',
-      'eteint vision', 'eteindre vision', 'eteint camera', 'eteindre camera',
-      'coupe vision', 'couper vision', 'coupe camera', 'couper camera',
-      'stop vision', 'stop camera', 'stoppe vision', 'stopper vision',
-      'stoppe camera', 'stopper camera', 'desactive la vision',
+      
       'desactiver la vision', 'desactive la camera', 'desactiver la camera',
-      'arrete la vision', 'arreter la vision', 'arrete la camera', 'arreter la camera'
+      
     ];
     
     // Mots-clés de désactivation avec contexte requis
@@ -745,21 +733,7 @@ const App: React.FC = () => {
                   // Phrases qui indiquent une demande de terminer la session
                   const endSessionPhrases = [
                     'terminer la session',
-                    'fin de session',
-                    'terminer session',
-                    'redémarrer l\'application',
-                    'redémarrer application',
-                    'redémarrer app',
-                    'relancer l\'application',
-                    'relancer application',
-                    'relancer app',
-                    'redémarrer',
-                    'relancer',
-                    'terminer',
-                    'arrêter la session',
-                    'arrêter session',
-                    'fermer la session',
-                    'fermer session'
+                    
                   ];
                   
                   const shouldEndSession = endSessionPhrases.some(phrase => 
@@ -786,47 +760,6 @@ const App: React.FC = () => {
                   }
                   
                   // Détecter les commandes de vision avec la fonction améliorée
-                  const visionCommand = detectVisionCommand(text);
-                  
-                  if (visionCommand === 'activate' && !isVideoActiveRef.current) {
-                    console.log('[App] ✅✅✅ DEMANDE D\'ACTIVATION DE LA VISION DÉTECTÉE:', text);
-                    console.log('[App] 🚀 Activation de la caméra...');
-                    
-                    // Vérifier qu'une caméra est disponible
-                    if (availableCamerasRef.current.length === 0) {
-                      console.log('[App] ⚠️ Aucune caméra disponible, énumération des caméras...');
-                      enumerateCameras().then(() => {
-                        setTimeout(() => {
-                          if (availableCamerasRef.current.length > 0) {
-                            if (!selectedCameraIdRef.current) {
-                              setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                              console.log('[App] 📹 Caméra sélectionnée:', availableCamerasRef.current[0].deviceId);
-                            }
-                            addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                            setIsVideoActive(true);
-                          } else {
-                            console.log('[App] ❌ Aucune caméra disponible');
-                            addToast('error', 'Erreur', 'Aucune caméra disponible');
-                          }
-                        }, 100);
-                      });
-                    } else {
-                      // S'assurer qu'une caméra est sélectionnée
-                      if (!selectedCameraIdRef.current && availableCamerasRef.current.length > 0) {
-                        setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                        console.log('[App] 📹 Caméra sélectionnée:', availableCamerasRef.current[0].deviceId);
-                      }
-                      addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                      setIsVideoActive(true);
-                    }
-                  } else if (visionCommand === 'deactivate' && isVideoActiveRef.current) {
-                    console.log('[App] ✅✅✅ DEMANDE DE DÉSACTIVATION DE LA VISION DÉTECTÉE:', text);
-                    console.log('[App] 🛑 Désactivation de la caméra...');
-                    console.log('[App] 📊 État actuel de la vision avant désactivation:', isVideoActiveRef.current);
-                    addToast('info', 'Désactivation Vision', 'Désactivation de la caméra...');
-                    setIsVideoActive(false);
-                    console.log('[App] 🛑 setIsVideoActive(false) appelé');
-                  }
                 }
               }
             }
@@ -903,55 +836,6 @@ const App: React.FC = () => {
                       // Log toutes les transcriptions (même intermédiaires) pour déboguer
                       if (transcript.length > 0) {
                         console.log(`[App] Transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
-                      }
-                      
-                      // Analyser aussi les transcriptions intermédiaires pour une détection plus rapide
-                      if (transcript.length > 0) {
-                        console.log(`[App] 🔍 Analyse de la transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
-                        
-                        // Détecter les commandes de vision (même dans les transcriptions intermédiaires)
-                        const visionCommand = detectVisionCommand(transcript);
-                        
-                        if (visionCommand === 'activate' && !isVideoActiveRef.current) {
-                          console.log('[App] ✅✅✅ DEMANDE D\'ACTIVATION DE LA VISION DÉTECTÉE:', transcript);
-                          console.log('[App] 🚀 Activation de la caméra...');
-                          console.log('[App] 📊 État actuel de la vision:', isVideoActiveRef.current);
-                          
-                          // Vérifier qu'une caméra est disponible
-                          if (availableCamerasRef.current.length === 0) {
-                            console.log('[App] ⚠️ Aucune caméra disponible, énumération des caméras...');
-                            enumerateCameras().then(() => {
-                              // Après l'énumération, vérifier à nouveau
-                              setTimeout(() => {
-                                if (availableCamerasRef.current.length > 0) {
-                                  if (!selectedCameraIdRef.current) {
-                                    setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                                  }
-                                  setIsVideoActive(true);
-                                  addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                                } else {
-                                  addToast('error', 'Erreur', 'Aucune caméra disponible');
-                                }
-                              }, 100);
-                            });
-                          } else {
-                            // S'assurer qu'une caméra est sélectionnée
-                            if (!selectedCameraIdRef.current && availableCamerasRef.current.length > 0) {
-                              setSelectedCameraId(availableCamerasRef.current[0].deviceId);
-                            }
-                            addToast('success', 'Activation Vision', 'Activation de la caméra...');
-                            setIsVideoActive(true);
-                          }
-                          return;
-                        } else if (visionCommand === 'deactivate' && isVideoActiveRef.current) {
-                          console.log('[App] ✅✅✅ DEMANDE DE DÉSACTIVATION DE LA VISION DÉTECTÉE:', transcript);
-                          console.log('[App] 🛑 Désactivation de la caméra...');
-                          console.log('[App] 📊 État actuel de la vision avant désactivation:', isVideoActiveRef.current);
-                          addToast('info', 'Désactivation Vision', 'Désactivation de la caméra...');
-                          setIsVideoActive(false);
-                          console.log('[App] 🛑 setIsVideoActive(false) appelé');
-                          return;
-                        }
                       }
                       
                       // Vérifier les commandes de fin de session uniquement dans les transcriptions finales
