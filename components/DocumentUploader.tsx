@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ProcessedDocument } from '../utils/documentProcessor';
+import type { ProcessedDocument } from '../utils/documentProcessor';
 import Tooltip from './Tooltip';
 
 interface DocumentUploaderProps {

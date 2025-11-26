@@ -4,36 +4,49 @@ import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
-import { ToastContainer, ToastMessage } from './components/Toast';
+import { ToastContainer } from './components/Toast';
 import QuickStartGuide from './components/QuickStartGuide';
 import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
-import { createBlob, decodeAudioData, base64ToArrayBuffer, arrayBufferToBase64 } from './utils/audioUtils';
+import { createBlob, decodeAudioData, base64ToArrayBuffer } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
-import { VideoContextAnalyzer } from './utils/videoContextAnalyzer';
 import { WakeWordDetector } from './utils/wakeWordDetector';
 import DocumentUploader from './components/DocumentUploader';
-import { ProcessedDocument, formatDocumentForContext } from './utils/documentProcessor';
+import type { ProcessedDocument } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
 import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
 import TasksViewer from './components/TasksViewer';
 import AgendaViewer from './components/AgendaViewer';
+import { useStatusManager } from './hooks/useStatusManager';
+import { useAudioManager } from './hooks/useAudioManager';
+import { useVisionManager } from './hooks/useVisionManager';
 
 const App: React.FC = () => {
-  // State
-  const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
-  const [isTalking, setIsTalking] = useState(false);
-  
-  // New Features State
-  const [isVideoActive, setIsVideoActive] = useState(false);
-  const [isScreenShareActive, setIsScreenShareActive] = useState(false);
+  const sessionRef = useRef<any>(null);
+
+  const {
+    connectionState,
+    setConnectionState,
+    connectionStateRef,
+    isTalking,
+    setIsTalking,
+    latency,
+    setLatency,
+    toasts,
+    addToast,
+    removeToast,
+  } = useStatusManager();
+
+  const {
+    activateAudioContext,
+    playBeep,
+    audioContextActivatedRef,
+    beepAudioRef,
+  } = useAudioManager();
+
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [latency, setLatency] = useState<number>(0);
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [isVideoEnlarged, setIsVideoEnlarged] = useState(false);
   
   // Custom Personality State - Charger depuis localStorage ou utiliser la par défaut
@@ -106,7 +119,6 @@ const App: React.FC = () => {
   const inputAnalyserRef = useRef<AnalyserNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const sessionRef = useRef<any>(null);
   const nextStartTimeRef = useRef<number>(0);
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -116,14 +128,45 @@ const App: React.FC = () => {
   const reconnectAttemptsRef = useRef<number>(0);
   const isReconnectingRef = useRef<boolean>(false);
   const isIntentionalDisconnectRef = useRef<boolean>(false);
-  const isScreenShareActiveRef = useRef(false); // Ref to track screen share state for closures
-  const isVideoActiveRef = useRef(false); // Ref to track video state for closures
-  const availableCamerasRef = useRef<MediaDeviceInfo[]>([]); // Ref to track cameras for closures
-  const selectedCameraIdRef = useRef<string>(''); // Ref to track selected camera for closures
   // Initialiser la ref avec la personnalité chargée (pas la par défaut)
   const initialPersonality = loadSavedPersonality();
   const currentPersonalityRef = useRef(initialPersonality); // Ref for seamless updates
   const uploadedDocumentsRef = useRef<ProcessedDocument[]>([]); // Ref for documents
+  const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
+  const connectRef = useRef<(() => Promise<void>) | null>(null);
+  const chatbotSpeechRecognitionRef = useRef<any>(null); // SpeechRecognition API
+  const loadDocumentsContext = useCallback(async (): Promise<string | undefined> => {
+    if (uploadedDocumentsRef.current.length === 0) {
+      return undefined;
+    }
+    const { formatDocumentForContext } = await import('./utils/documentProcessor');
+    return formatDocumentForContext(uploadedDocumentsRef.current);
+  }, []);
+
+  const {
+    isVideoActive,
+    setIsVideoActive,
+    isVideoActiveRef,
+    isScreenShareActive,
+    toggleScreenShare,
+    availableCameras,
+    availableCamerasRef,
+    selectedCameraId,
+    setSelectedCameraId,
+    selectedCameraIdRef,
+    changeCamera,
+    enumerateCameras,
+    startFrameTransmission,
+    resetVisionState,
+    videoRef,
+    canvasRef,
+    videoStreamRef,
+    screenStreamRef,
+  } = useVisionManager({
+    connectionState,
+    addToast,
+    sessionRef,
+  });
 
   // Sync refs with state
   useEffect(() => {
@@ -136,47 +179,13 @@ const App: React.FC = () => {
   }, [uploadedDocuments]);
 
   useEffect(() => {
-    isVideoActiveRef.current = isVideoActive;
-  }, [isVideoActive]);
+    currentPersonalityRef.current = currentPersonality;
+    console.log('[App] Ref personnalité mise à jour:', currentPersonality.name);
+  }, [currentPersonality]);
 
   useEffect(() => {
-    availableCamerasRef.current = availableCameras;
-  }, [availableCameras]);
-
-  useEffect(() => {
-    selectedCameraIdRef.current = selectedCameraId;
-  }, [selectedCameraId]);
-
-  useEffect(() => {
-    connectionStateRef.current = connectionState;
-  }, [connectionState]);
-
-  // Video Refs
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoStreamRef = useRef<MediaStream | null>(null);
-  const screenStreamRef = useRef<MediaStream | null>(null);
-  const frameIntervalRef = useRef<number | NodeJS.Timeout | null>(null);
-  const videoContextAnalyzerRef = useRef<VideoContextAnalyzer | null>(null);
-  const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
-  const connectRef = useRef<(() => Promise<void>) | null>(null);
-  const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
-  const chatbotSpeechRecognitionRef = useRef<any>(null); // SpeechRecognition API
-  const beepAudioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextActivatedRef = useRef<boolean>(false);
-
-  const addToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
-    setToasts(prev => [...prev, {
-        id: Date.now().toString(),
-        type,
-        title,
-        message
-    }]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+    uploadedDocumentsRef.current = uploadedDocuments;
+  }, [uploadedDocuments]);
 
   // Fonction utilitaire pour normaliser le texte et améliorer la détection
   const normalizeText = (text: string): string => {
@@ -369,101 +378,6 @@ const App: React.FC = () => {
     return null;
   };
 
-  // Activer le contexte audio lors de la première interaction utilisateur
-  const activateAudioContext = useCallback(() => {
-    if (audioContextActivatedRef.current) return;
-    
-    try {
-      // Créer un contexte audio silencieux pour activer le contexte
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      gainNode.gain.value = 0; // Son silencieux
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + 0.001);
-      
-      // Marquer comme activé
-      audioContextActivatedRef.current = true;
-      
-      // Précharger l'audio maintenant que le contexte est activé
-      if (!beepAudioRef.current) {
-        const audio = new Audio('/bip.mp3');
-        audio.volume = 0.7;
-        audio.preload = 'auto';
-        audio.load();
-        beepAudioRef.current = audio;
-      }
-    } catch (error) {
-      console.warn('[App] Impossible d\'activer le contexte audio:', error);
-    }
-  }, []);
-
-  // Précharger le fichier audio du bip
-  useEffect(() => {
-    const audio = new Audio('/bip.mp3');
-    audio.volume = 0.7; // Volume à 70%
-    audio.preload = 'auto';
-    
-    // Précharger le fichier
-    audio.load();
-    
-    beepAudioRef.current = audio;
-    
-    return () => {
-      if (beepAudioRef.current) {
-        beepAudioRef.current.pause();
-        beepAudioRef.current = null;
-      }
-    };
-  }, []);
-
-  // Fonction pour émettre un bip sonore depuis un fichier audio
-  const playBeep = useCallback(() => {
-    try {
-      // Utiliser l'instance préchargée si disponible
-      if (beepAudioRef.current) {
-        // Réinitialiser la position pour pouvoir rejouer
-        beepAudioRef.current.currentTime = 0;
-        
-        // Jouer le son
-        const playPromise = beepAudioRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              // Succès silencieux - pas besoin de log
-            })
-            .catch(error => {
-              // Ignorer silencieusement les erreurs NotAllowedError
-              // C'est normal si l'utilisateur n'a pas encore interagi avec la page
-              if (error.name !== 'NotAllowedError') {
-                console.warn('[App] Erreur lors de la lecture du bip:', error);
-              }
-            });
-        }
-      } else {
-        // Fallback : créer une nouvelle instance si l'audio n'est pas préchargé
-        const audio = new Audio('/bip.mp3');
-        audio.volume = 0.7;
-        audio.play().catch(error => {
-          // Ignorer silencieusement les erreurs NotAllowedError
-          if (error.name !== 'NotAllowedError') {
-            console.warn('[App] Impossible de jouer le bip (fallback):', error);
-          }
-        });
-      }
-    } catch (error) {
-      // Ignorer silencieusement les erreurs
-      if ((error as any).name !== 'NotAllowedError') {
-        console.warn('[App] Erreur lors de la création du bip:', error);
-      }
-    }
-  }, []);
-
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
     // Sauvegarder la personnalité dans localStorage pour la persistance
@@ -536,331 +450,7 @@ const App: React.FC = () => {
       addToast('success', 'Documents Chargés', `${documents.length} document(s) prêt(s) à être utilisés`);
     }
   };
-  // Enumerate available cameras
-  const enumerateCameras = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      setAvailableCameras(videoDevices);
-      
-      // Try to load saved camera preference
-      const savedCameraId = localStorage.getItem('selectedCameraId');
-      
-      if (videoDevices.length > 0) {
-        // Use saved camera if it exists in the list, otherwise use first camera
-        if (savedCameraId && videoDevices.some(device => device.deviceId === savedCameraId)) {
-          setSelectedCameraId(savedCameraId);
-        } else if (!selectedCameraId) {
-          setSelectedCameraId(videoDevices[0].deviceId);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to enumerate cameras", e);
-    }
-  };
-
-  // Change camera function
-  const changeCamera = async (cameraId: string) => {
-    setSelectedCameraId(cameraId);
-    
-    // Save camera preference to localStorage
-    localStorage.setItem('selectedCameraId', cameraId);
-    
-    // If video is active, restart the stream with the new camera
-    if (isVideoActive && videoStreamRef.current) {
-      // Stop current stream
-      videoStreamRef.current.getTracks().forEach(t => t.stop());
-      videoStreamRef.current = null;
-      
-      // Stop frame transmission
-      if (frameIntervalRef.current) {
-        clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
-        clearInterval(frameIntervalRef.current as number);
-        frameIntervalRef.current = null;
-      }
-      
-      // Reset context analyzer for new camera source
-      if (videoContextAnalyzerRef.current) {
-        videoContextAnalyzerRef.current.reset();
-      }
-      
-      // Start new stream with selected camera
-      try {
-        const constraints: MediaStreamConstraints = {
-          video: { deviceId: { exact: cameraId } }
-        };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoStreamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-        
-        // Restart frame transmission
-        if (connectionState === ConnectionState.CONNECTED) {
-          startFrameTransmission();
-        }
-        
-        addToast('success', 'Caméra changée', 'La nouvelle caméra est maintenant active');
-      } catch (e) {
-        console.error("Failed to switch camera", e);
-        addToast('error', 'Erreur', "Impossible de changer de caméra");
-      }
-    }
-  };
-
-  // Load cameras on mount
-  useEffect(() => {
-    enumerateCameras();
-  }, []);
-
-  // Screen Share Functions
-  const startScreenShare = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      screenStreamRef.current = stream;
-      setIsScreenShareActive(true);
-      isScreenShareActiveRef.current = true;
-
-      // Reset context analyzer for screen share source
-      if (videoContextAnalyzerRef.current) {
-        videoContextAnalyzerRef.current.reset();
-      }
-
-      // Use screen stream in video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      // Handle "Stop sharing" from browser UI
-      stream.getVideoTracks()[0].onended = () => {
-        stopScreenShare();
-      };
-
-      // Ensure transmission uses the new stream content
-      if (connectionState === ConnectionState.CONNECTED) {
-        startFrameTransmission();
-      }
-      
-      addToast('success', 'Partage d\'écran', 'Partage d\'écran activé');
-
-    } catch (e) {
-      console.error("Error sharing screen", e);
-      // Don't show error if user cancelled
-      if ((e as any).name !== 'NotAllowedError') {
-        addToast('error', 'Erreur', "Impossible de partager l'écran");
-      }
-      setIsScreenShareActive(false);
-    }
-  };
-
-  const stopScreenShare = async () => {
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach(t => t.stop());
-      screenStreamRef.current = null;
-    }
-    setIsScreenShareActive(false);
-    isScreenShareActiveRef.current = false;
-
-    // Reset context analyzer when switching back to camera
-    if (videoContextAnalyzerRef.current) {
-      videoContextAnalyzerRef.current.reset();
-    }
-
-    // Restore camera if active
-    if (isVideoActive && videoStreamRef.current && videoRef.current) {
-       videoRef.current.srcObject = videoStreamRef.current;
-       await videoRef.current.play();
-    } else if (videoRef.current) {
-       videoRef.current.srcObject = null;
-    }
-  };
-
-  const toggleScreenShare = () => {
-    if (isScreenShareActive) {
-      stopScreenShare();
-    } else {
-      startScreenShare();
-    }
-  };
-
-  // Video Stream Management
-  useEffect(() => {
-    const startVideo = async () => {
-        if (isScreenShareActive) return;
-
-        if (isVideoActive && !videoStreamRef.current) {
-            console.log('[App] 🎥 Démarrage de la caméra...', { isVideoActive, selectedCameraId });
-            try {
-                const constraints: MediaStreamConstraints = {
-                  video: selectedCameraId ? { deviceId: { exact: selectedCameraId } } : true
-                };
-                console.log('[App] 📹 Contraintes caméra:', constraints);
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('[App] ✅ Stream caméra obtenu:', stream);
-                videoStreamRef.current = stream;
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    await videoRef.current.play();
-                    console.log('[App] ✅ Vidéo démarrée avec succès');
-                }
-                
-                // Reset context analyzer for new video stream
-                if (videoContextAnalyzerRef.current) {
-                    videoContextAnalyzerRef.current.reset();
-                }
-                
-                // Start sending frames if we are connected
-                if (connectionState === ConnectionState.CONNECTED) {
-                    console.log('[App] 📤 Démarrage de l\'envoi des frames...');
-                    startFrameTransmission();
-                }
-            } catch (e) {
-                console.error("[App] ❌ Échec d'accès à la caméra", e);
-                addToast('error', 'Erreur Caméra', "Impossible d'accéder à la caméra. Vérifiez les permissions.");
-                setIsVideoActive(false);
-            }
-        } else if (!isVideoActive && videoStreamRef.current) {
-            console.log('[App] 🛑 Arrêt de la caméra...');
-            
-            // Arrêter tous les tracks vidéo
-            videoStreamRef.current.getTracks().forEach(t => {
-                t.stop();
-                console.log('[App] 🛑 Track arrêté:', t.kind, t.label);
-            });
-            videoStreamRef.current = null;
-            
-            // Nettoyer la vidéo
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
-                videoRef.current.pause();
-                console.log('[App] 🛑 Élément vidéo nettoyé');
-            }
-            
-            // Only stop transmission if screen share is also not active
-            if (!isScreenShareActive && frameIntervalRef.current) {
-                clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
-                clearInterval(frameIntervalRef.current as number);
-                frameIntervalRef.current = null;
-                console.log('[App] 🛑 Transmission de frames arrêtée');
-            }
-        }
-    };
-    startVideo();
-  }, [isVideoActive, connectionState, isScreenShareActive, selectedCameraId]);
-
-  const startFrameTransmission = () => {
-      if (frameIntervalRef.current) {
-          clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
-          clearInterval(frameIntervalRef.current as number);
-      }
-      
-      // Initialize context analyzer if not already done
-      if (!videoContextAnalyzerRef.current) {
-          videoContextAnalyzerRef.current = new VideoContextAnalyzer();
-      }
-      
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
-      if (!canvas || !video) return;
-      const ctx = canvas.getContext('2d', { willReadFrequently: false });
-      if (!ctx) return;
-
-      let lastFrameTime = 0;
-      const targetInterval = isScreenShareActiveRef.current ? 500 : 1000;
-      
-      // Optimized frame capture with downscaling for performance
-      const captureAndSend = async () => {
-          const now = Date.now();
-          if (now - lastFrameTime < targetInterval) {
-              frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval - (now - lastFrameTime));
-              return;
-          }
-          
-          lastFrameTime = now;
-          const isScreenSharing = isScreenShareActiveRef.current;
-          const currentStream = isScreenSharing ? screenStreamRef.current : videoStreamRef.current;
-          
-          if (!sessionRef.current || !currentStream || video.readyState !== 4) {
-              frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
-              return;
-          }
-
-          try {
-              const sourceWidth = video.videoWidth;
-              const sourceHeight = video.videoHeight;
-              
-              if (sourceWidth === 0 || sourceHeight === 0) {
-                  frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
-                  return;
-              }
-
-              // Downscale for performance (max 1280px width for screen, 640px for camera)
-              const maxWidth = isScreenSharing ? 1280 : 640;
-              const scale = Math.min(1, maxWidth / sourceWidth);
-              const targetWidth = Math.floor(sourceWidth * scale);
-              const targetHeight = Math.floor(sourceHeight * scale);
-
-              // Only resize canvas if dimensions changed
-              if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-                  canvas.width = targetWidth;
-                  canvas.height = targetHeight;
-              }
-
-              // Draw with scaling for better performance
-              ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-              
-              // Context Awareness: Analyze frame before sending
-              const analysis = videoContextAnalyzerRef.current.analyzeFrame(canvas, isScreenSharing);
-              
-              // Only send frame if analysis indicates significant change or first frame
-              if (!analysis.shouldSend) {
-                  frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
-                  return;
-              }
-              
-              // Use lower quality for faster encoding (still readable)
-              const quality = isScreenSharing ? 0.75 : 0.55;
-              
-              // Use setTimeout to defer heavy encoding off main thread
-              setTimeout(() => {
-                  try {
-                      const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
-                      
-                      if (sessionRef.current) {
-                          // Send frame with optional context prompt
-                          const input: any = {
-                              media: {
-                                  mimeType: 'image/jpeg',
-                                  data: base64
-                              }
-                          };
-                          
-                          // Add context prompt as text input if available (Gemini Live supports mixed inputs)
-                          if (analysis.contextPrompt) {
-                              // Note: Gemini Live API may support sending text context with media
-                              // For now, we log it for debugging. In future, this could be sent as a tool call or text input
-                              console.debug('Context vidéo:', analysis.contextPrompt);
-                          }
-                          
-                          sessionRef.current.sendRealtimeInput(input);
-                      }
-                  } catch (e) {
-                      console.warn("Error encoding/sending frame", e);
-                  }
-              }, 0);
-              
-          } catch (e) {
-              console.warn("Error capturing frame", e);
-          }
-          
-          frameIntervalRef.current = window.setTimeout(captureAndSend, targetInterval);
-      };
-
-      captureAndSend();
-  };
+  // Vision logic gérée via useVisionManager
 
   // Activer le contexte audio au premier clic sur la page
   useEffect(() => {
@@ -952,13 +542,6 @@ const App: React.FC = () => {
   useEffect(() => {
     return () => {
       disconnect();
-      if (videoStreamRef.current) {
-          videoStreamRef.current.getTracks().forEach(t => t.stop());
-      }
-      if (frameIntervalRef.current) {
-          clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
-          clearInterval(frameIntervalRef.current as number);
-      }
       if (wakeWordDetectorRef.current) {
         wakeWordDetectorRef.current.destroy();
       }
@@ -1025,6 +608,8 @@ const App: React.FC = () => {
             disconnect();
         }
       };
+
+      const documentsContext = await loadDocumentsContext();
 
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -1520,9 +1105,7 @@ const App: React.FC = () => {
           },
           systemInstruction: buildSystemInstruction(
             currentPersonalityRef.current.systemInstruction,
-            uploadedDocumentsRef.current.length > 0 
-              ? formatDocumentForContext(uploadedDocumentsRef.current)
-              : undefined
+            documentsContext
           ),
           tools: buildToolsConfig(isFunctionCallingEnabled, isGoogleSearchEnabled),
         }
@@ -1549,7 +1132,7 @@ const App: React.FC = () => {
         }, 3000);
       }
     }
-  }, [isVideoActive, selectedVoice]);
+  }, [isVideoActive, selectedVoice, loadDocumentsContext]);
 
   // Mettre à jour la ref pour le wake word detector
   useEffect(() => {
@@ -1593,30 +1176,12 @@ const App: React.FC = () => {
         outputAudioContextRef.current = null;
     }
 
-    if (frameIntervalRef.current) {
-        clearTimeout(frameIntervalRef.current as NodeJS.Timeout);
-        clearInterval(frameIntervalRef.current as number);
-        frameIntervalRef.current = null;
-    }
-
     if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
     }
 
-    // Cleanup video stream
-    if (videoStreamRef.current) {
-        videoStreamRef.current.getTracks().forEach(t => t.stop());
-        videoStreamRef.current = null;
-    }
-    
-    // Cleanup screen share
-    if (screenStreamRef.current) {
-        screenStreamRef.current.getTracks().forEach(t => t.stop());
-        screenStreamRef.current = null;
-    }
-    setIsScreenShareActive(false);
-    isScreenShareActiveRef.current = false;
+    resetVisionState();
 
     setConnectionState(ConnectionState.DISCONNECTED);
     setIsTalking(false);
