@@ -1495,7 +1495,7 @@ export async function executeFunction(functionCall: FunctionCall): Promise<any> 
           result: 'ok',
           value: value,
           percentage: percentage,
-          result: Number(result.toFixed(2))
+          calculatedValue: Number(result.toFixed(2))
         };
       } catch (error) {
         return {
