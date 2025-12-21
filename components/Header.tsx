@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className={`absolute top-0 left-0 w-full p-4 md:p-6 lg:p-6 xl:p-8 flex justify-between items-start md:items-center pointer-events-none z-50 transition-all duration-500 ${
+      className={`absolute top-0 left-0 w-full p-1.5 md:p-2 lg:p-2 xl:p-2.5 flex justify-between items-center pointer-events-none z-50 transition-all duration-500 ${
         isScrolled 
           ? 'bg-gradient-to-b from-[#131c24ee] via-[#172233cc] to-transparent backdrop-blur-xl border-b border-white/20 shadow-2xl' 
           : 'bg-gradient-to-b from-[#131c24cc] via-[#1722337a] to-transparent backdrop-blur-lg border-b border-white/10'
@@ -134,9 +134,9 @@ const Header: React.FC<HeaderProps> = ({
       />
 
       {/* Left: Brand & Identity */}
-      <div className="flex items-center gap-3 lg:gap-4 xl:gap-6 pointer-events-auto group select-none relative z-10">
+      <div className="flex items-center gap-1.5 lg:gap-1.5 xl:gap-2 pointer-events-auto group select-none relative z-10">
         <h1
-          className="font-display text-lg md:text-xl lg:text-2xl xl:text-2xl font-bold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-1"
+          className="font-display text-sm md:text-base lg:text-lg xl:text-lg font-bold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-0.5"
           style={{
             textShadow: `0 0 24px ${currentPersonality.themeColor}40, 0 2px 4px rgba(0,0,0,0.18), 0 1px 0 #0007`,
             filter: isConnected ? `drop-shadow(0 0 6px ${currentPersonality.themeColor}30)` : undefined
@@ -151,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({
             >NEUROCHAT</span>
           </span>
           <span
-            className="font-extrabold relative ml-1 px-2 py-0.5 rounded-lg shadow-lg bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-300 bg-clip-text text-transparent border border-sky-600/30"
+            className="font-extrabold relative ml-0.5 px-1 py-0.5 rounded-md shadow-lg bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-300 bg-clip-text text-transparent border border-sky-600/30"
             style={{
               backgroundSize: '250% 250%',
               animation: 'gradient-shift 4s ease-in-out infinite',
@@ -188,16 +188,16 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Controls & Status */}
-      <div className="flex flex-row items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 pointer-events-auto relative z-10">
+      <div className="flex flex-row items-center gap-1 sm:gap-1.5 md:gap-1.5 lg:gap-2 xl:gap-2 pointer-events-auto relative z-10">
         {/* Status Pill - Moved to right side */}
         <div className="hidden sm:block">
           <StatusPill connectionState={connectionState} />
         </div>
 
         {/* Separator with enhanced design */}
-        <div className="hidden sm:flex flex-col items-center mx-1 md:mx-2">
+        <div className="hidden sm:flex flex-col items-center mx-0.5 md:mx-1">
           <div 
-            className={`h-8 md:h-10 w-px transition-all duration-500 ${
+            className={`h-5 md:h-6 w-px transition-all duration-500 ${
               isConnected 
                 ? 'bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent opacity-100' 
                 : isConnecting
@@ -215,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Controls Container with glassmorphism */}
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-xl glass-intense border border-white/10 backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:shadow-lg"
+        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-1.5 px-1 sm:px-1.5 md:px-1.5 py-0.5 sm:py-1 md:py-1 rounded-lg glass-intense border border-white/10 backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:shadow-lg"
           style={{
             boxShadow: isConnected 
               ? `0 4px 20px rgba(0, 0, 0, 0.3), 0 0 40px ${currentPersonality.themeColor}10`
@@ -233,7 +233,7 @@ const Header: React.FC<HeaderProps> = ({
             >
               <div className="relative">
                 <div className={`
-                  relative p-1.5 sm:p-2 rounded-lg transition-all duration-300
+                  relative p-0.5 sm:p-1 rounded-md transition-all duration-300
                   ${isConnected 
                     ? 'opacity-50 cursor-not-allowed' 
                     : 'opacity-100 hover:bg-white/5 active:scale-95 cursor-pointer'
@@ -267,7 +267,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Mini separator between controls */}
-          <div className="h-6 w-px bg-white/10 mx-1" />
+          <div className="h-4 w-px bg-white/10 mx-0.5" />
 
           {/* Voice Selector with enhanced design */}
           <div className="relative group">
@@ -287,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({
                   : 'opacity-100 hover:scale-105 active:scale-95'
                 }
               `}>
-                <div className="p-1 rounded-lg group-hover:bg-white/5 transition-colors duration-300">
+                <div className="p-0.5 rounded-md group-hover:bg-white/5 transition-colors duration-300">
                   <VoiceSelector
                     currentVoice={selectedVoice}
                     onVoiceChange={onVoiceChange}

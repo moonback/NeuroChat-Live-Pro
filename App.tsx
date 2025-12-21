@@ -1367,7 +1367,7 @@ const App: React.FC = () => {
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
-        <div className="flex-grow flex flex-col lg:flex-row lg:pt-20 xl:pt-24">
+        <div className="flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
           {/* Desktop Sidebar - Contrôles et informations */}
           <aside className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 lg:border-r lg:border-white/10 lg:bg-black/20 lg:backdrop-blur-sm lg:p-6 xl:p-8 lg:gap-6 xl:gap-8 lg:overflow-y-auto custom-scrollbar">
             {/* Status Panel */}
