@@ -97,9 +97,9 @@ const App: React.FC = () => {
   
   // Wake Word Detection State
   const [isWakeWordEnabled, setIsWakeWordEnabled] = useState<boolean>(() => {
-    // Charger la préférence depuis localStorage, par défaut activé
+    // Charger la préférence depuis localStorage, par défaut désactivé
     const saved = localStorage.getItem('wakeWordEnabled');
-    return saved !== null ? saved === 'true' : true;
+    return saved !== null ? saved === 'true' : false; // Désactivé par défaut
   });
 
   // Tools State
