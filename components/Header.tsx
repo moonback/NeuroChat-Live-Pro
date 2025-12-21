@@ -115,13 +115,13 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className={`absolute top-0 left-0 w-full p-1.5 md:p-2 lg:p-2 xl:p-2.5 flex justify-between items-center pointer-events-none z-50 transition-all duration-500 ${
+      className={`absolute top-0 left-0 w-full p-1 md:p-1.5 lg:p-1.5 xl:p-2 flex justify-between items-center pointer-events-none z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-gradient-to-b from-[#131c24ee] via-[#172233cc] to-transparent backdrop-blur-xl border-b border-white/20 shadow-2xl' 
-          : 'bg-gradient-to-b from-[#131c24cc] via-[#1722337a] to-transparent backdrop-blur-lg border-b border-white/10'
+          ? 'bg-gradient-to-b from-[#131c24f0] via-[#172233e0] to-transparent backdrop-blur-md border-b border-white/15' 
+          : 'bg-gradient-to-b from-[#131c24d0] via-[#17223380] to-transparent backdrop-blur-sm border-b border-white/8'
       }`}
       style={{
-        boxShadow: isScrolled ? `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px ${currentPersonality.themeColor}15` : undefined
+        boxShadow: isScrolled ? `0 2px 16px rgba(0, 0, 0, 0.3), 0 0 24px ${currentPersonality.themeColor}08` : undefined
       }}
     >
       {/* Animated background gradient overlay */}
@@ -134,12 +134,12 @@ const Header: React.FC<HeaderProps> = ({
       />
 
       {/* Left: Brand & Identity */}
-      <div className="flex items-center gap-1.5 lg:gap-1.5 xl:gap-2 pointer-events-auto group select-none relative z-10">
+      <div className="flex items-center gap-1.5 lg:gap-1.5 xl:gap-2 pointer-events-auto group select-none relative z-10 animate-slide-in-left">
         <h1
-          className="font-display text-sm md:text-base lg:text-lg xl:text-lg font-bold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-0.5"
+          className="font-display text-xs md:text-sm lg:text-base xl:text-base font-bold tracking-tight text-white leading-none transition-all duration-300 cursor-default flex items-center gap-0.5 hover-scale-sm"
           style={{
-            textShadow: `0 0 24px ${currentPersonality.themeColor}40, 0 2px 4px rgba(0,0,0,0.18), 0 1px 0 #0007`,
-            filter: isConnected ? `drop-shadow(0 0 6px ${currentPersonality.themeColor}30)` : undefined
+            textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
+            filter: isConnected ? `drop-shadow(0 0 4px ${currentPersonality.themeColor}20)` : undefined
           }}
         >
           <span className="relative">
@@ -151,13 +151,9 @@ const Header: React.FC<HeaderProps> = ({
             >NEUROCHAT</span>
           </span>
           <span
-            className="font-extrabold relative ml-0.5 px-1 py-0.5 rounded-md shadow-lg bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-300 bg-clip-text text-transparent border border-sky-600/30"
+            className="font-extrabold relative ml-0.5 px-1 py-0.5 rounded border border-sky-500/40 bg-sky-500/10 text-sky-300 text-[9px] md:text-[10px] tracking-wider"
             style={{
-              backgroundSize: '250% 250%',
-              animation: 'gradient-shift 4s ease-in-out infinite',
-              textShadow: `0 2px 24px ${currentPersonality.themeColor}55, 0 2px 8px rgba(14,165,233,0.22), 0 3px 16px #0ea5e980`,
-              letterSpacing: '0.12em',
-              filter: 'drop-shadow(0 4px 24px rgba(14,165,233,0.12))'
+              letterSpacing: '0.1em'
             }}
             title="Version professionnelle avancée"
           >
@@ -215,11 +211,11 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Controls Container with glassmorphism */}
-        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-1.5 px-1 sm:px-1.5 md:px-1.5 py-0.5 sm:py-1 md:py-1 rounded-lg glass-intense border border-white/10 backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:shadow-lg"
+        <div className="flex items-center gap-1 sm:gap-1 md:gap-1.5 px-1 sm:px-1.5 md:px-1.5 py-0.5 sm:py-0.5 md:py-1 rounded-md glass border border-white/8 backdrop-blur-sm transition-all duration-300 hover:border-white/15 glass-hover animate-slide-in-right"
           style={{
             boxShadow: isConnected 
-              ? `0 4px 20px rgba(0, 0, 0, 0.3), 0 0 40px ${currentPersonality.themeColor}10`
-              : '0 4px 20px rgba(0, 0, 0, 0.2)'
+              ? `0 2px 8px rgba(0, 0, 0, 0.2), 0 0 16px ${currentPersonality.themeColor}08`
+              : '0 2px 8px rgba(0, 0, 0, 0.15)'
           }}
         >
           {/* Document Uploader with enhanced design */}
@@ -248,10 +244,7 @@ const Header: React.FC<HeaderProps> = ({
                   {/* Enhanced notification badge */}
                   {uploadedDocuments.length > 0 && (
                     <span 
-                      className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full border-2 border-[#131c24] flex items-center justify-center text-[10px] font-bold text-white shadow-lg animate-pulse"
-                      style={{
-                        boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3)'
-                      }}
+                      className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 bg-indigo-500 rounded-full border border-[#131c24] flex items-center justify-center text-[9px] font-bold text-white"
                     >
                       {uploadedDocuments.length}
                     </span>

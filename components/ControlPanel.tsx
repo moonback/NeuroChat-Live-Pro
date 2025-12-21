@@ -93,7 +93,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   // Button base classes for DRY (improvements)
   const baseBtn =
-    "group relative flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 xl:gap-3 px-3 sm:px-4 md:px-5 lg:px-6 xl:px-7 py-2 sm:py-2.5 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl glass border font-body text-[10px] sm:text-xs lg:text-sm xl:text-base font-semibold transition-all duration-300 hover:scale-[1.05] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 touch-manipulation select-none";
+    "group relative flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2.5 sm:px-3 md:px-4 lg:px-4 py-1.5 sm:py-2 md:py-2 rounded-md glass border border-white/8 font-body text-[10px] sm:text-xs md:text-sm font-medium transition-all duration-200 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-1 focus:ring-white/20 touch-manipulation select-none hover-lift ripple";
 
   // Render camera selector only when at least 2 cameras and video is on
   const renderCameraSelector = isConnected && isVideoActive && availableCameras.length > 1;
@@ -111,34 +111,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   // Main render
   return (
-    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-8 sm:pb-6 md:pb-16 lg:pb-8 xl:pb-12 space-y-2 sm:space-y-3 md:space-y-8 lg:space-y-6 xl:space-y-8 w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-0 pointer-events-none safe-area-bottom">
+    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-4 sm:pb-4 md:pb-8 lg:pb-6 xl:pb-8 space-y-2 sm:space-y-2 md:space-y-4 lg:space-y-4 xl:space-y-5 w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-0 pointer-events-none safe-area-bottom">
       {/* Main Panel */}
       <div
-        className="pointer-events-auto glass-intense rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 w-full text-center transition-all duration-500 flex flex-col items-center animate-fade-in relative group max-h-[85vh] sm:max-h-none overflow-y-auto"
+        className="pointer-events-auto glass-intense rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 xl:p-7 w-full text-center transition-all duration-300 flex flex-col items-center animate-fade-in relative group max-h-[85vh] sm:max-h-none overflow-y-auto hover-lift"
         style={{
-          boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 80px ${currentPersonality.themeColor}15, inset 0 1px 0 rgba(255,255,255,0.1)`,
+          boxShadow: `0 4px 20px rgba(0,0,0,0.3), 0 0 32px ${currentPersonality.themeColor}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}
       >
-        {/* Background & Shimmer */}
+        {/* Background */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           aria-hidden="true"
-        >
-          <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"
-            style={{
-              background: `radial-gradient(circle at 50% 50%, ${currentPersonality.themeColor}08, transparent 70%)`,
-            }}
-          ></div>
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-shimmer"></div>
-        </div>
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${currentPersonality.themeColor}05, transparent 70%)`,
+          }}
+        ></div>
 
         {/* Status, latency, input */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-4 mb-2 sm:mb-3 md:mb-4 lg:mb-6 relative z-10">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3 mb-2 sm:mb-2 md:mb-3 lg:mb-4 relative z-10 animate-slide-in-bottom">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative" aria-label={status.text}>
+            <div className="relative animate-breathe" aria-label={status.text}>
               <span
-                className={`block w-3 h-3 rounded-full transition-all duration-300 ${status.class}`}
+                className={`block w-3 h-3 rounded-full transition-all duration-300 ${status.class} animate-glow-pulse-subtle`}
                 aria-live="assertive"
               ></span>
               {(isConnected || isConnecting) && (
@@ -177,31 +172,23 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Assistant personality */}
-        <div className="relative mb-1.5 sm:mb-2 md:mb-3 lg:mb-4 xl:mb-6 w-full z-10">
+        <div className="relative mb-1.5 sm:mb-2 md:mb-2.5 lg:mb-3 xl:mb-4 w-full z-10 animate-fade-in">
           <h1
-            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-display font-black tracking-tight mb-0.5 sm:mb-1 md:mb-1.5 lg:mb-2 xl:mb-3 relative transition-all duration-500 group-hover:scale-105 px-2"
+            className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight mb-0.5 sm:mb-0.5 md:mb-1 lg:mb-1 relative transition-all duration-300 px-2 hover-scale-sm"
             style={{
               color: currentPersonality.themeColor,
-              textShadow: `0 0 40px ${currentPersonality.themeColor}60, 0 0 80px ${currentPersonality.themeColor}30`,
-              filter: "drop-shadow(0 0 20px rgba(99, 102, 241, 0.3))",
+              textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
             }}
           >
             {currentPersonality.name}
-            <span
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 transition-all duration-700 group-hover:w-16 sm:group-hover:w-20 md:group-hover:w-24"
-              style={{
-                background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)`,
-                boxShadow: `0 0 10px ${currentPersonality.themeColor}`,
-              }}
-            ></span>
           </h1>
-          <p className="text-slate-300 font-body text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base 2xl:text-lg font-light max-w-md lg:max-w-lg xl:max-w-xl mx-auto leading-relaxed transition-all duration-300 group-hover:text-slate-200 px-2">
+          <p className="text-slate-400 font-body text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-sm font-light max-w-md lg:max-w-lg xl:max-w-xl mx-auto leading-relaxed transition-all duration-300 px-2">
             {currentPersonality.description}
           </p>
         </div>
 
         {/* Controls Row */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-5 mb-1.5 sm:mb-2 md:mb-3 lg:mb-4 xl:mb-6 relative z-10 px-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 md:gap-2 lg:gap-2.5 xl:gap-3 mb-1.5 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-4 relative z-10 px-2 animate-slide-in-bottom" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
 
           {/* CAMERA TOGGLE */}
           {isConnected && (
@@ -216,15 +203,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }`}
                 style={{
                   boxShadow: isVideoActive
-                    ? '0 0 30px rgba(239, 68, 68, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)'
-                    : '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    ? '0 0 16px rgba(239, 68, 68, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 {isVideoActive && (
-                  <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
+                  <div className="absolute inset-0 bg-red-500/5"></div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
                 {isVideoActive ? (
                   <>
                     <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" tabIndex={-1}>
@@ -286,15 +271,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }`}
                 style={{
                   boxShadow: isScreenShareActive
-                    ? '0 0 30px rgba(99, 102, 241, 0.3), 0 4px 12px rgba(0,0,0,0.2)'
-                    : '0 4px 12px rgba(0,0,0,0.1)'
+                    ? '0 0 16px rgba(99, 102, 241, 0.2), 0 2px 8px rgba(0,0,0,0.15)'
+                    : '0 2px 8px rgba(0,0,0,0.1)'
                 }}
               >
                 {isScreenShareActive && (
-                  <div className="absolute inset-0 bg-indigo-500/10 animate-pulse"></div>
+                  <div className="absolute inset-0 bg-indigo-500/5"></div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
                 {isScreenShareActive ? (
                   <>
                     <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,15 +314,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }`}
                 style={{
                   boxShadow: isWakeWordEnabled
-                    ? '0 0 30px rgba(16,185,129,0.3), 0 4px 12px rgba(0,0,0,0.2)'
-                    : '0 4px 12px rgba(0,0,0,0.1)'
+                    ? '0 0 16px rgba(16,185,129,0.2), 0 2px 8px rgba(0,0,0,0.15)'
+                    : '0 2px 8px rgba(0,0,0,0.1)'
                 }}
               >
                 {isWakeWordEnabled && (
-                  <div className="absolute inset-0 bg-emerald-500/10 animate-pulse"></div>
+                  <div className="absolute inset-0 bg-emerald-500/5"></div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
                 {isWakeWordEnabled ? (
                   <>
                     <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -368,12 +349,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 aria-label="Modifier la personnalité"
                 className={`${baseBtn} border-white/10 text-slate-300 hover:border-white/30 hover:text-white`}
                 style={{
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
-                <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 relative z-10 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 <span className="relative z-10 hidden sm:inline">Modifier</span>
@@ -389,12 +368,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 aria-label="Ouvrir les actions rapides"
                 className={`lg:hidden ${baseBtn} border-white/10 text-slate-300 hover:border-white/30 hover:text-white`}
                 style={{
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
-                <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 relative z-10 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 <span className="relative z-10 hidden sm:inline">Actions</span>
@@ -421,15 +398,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     }`}
                     style={{
                       boxShadow: isFunctionCallingEnabled
-                        ? '0 0 30px rgba(59,130,246,0.3), 0 4px 12px rgba(0,0,0,0.2)'
-                        : '0 4px 12px rgba(0,0,0,0.1)',
+                        ? '0 0 16px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.15)'
+                        : '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                   >
                     {isFunctionCallingEnabled && (
-                      <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                      <div className="absolute inset-0 bg-blue-500/5"></div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
                     <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
@@ -453,15 +428,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     }`}
                     style={{
                       boxShadow: isGoogleSearchEnabled
-                        ? '0 0 30px rgba(34,197,94,0.3), 0 4px 12px rgba(0,0,0,0.2)'
-                        : '0 4px 12px rgba(0,0,0,0.1)',
+                        ? '0 0 16px rgba(34,197,94,0.2), 0 2px 8px rgba(0,0,0,0.15)'
+                        : '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                   >
                     {isGoogleSearchEnabled && (
-                      <div className="absolute inset-0 bg-green-500/10 animate-pulse"></div>
+                      <div className="absolute inset-0 bg-green-500/5"></div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <span className="absolute inset-0 rounded-xl bg-white/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-300"></span>
                     <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -474,25 +447,23 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Main Action Button */}
-        <div className="w-full flex justify-center relative z-10 mt-1 sm:mt-0">
+        <div className="w-full flex justify-center relative z-10 mt-1 sm:mt-0 animate-slide-in-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
           {!isConnected ? (
             <button
               onClick={onConnect}
               disabled={isConnecting}
               aria-label={isConnecting ? "Connexion en cours..." : "Activer NeuroChat"}
-              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-6 md:px-10 lg:px-12 xl:px-16 py-2.5 sm:py-3 md:py-3.5 lg:py-4 xl:py-5 rounded-xl sm:rounded-2xl font-display font-black text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden focus:outline-none focus:ring-4 focus:ring-white/30 touch-manipulation min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px] xl:min-h-[64px]"
+              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-5 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl font-display font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[40px] sm:min-h-[44px] md:min-h-[48px] lg:min-h-[52px] xl:min-h-[56px] hover-lift hover-glow ripple"
               style={{
                 background: isConnecting
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.8), rgba(226,232,240,0.8))'
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(226,232,240,0.9))'
                   : 'linear-gradient(135deg,#fff,#f1f5f9)',
                 color: '#0f0f19',
                 boxShadow: isConnecting
-                  ? '0 8px 32px rgba(255,255,255,0.2), 0 0 60px rgba(255,255,255,0.15)'
-                  : '0 8px 32px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.2)',
+                  ? '0 4px 16px rgba(255,255,255,0.2), 0 0 24px rgba(255,255,255,0.1)'
+                  : '0 4px 20px rgba(255,255,255,0.25), 0 0 32px rgba(255,255,255,0.15)',
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-              <span className="absolute inset-0 rounded-2xl bg-white/30 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-500"></span>
               <span className="relative z-10 flex items-center justify-center gap-3">
                 {isConnecting ? (
                   <>
@@ -522,14 +493,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               onClick={onDisconnect}
               aria-label="Terminer la session"
-              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-6 md:px-10 lg:px-12 xl:px-16 py-2.5 sm:py-3 md:py-3.5 lg:py-4 xl:py-5 glass-intense rounded-xl sm:rounded-2xl font-display font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl tracking-wide text-red-400 border-2 border-red-500/40 transition-all duration-300 hover:scale-[1.03] hover:border-red-500/60 active:scale-[0.97] overflow-hidden focus:outline-none focus:ring-4 focus:ring-red-500/30 touch-manipulation min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px] xl:min-h-[64px]"
+              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-5 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-3.5 glass-intense rounded-lg sm:rounded-xl font-display font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl tracking-wide text-red-400 border border-red-500/40 transition-all duration-200 hover:scale-[1.02] hover:border-red-500/60 active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-red-500/20 touch-manipulation min-h-[40px] sm:min-h-[44px] md:min-h-[48px] lg:min-h-[52px] xl:min-h-[56px] hover-lift ripple"
               style={{
-                boxShadow: '0 8px 32px rgba(239,68,68,0.2), 0 0 60px rgba(239,68,68,0.15)'
+                boxShadow: '0 4px 16px rgba(239,68,68,0.15), 0 0 24px rgba(239,68,68,0.1)'
               }}
             >
-              <div className="absolute inset-0 bg-red-500/0 group-hover:bg-red-500/10 transition-colors duration-300"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-              <span className="absolute inset-0 rounded-2xl bg-red-500/20 scale-0 group-active:scale-100 opacity-0 group-active:opacity-100 transition-all duration-500"></span>
+              <div className="absolute inset-0 bg-red-500/0 group-hover:bg-red-500/5 transition-colors duration-200"></div>
               <span className="relative z-10 flex items-center justify-center gap-3">
                 <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>

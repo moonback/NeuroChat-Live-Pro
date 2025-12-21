@@ -1369,9 +1369,9 @@ const App: React.FC = () => {
         {/* Desktop Layout: Sidebar + Main Content */}
         <div className="flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
           {/* Desktop Sidebar - Contrôles et informations */}
-          <aside className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 lg:border-r lg:border-white/10 lg:bg-black/20 lg:backdrop-blur-sm lg:p-6 xl:p-8 lg:gap-6 xl:gap-8 lg:overflow-y-auto custom-scrollbar">
+          <aside className="hidden lg:flex lg:flex-col lg:w-72 xl:w-80 lg:border-r lg:border-white/8 lg:bg-black/20 lg:backdrop-blur-sm lg:p-4 xl:p-5 lg:gap-4 xl:gap-5 lg:overflow-y-auto custom-scrollbar animate-slide-in-left">
             {/* Status Panel */}
-            <div className="glass-intense rounded-2xl p-5 xl:p-6 space-y-4">
+            <div className="glass-intense rounded-xl p-4 xl:p-4 space-y-3 hover-lift glass-hover animate-fade-in">
               <h3 className="text-sm xl:text-base font-display font-bold text-white uppercase tracking-wider mb-4">
                 État du Système
               </h3>
