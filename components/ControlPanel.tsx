@@ -156,47 +156,89 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Personality Selector (Visible when disconnected) */}
       {!isConnected && (
-         <div className="pointer-events-auto mb-8 text-center animate-fade-in space-y-2">
-            {onSelectPersonality ? (
-                <div className="relative group inline-block">
-                    <select
-                        value={currentPersonality.id}
-                        onChange={(e) => {
-                            const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
-                            if (selected) onSelectPersonality(selected);
-                        }}
-                        className="appearance-none bg-transparent text-3xl md:text-4xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 py-2 px-8 rounded-2xl hover:bg-white/5"
-                        style={{
-                                color: currentPersonality.themeColor,
-                                textShadow: `0 0 30px ${currentPersonality.themeColor}40`,
-                        }}
-                    >
-                        {AVAILABLE_PERSONALITIES.map(p => (
-                            <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
-                                {p.name}
-                            </option>
-                        ))}
-                         {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
-                            <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
-                                {currentPersonality.name} (Personnalisé)
-                            </option>
-                        )}
-                    </select>
-                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
+        <div className="pointer-events-auto mb-8 text-center animate-fade-in space-y-3">
+          {/* High contrast glass card */}
+          <div
+            className="mx-auto w-full max-w-xl rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl px-6 py-6 relative overflow-hidden transition-all duration-500 hover:border-white/20"
+            style={{
+              boxShadow: `0 20px 70px rgba(0,0,0,0.6), 0 0 0 1px ${currentPersonality.themeColor}20, 0 0 40px ${currentPersonality.themeColor}10`,
+            }}
+          >
+            {/* Top gradient accent */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-px opacity-50"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)`
+              }}
+            />
+
+            <div className="relative flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <span
+                  className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]"
+                  style={{ color: currentPersonality.themeColor, backgroundColor: currentPersonality.themeColor }}
+                />
+                <span className="text-[10px] uppercase tracking-[0.2em] text-white/90 font-bold">
+                  Personnalité Active
+                </span>
+              </div>
+
+              {onSelectPersonality ? (
+                <div className="relative group inline-block mt-1">
+                  <select
+                    value={currentPersonality.id}
+                    onChange={(e) => {
+                      const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
+                      if (selected) onSelectPersonality(selected);
+                    }}
+                    className="appearance-none bg-transparent text-3xl md:text-5xl font-display font-black tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-[1.02] py-2 px-12 rounded-2xl hover:bg-white/5"
+                    style={{
+                      color: '#ffffff',
+                      textShadow: `0 0 30px ${currentPersonality.themeColor}60, 0 2px 4px rgba(0,0,0,0.5)`,
+                    }}
+                  >
+                    {AVAILABLE_PERSONALITIES.map(p => (
+                      <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
+                        {p.name}
+                      </option>
+                    ))}
+                    {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
+                      <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
+                        {currentPersonality.name} (Personnalisé)
+                      </option>
+                    )}
+                  </select>
+
+                  {/* Chevron indicators */}
+                  <div className="absolute -right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </div>
                 </div>
-            ) : (
-                <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight" style={{ color: currentPersonality.themeColor }}>
-                    {currentPersonality.name}
+              ) : (
+                <h1
+                  className="text-3xl md:text-5xl font-display font-black tracking-tight mt-1"
+                  style={{
+                    color: '#ffffff',
+                    textShadow: `0 0 30px ${currentPersonality.themeColor}60, 0 2px 4px rgba(0,0,0,0.5)`,
+                  }}
+                >
+                  {currentPersonality.name}
                 </h1>
-            )}
-            <p className="text-slate-400 font-light text-sm max-w-md mx-auto leading-relaxed px-4">
+              )}
+
+              <p className="text-slate-200 font-medium text-sm md:text-base max-w-lg mx-auto leading-relaxed px-4 text-center text-shadow-sm">
                 {currentPersonality.description}
-            </p>
-         </div>
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main Control Dock */}

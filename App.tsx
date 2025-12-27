@@ -18,11 +18,13 @@ import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
 import TasksViewer from './components/TasksViewer';
 import AgendaViewer from './components/AgendaViewer';
+import ConversationsViewer from './components/ConversationsViewer';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
 import VideoOverlay from './components/VideoOverlay';
+import { addTurn, createConversation, getConversation, getUserProfile, updateConversation } from './utils/conversationsDb';
 
 const deserializeDocuments = (raw: string) => {
   const parsed = JSON.parse(raw);
@@ -83,9 +85,15 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isTasksViewerOpen, setIsTasksViewerOpen] = useState(false);
   const [isAgendaViewerOpen, setIsAgendaViewerOpen] = useState(false);
+  const [isConversationsViewerOpen, setIsConversationsViewerOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
+
+  // Conversation + transcription
+  const currentConversationIdRef = useRef<string | null>(null);
+  const userSpeechRecognitionRef = useRef<any>(null);
+  const assistantTextBufferRef = useRef<string>('');
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
@@ -429,6 +437,14 @@ const App: React.FC = () => {
 
       const documentsContext = await loadDocumentsContext();
 
+      // Charger profil (mémoire long terme) pour enrichir l'instruction système
+      const profile = await getUserProfile();
+      const memoryContext =
+        (profile.displayName ? `Nom utilisateur: ${profile.displayName}\n` : '') +
+        (profile.timezone ? `Timezone: ${profile.timezone}\n` : '') +
+        (profile.preferencesText ? `Préférences: ${profile.preferencesText}\n` : '');
+      const memoryBlock = memoryContext.trim().length > 0 ? `\n\n[USER_PROFILE]\n${memoryContext.trim()}\n[/USER_PROFILE]` : '';
+
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
@@ -439,6 +455,54 @@ const App: React.FC = () => {
             reconnectAttemptsRef.current = 0;
             isReconnectingRef.current = false;
             
+            // Créer une conversation (IndexedDB)
+            createConversation({
+              title: `Conversation — ${new Date().toLocaleString('fr-FR')}`,
+              personalityId: currentPersonalityRef.current.id,
+              voiceName: selectedVoice,
+            })
+              .then((conv) => {
+                currentConversationIdRef.current = conv.id;
+              })
+              .catch((e) => console.warn('[Conversations] Impossible de créer une conversation:', e));
+
+            // Démarrer transcription utilisateur (Web Speech API)
+            try {
+              const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+              if (SpeechRecognition && !userSpeechRecognitionRef.current) {
+                const rec = new SpeechRecognition();
+                rec.continuous = true;
+                rec.interimResults = true;
+                rec.lang = 'fr-FR';
+                rec.onresult = (event: any) => {
+                  const convId = currentConversationIdRef.current;
+                  if (!convId) return;
+                  for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    const transcript = (result[0]?.transcript || '').trim();
+                    if (!transcript) continue;
+                    if (result.isFinal) {
+                      addTurn({
+                        conversationId: convId,
+                        role: 'user',
+                        text: transcript,
+                        source: 'speech',
+                        isFinal: true,
+                      }).catch(() => {});
+                    }
+                  }
+                };
+                rec.onerror = () => {};
+                rec.onend = () => {
+                  userSpeechRecognitionRef.current = null;
+                };
+                rec.start();
+                userSpeechRecognitionRef.current = rec;
+              }
+            } catch (e) {
+              console.warn('[Transcription] Web Speech API indisponible:', e);
+            }
+
             if (isVideoActive) {
                 startFrameTransmission();
             }
@@ -558,6 +622,22 @@ const App: React.FC = () => {
               for (const part of parts) {
                 const text = (part as any).text;
                 if (text && typeof text === 'string' && text.trim().length > 0) {
+                  const convId = currentConversationIdRef.current;
+                  if (convId) {
+                    // On bufferise un peu: le modèle peut envoyer plusieurs chunks
+                    assistantTextBufferRef.current += (assistantTextBufferRef.current ? '\n' : '') + text.trim();
+                    // flush simple
+                    const flush = assistantTextBufferRef.current;
+                    assistantTextBufferRef.current = '';
+                    addTurn({
+                      conversationId: convId,
+                      role: 'assistant',
+                      text: flush,
+                      source: 'model',
+                      isFinal: true,
+                    }).catch(() => {});
+                  }
+
                   const textLower = text.toLowerCase().trim();
                   
                   // Phrases qui indiquent une demande de terminer la session
@@ -813,13 +893,15 @@ const App: React.FC = () => {
           }
         },
         config: {
-          responseModalities: [Modality.AUDIO],
+          // On tente d'activer la sortie texte pour enrichir les transcriptions.
+          // (Si non supporté par le modèle, l'audio reste le canal principal.)
+          responseModalities: [Modality.AUDIO, (Modality as any).TEXT].filter(Boolean) as any,
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } }
           },
           systemInstruction: buildSystemInstruction(
             currentPersonalityRef.current.systemInstruction,
-            documentsContext
+            (documentsContext ?? '') + memoryBlock
           ),
           tools: buildToolsConfig(isFunctionCallingEnabled, isGoogleSearchEnabled),
         }
@@ -854,6 +936,31 @@ const App: React.FC = () => {
   }, [connect]);
 
   const disconnect = (shouldReload: boolean = false) => {
+    // Stop transcription user
+    if (userSpeechRecognitionRef.current) {
+      try {
+        userSpeechRecognitionRef.current.stop();
+        userSpeechRecognitionRef.current = null;
+      } catch (e) {}
+    }
+
+    // Générer un “résumé” simple (MVP) à partir des derniers tours et le stocker
+    const convId = currentConversationIdRef.current;
+    if (convId) {
+      getConversation(convId)
+        .then(async (conv) => {
+          if (!conv) return;
+          const lastTurns = conv.turns.slice(-12).map((t) => `${t.role.toUpperCase()}: ${t.text}`).join('\n');
+          const summary = lastTurns.length > 0 ? lastTurns.split(/\s+/).slice(0, 120).join(' ') + (lastTurns.split(/\s+/).length > 120 ? '…' : '') : '';
+          await updateConversation(convId, {
+            summary,
+            title: conv.meta.title || `Conversation — ${new Date(conv.meta.createdAt).toLocaleString('fr-FR')}`,
+          });
+        })
+        .catch(() => {});
+      currentConversationIdRef.current = null;
+    }
+
     // Arrêter la reconnaissance vocale du chatbot
     if (chatbotSpeechRecognitionRef.current) {
       try {
@@ -1044,6 +1151,11 @@ const App: React.FC = () => {
         }}
       />
 
+      <ConversationsViewer
+        isOpen={isConversationsViewerOpen}
+        onClose={() => setIsConversationsViewerOpen(false)}
+      />
+
       <VideoOverlay
         isVideoActive={isVideoActive}
         isScreenShareActive={isScreenShareActive}
@@ -1067,6 +1179,13 @@ const App: React.FC = () => {
             onVoiceChange={setSelectedVoice}
             uploadedDocuments={uploadedDocuments}
             onDocumentsChange={handleDocumentsChange}
+            isFunctionCallingEnabled={isFunctionCallingEnabled}
+            isGoogleSearchEnabled={isGoogleSearchEnabled}
+            onOpenPersonalityEditor={() => setIsPersonalityEditorOpen(true)}
+            onOpenToolsList={() => setIsToolsListOpen(true)}
+            onOpenConversations={() => setIsConversationsViewerOpen(true)}
+            onToggleFunctionCalling={handleFunctionCallingToggle}
+            onToggleGoogleSearch={handleGoogleSearchToggle}
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
@@ -1083,7 +1202,7 @@ const App: React.FC = () => {
             onMouseLeave={scheduleCloseDesktopSidebar}
             className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 transition-all duration-300 ease-out ${
               isDesktopSidebarOpen
-                ? 'lg:w-72 xl:w-80 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-4 xl:p-6 lg:gap-6 xl:gap-8 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
+                ? 'lg:w-64 xl:w-72 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-3 xl:p-4 lg:gap-4 xl:gap-5 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
                 : 'lg:w-0 xl:w-0 lg:p-0 lg:border-r-0 lg:bg-transparent lg:backdrop-blur-0 shadow-none'
             }`}
           >
@@ -1108,13 +1227,13 @@ const App: React.FC = () => {
               className={`${isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-200`}
             >
             {/* Status Panel */}
-            <div className="glass-intense rounded-2xl p-5 space-y-4 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <div className="glass-intense rounded-2xl p-4 space-y-3 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <h3 className="text-[11px] font-display font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="w-1 h-4 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
                 État du Système
               </h3>
               
-              <div className="space-y-3">
+                <div className="space-y-2.5">
                 {/* Connection Status */}
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
                   <span className="text-xs text-slate-300 font-medium">Connexion</span>
@@ -1178,15 +1297,15 @@ const App: React.FC = () => {
 
             {/* Quick Actions */}
             {connectionState === ConnectionState.DISCONNECTED && (
-              <div className="glass-intense rounded-2xl p-5 space-y-4 animate-slide-in-bottom" style={{ animationDelay: '0.1s' }}>
-                <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+              <div className="glass-intense rounded-2xl p-4 space-y-3 animate-slide-in-bottom lg:hidden" style={{ animationDelay: '0.1s' }}>
+                <h3 className="text-[11px] font-display font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                   <span className="w-1 h-4 bg-gradient-to-b from-orange-400 to-pink-500 rounded-full"></span>
                   Actions
                 </h3>
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => setIsPersonalityEditorOpen(true)}
-                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-white/20 hover:bg-white/5 text-slate-300 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden"
+                    className="group w-full px-3 py-2.5 rounded-xl glass border border-white/5 hover:border-white/20 hover:bg-white/5 text-slate-300 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/0 group-hover:via-purple-500/5 transition-all duration-500"></div>
                     <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-purple-500/20 transition-colors duration-300 text-purple-400">
@@ -1205,7 +1324,7 @@ const App: React.FC = () => {
                   
                   <button
                     onClick={() => handleFunctionCallingToggle(!isFunctionCallingEnabled)}
-                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
+                    className={`group w-full px-3 py-2.5 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
                       isFunctionCallingEnabled 
                         ? 'border-blue-500/30 text-blue-100 hover:shadow-blue-500/10' 
                         : 'border-white/5 text-slate-300 hover:border-white/20'
@@ -1227,7 +1346,7 @@ const App: React.FC = () => {
                   
                   <button
                     onClick={() => handleGoogleSearchToggle(!isGoogleSearchEnabled)}
-                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
+                    className={`group w-full px-3 py-2.5 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
                       isGoogleSearchEnabled 
                         ? 'border-green-500/30 text-green-100 hover:shadow-green-500/10' 
                         : 'border-white/5 text-slate-300 hover:border-white/20'
@@ -1249,7 +1368,7 @@ const App: React.FC = () => {
                   
                   <button
                     onClick={() => setIsToolsListOpen(true)}
-                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-blue-400/30 hover:bg-blue-500/5 text-slate-300 hover:text-blue-100 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 active:scale-[0.98] text-left flex items-center gap-3 mt-2"
+                    className="group w-full px-3 py-2.5 rounded-xl glass border border-white/5 hover:border-blue-400/30 hover:bg-blue-500/5 text-slate-300 hover:text-blue-100 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 active:scale-[0.98] text-left flex items-center gap-3 mt-2"
                   >
                      <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors duration-300 text-slate-400 group-hover:text-blue-400">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1259,6 +1378,21 @@ const App: React.FC = () => {
                     <span className="text-xs font-bold tracking-wide">Bibliothèque</span>
                     <svg className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => setIsConversationsViewerOpen(true)}
+                    className="group w-full px-3 py-2.5 rounded-xl glass border border-white/5 hover:border-indigo-400/30 hover:bg-indigo-500/5 text-slate-300 hover:text-indigo-100 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10 active:scale-[0.98] text-left flex items-center gap-3"
+                  >
+                    <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-indigo-500/20 transition-colors duration-300 text-slate-400 group-hover:text-indigo-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold tracking-wide">Historique & Transcriptions</span>
+                    <svg className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   </button>
                 </div>

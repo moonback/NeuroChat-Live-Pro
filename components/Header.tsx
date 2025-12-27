@@ -12,6 +12,14 @@ interface HeaderProps {
   onVoiceChange: (voice: string) => void;
   uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
+  // Desktop actions
+  isFunctionCallingEnabled: boolean;
+  isGoogleSearchEnabled: boolean;
+  onOpenPersonalityEditor: () => void;
+  onOpenToolsList: () => void;
+  onOpenConversations: () => void;
+  onToggleFunctionCalling: (enabled: boolean) => void;
+  onToggleGoogleSearch: (enabled: boolean) => void;
 }
 
 const StatusPill: React.FC<{ connectionState: ConnectionState }> = ({ connectionState }) => {
@@ -100,6 +108,13 @@ const Header: React.FC<HeaderProps> = ({
   onVoiceChange,
   uploadedDocuments,
   onDocumentsChange,
+  isFunctionCallingEnabled,
+  isGoogleSearchEnabled,
+  onOpenPersonalityEditor,
+  onOpenToolsList,
+  onOpenConversations,
+  onToggleFunctionCalling,
+  onToggleGoogleSearch,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -304,6 +319,75 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </Tooltip>
           </div>
+        </div>
+
+        {/* Desktop Actions (moved from sidebar) */}
+        <div className="hidden lg:flex items-center gap-2 ml-2">
+          {/* Personality */}
+          {!isConnected && (
+            <Tooltip content="Modifier la personnalité">
+              <button
+                onClick={onOpenPersonalityEditor}
+                className="px-3 py-2 rounded-lg glass border border-white/10 text-slate-200 hover:border-white/25 hover:bg-white/5 transition-all"
+              >
+                <span className="text-[11px] font-bold tracking-wider uppercase">Personnalité</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Function calling toggle */}
+          {!isConnected && (
+            <Tooltip content={isFunctionCallingEnabled ? "Désactiver l'appel de fonction" : "Activer l'appel de fonction"}>
+              <button
+                onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                className={`px-3 py-2 rounded-lg border text-[11px] font-bold tracking-wider uppercase transition-all ${
+                  isFunctionCallingEnabled
+                    ? 'bg-blue-500/15 border-blue-500/30 text-blue-200 hover:border-blue-500/50'
+                    : 'glass border-white/10 text-slate-200 hover:border-white/25 hover:bg-white/5'
+                }`}
+              >
+                Fonctions
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Google Search toggle */}
+          {!isConnected && (
+            <Tooltip content={isGoogleSearchEnabled ? "Désactiver Google Search" : "Activer Google Search"}>
+              <button
+                onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                className={`px-3 py-2 rounded-lg border text-[11px] font-bold tracking-wider uppercase transition-all ${
+                  isGoogleSearchEnabled
+                    ? 'bg-green-500/15 border-green-500/30 text-green-200 hover:border-green-500/50'
+                    : 'glass border-white/10 text-slate-200 hover:border-white/25 hover:bg-white/5'
+                }`}
+              >
+                Search
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Tools list */}
+          {!isConnected && (
+            <Tooltip content="Voir les fonctions disponibles">
+              <button
+                onClick={onOpenToolsList}
+                className="px-3 py-2 rounded-lg glass border border-white/10 text-slate-200 hover:border-white/25 hover:bg-white/5 transition-all"
+              >
+                <span className="text-[11px] font-bold tracking-wider uppercase">Outils</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Conversations */}
+          <Tooltip content="Historique & transcriptions">
+            <button
+              onClick={onOpenConversations}
+              className="px-3 py-2 rounded-lg glass border border-indigo-500/20 text-indigo-100 hover:border-indigo-400/40 hover:bg-indigo-500/10 transition-all"
+            >
+              <span className="text-[11px] font-bold tracking-wider uppercase">Historique</span>
+            </button>
+          </Tooltip>
         </div>
       </div>
     </header>
