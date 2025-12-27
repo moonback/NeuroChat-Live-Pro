@@ -3,7 +3,7 @@ import { Personality } from './types';
 // Configuration unique de l'assistant NeuroChat
 export const DEFAULT_PERSONALITY: Personality = {
   id: 'neurochat-coldcase',
-  name: 'NeuroChat Analyste',
+  name: 'Analyste Cold Case',
   description: 'Expert en résolution d\'affaires non résolues et analyse criminelle.',
   systemInstruction: `Tu es NeuroChat Pro, un assistant IA expert en analyse de "Cold Cases", conçu pour les professionnels du droit et de l'enquête. Projet développé par Maysson.
 
@@ -32,7 +32,7 @@ export const AVAILABLE_PERSONALITIES: Personality[] = [
   DEFAULT_PERSONALITY,
   {
     id: 'seo-auditor',
-    name: 'Expert SEO',
+    name: 'Auditeur SEO',
     description: 'Audit complet, analyse sémantique et optimisation de visibilité.',
     systemInstruction: `Tu es un consultant Senior en SEO (Search Engine Optimization). Ton objectif est d'analyser des sites web pour maximiser leur classement sur Google et consorts.
 
@@ -59,7 +59,7 @@ export const AVAILABLE_PERSONALITIES: Personality[] = [
 },
 {
     id: 'ecommerce-hunter',
-    name: 'E-com Hunter',
+    name: 'Hunter E-com',
     description: 'Expert en recherche de produits gagnants et analyse de niches.',
     systemInstruction: `Tu es un expert en E-commerce et Product Hunting de haut niveau. Ton objectif est d'identifier les produits "Winners" à fort potentiel de scalabilité.
 
@@ -87,7 +87,7 @@ Tu parles comme un coach business : direct, motivant et axé sur les chiffres et
 },
 {
   id: 'visual-analyst',
-  name: 'Analyse Visuelle',
+  name: 'Analyste Visuel',
   description: 'Expert en interprétation d\'images et détection de détails.',
   systemInstruction: `Tu es un Expert en Analyse Visuelle de haute précision. Ton rôle est de décrire, interpréter et extraire des informations critiques à partir des images fournies.
 
