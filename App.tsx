@@ -1318,6 +1318,7 @@ const App: React.FC = () => {
             onToggleFunctionCalling={handleFunctionCallingToggle}
             isGoogleSearchEnabled={isGoogleSearchEnabled}
             onToggleGoogleSearch={handleGoogleSearchToggle}
+            onOpenToolsList={() => setIsToolsListOpen(true)}
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}

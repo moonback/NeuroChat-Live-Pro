@@ -100,21 +100,29 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
           <div className="flex items-center gap-3">
-            <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            <h2 className="text-2xl font-display font-bold text-white">
-              Fonctions Disponibles
-            </h2>
-            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm font-semibold">
-              {functions.length}
+            <div className="p-2 rounded-lg bg-blue-500/20 border border-blue-500/30">
+              <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-display font-bold text-white">
+                Fonctions Disponibles
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Liste complète des fonctions accessibles à l'IA
+              </p>
+            </div>
+            <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-sm font-semibold">
+              {functions.length} fonction{functions.length > 1 ? 's' : ''}
             </span>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            aria-label="Fermer la modal"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -144,14 +152,14 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
                     {categoryFunctions.map((func) => (
                       <div
                         key={func.name}
-                        className="p-4 rounded-lg glass border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-300"
+                        className="p-4 rounded-lg glass border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-300 group cursor-default"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-white font-mono text-sm">
+                          <h4 className="font-semibold text-white font-mono text-sm group-hover:text-blue-300 transition-colors">
                             {func.name}
                           </h4>
                         </div>
-                        <p className="text-sm text-slate-300 mb-3">
+                        <p className="text-sm text-slate-300 mb-3 leading-relaxed">
                           {func.description}
                         </p>
                         
@@ -197,10 +205,15 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-slate-900/50">
-          <p className="text-xs text-slate-400 text-center">
-            Ces fonctions sont disponibles pour l'IA lorsque l'appel de fonction est activé
-          </p>
+        <div className="p-4 border-t border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
+          <div className="flex items-center justify-center gap-2">
+            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs text-slate-400 text-center">
+              Ces fonctions sont disponibles pour l'IA lorsque l'appel de fonction est activé dans les paramètres
+            </p>
+          </div>
         </div>
       </div>
     </div>
