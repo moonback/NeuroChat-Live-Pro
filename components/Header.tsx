@@ -29,32 +29,35 @@ const StatusPill: React.FC<{ connectionState: ConnectionState }> = ({ connection
     if (isConnected) {
       return {
         text: 'Connecté',
-        bg: 'bg-emerald-500/20',
+        bg: 'bg-emerald-500/15',
         textColor: 'text-emerald-300',
-        border: 'border-emerald-400/40',
+        border: 'border-emerald-400/50',
         dot: 'bg-emerald-400',
-        shadow: 'shadow-[0_0_12px_3px_rgba(34,197,94,0.4)]',
-        glow: 'shadow-emerald-500/50'
+        shadow: 'shadow-[0_0_16px_4px_rgba(34,197,94,0.5)]',
+        glow: 'shadow-emerald-500/60',
+        ring: 'ring-emerald-500/20'
       };
     } else if (isConnecting) {
       return {
         text: 'Connexion...',
-        bg: 'bg-amber-500/20',
+        bg: 'bg-amber-500/15',
         textColor: 'text-amber-300',
-        border: 'border-amber-400/40',
+        border: 'border-amber-400/50',
         dot: 'bg-amber-400',
-        shadow: 'shadow-[0_0_12px_3px_rgba(251,191,36,0.4)]',
-        glow: 'shadow-amber-500/50'
+        shadow: 'shadow-[0_0_16px_4px_rgba(251,191,36,0.5)]',
+        glow: 'shadow-amber-500/60',
+        ring: 'ring-amber-500/20'
       };
     } else {
       return {
         text: 'Déconnecté',
-        bg: 'bg-slate-700/30',
+        bg: 'bg-slate-700/20',
         textColor: 'text-slate-400',
-        border: 'border-slate-400/20',
+        border: 'border-slate-500/30',
         dot: 'bg-slate-500',
         shadow: '',
-        glow: ''
+        glow: '',
+        ring: ''
       };
     }
   };
@@ -64,38 +67,53 @@ const StatusPill: React.FC<{ connectionState: ConnectionState }> = ({ connection
   return (
     <span
       className={`
-        flex items-center gap-1 px-2 py-0.5 rounded-full
-        text-[9px] md:text-[10px] font-semibold tracking-wide
-        ${config.bg} ${config.textColor} ${config.border} border backdrop-blur
-        transition-all duration-300 shadow-sm
-        hover:scale-102 active:scale-98 cursor-default
+        relative flex items-center gap-1.5 px-2.5 py-1 rounded-full
+        text-[10px] md:text-[11px] font-semibold tracking-wider
+        ${config.bg} ${config.textColor} ${config.border} border backdrop-blur-md
+        transition-all duration-500 shadow-lg
+        hover:scale-105 active:scale-95 cursor-default
+        ${config.ring ? `ring-2 ${config.ring}` : ''}
       `}
       title={config.text}
       role="status"
       aria-live={isConnected ? "polite" : "off"}
-      style={{ minHeight: 0, lineHeight: 1.2 }}
+      style={{ 
+        minHeight: 0, 
+        lineHeight: 1.2,
+        boxShadow: config.shadow || undefined
+      }}
     >
-      <span className="relative flex items-center">
+      <span className="relative flex items-center justify-center w-2 h-2">
         <span
           className={`
-            inline-block w-1.5 h-1.5 rounded-full
+            absolute inline-block w-2 h-2 rounded-full
             ${config.dot} ${config.shadow}
             ${isConnected || isConnecting ? 'animate-pulse' : ''}
-            transition-all duration-300
+            transition-all duration-500
           `}
         />
         {(isConnected || isConnecting) && (
-          <span
-            className={`
-              absolute inset-0 w-2 h-2 rounded-full pointer-events-none
-              ${config.dot} ${config.glow} animate-ping opacity-70
-            `}
-            style={{ animationDuration: '1.7s' }}
-            aria-hidden="true"
-          />
+          <>
+            <span
+              className={`
+                absolute inset-0 w-2.5 h-2.5 rounded-full pointer-events-none
+                ${config.dot} ${config.glow} animate-ping opacity-75
+              `}
+              style={{ animationDuration: '2s' }}
+              aria-hidden="true"
+            />
+            <span
+              className={`
+                absolute inset-0 w-3 h-3 rounded-full pointer-events-none
+                ${config.dot} opacity-20 animate-ping
+              `}
+              style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}
+              aria-hidden="true"
+            />
+          </>
         )}
       </span>
-      <span className="ml-1 font-medium">{config.text}</span>
+      <span className="ml-0.5 font-semibold">{config.text}</span>
     </span>
   );
 };
@@ -129,58 +147,82 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className={`absolute top-0 left-0 w-full px-3 py-2 md:px-6 md:py-4 flex justify-between items-center pointer-events-none z-50 transition-all duration-300 ${
+      className={`absolute top-0 left-0 w-full px-4 py-2.5 md:px-8 md:py-4 flex justify-between items-center pointer-events-none z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-[#000000]/80 backdrop-blur-xl border-b border-white/10' 
-          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-sm'
+          ? 'bg-[#000000]/90 backdrop-blur-2xl border-b border-white/10 shadow-2xl' 
+          : 'bg-gradient-to-b from-black/90 via-black/50 to-transparent backdrop-blur-xl'
       }`}
       style={{
-        boxShadow: isScrolled ? `0 4px 30px rgba(0, 0, 0, 0.5)` : undefined
+        boxShadow: isScrolled 
+          ? `0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)` 
+          : undefined
       }}
     >
       {/* Animated background gradient overlay */}
       <div 
         className="absolute inset-0 opacity-0 transition-opacity duration-1000 pointer-events-none"
         style={{
-          background: `linear-gradient(135deg, ${currentPersonality.themeColor}08 0%, transparent 50%, ${currentPersonality.themeColor}08 100%)`,
-          opacity: isConnected ? 0.3 : 0
+          background: `linear-gradient(135deg, ${currentPersonality.themeColor}12 0%, transparent 50%, ${currentPersonality.themeColor}12 100%)`,
+          opacity: isConnected ? 0.4 : 0
         }}
       />
+      
+      {/* Subtle animated border glow when connected */}
+      {isConnected && (
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent pointer-events-none"
+          style={{
+            boxShadow: `0 0 20px ${currentPersonality.themeColor}40`
+          }}
+        />
+      )}
 
       {/* Left: Brand & Identity */}
-      <div className="flex items-center gap-1.5 lg:gap-1.5 xl:gap-2 pointer-events-auto group select-none relative z-10 animate-slide-in-left">
-        <h1
-          className="font-display text-xs md:text-sm lg:text-base xl:text-base font-bold tracking-tight text-white leading-none transition-all duration-300 cursor-default flex items-center gap-0.5 hover-scale-sm"
-          style={{
-            textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
-            filter: isConnected ? `drop-shadow(0 0 4px ${currentPersonality.themeColor}20)` : undefined
-          }}
-        >
-          <span className="relative">
-            NEUROCHAT
-            <span 
-              className="absolute inset-0 blur opacity-0 group-hover:opacity-40 transition-opacity duration-400"
-              style={{ color: currentPersonality.themeColor }}
-              aria-hidden="true"
-            >NEUROCHAT</span>
-          </span>
-          <span
-            className="font-extrabold relative ml-0.5 px-1 py-0.5 rounded border border-sky-500/40 bg-sky-500/10 text-sky-300 text-[9px] md:text-[10px] tracking-wider"
+      <div className="flex items-center gap-2 lg:gap-2.5 pointer-events-auto group select-none relative z-10">
+        <div className="relative">
+          <h1
+            className="font-display text-sm md:text-base lg:text-lg xl:text-xl font-extrabold tracking-tight text-white leading-none transition-all duration-500 cursor-default flex items-center gap-1.5 group-hover:scale-105"
             style={{
-              letterSpacing: '0.1em'
+              textShadow: `0 2px 8px rgba(0,0,0,0.5), 0 0 20px ${currentPersonality.themeColor}30`,
+              filter: isConnected ? `drop-shadow(0 0 8px ${currentPersonality.themeColor}40)` : undefined
             }}
-            title="Version professionnelle avancée"
           >
-            <span 
-              className="animate-[gradient-glow_2s_ease-in-out_infinite] inline-block tracking-widest"
-              style={{
-                animationDelay: '0.05s'
-              }}
-            >
-              PRO
+            <span className="relative inline-flex items-center">
+              <span className="relative z-10">NEUROCHAT</span>
+              <span 
+                className="absolute inset-0 blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+                style={{ 
+                  color: currentPersonality.themeColor,
+                  textShadow: `0 0 20px ${currentPersonality.themeColor}`
+                }}
+                aria-hidden="true"
+              >
+                NEUROCHAT
+              </span>
             </span>
-          </span>
-        </h1>
+            <span
+              className="relative font-black ml-1 px-2 py-0.5 rounded-md border border-sky-400/50 bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-300 text-[10px] md:text-[11px] tracking-widest backdrop-blur-sm transition-all duration-500 group-hover:border-sky-400/70 group-hover:from-sky-500/30 group-hover:to-blue-500/30"
+              style={{
+                letterSpacing: '0.15em',
+                boxShadow: `0 0 15px rgba(56, 189, 248, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`
+              }}
+              title="Version professionnelle avancée"
+            >
+              <span 
+                className="relative z-10 inline-block"
+                style={{
+                  textShadow: '0 0 10px rgba(56, 189, 248, 0.5)'
+                }}
+              >
+                PRO
+              </span>
+              <span 
+                className="absolute inset-0 rounded-md bg-sky-400/20 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500"
+                aria-hidden="true"
+              />
+            </span>
+          </h1>
+        </div>
         {/* <div className="flex items-center gap-2 lg:gap-2 mt-0.5 md:mt-1 flex-wrap">
           <StatusPill connectionState={connectionState} />
           {uploadedDocuments.length > 0 && (
@@ -198,38 +240,40 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Controls & Status */}
-      <div className="flex flex-row items-center gap-1 sm:gap-1.5 md:gap-1.5 lg:gap-2 xl:gap-2 pointer-events-auto relative z-10">
+      <div className="flex flex-row items-center gap-2 sm:gap-2.5 md:gap-3 pointer-events-auto relative z-10">
         {/* Status Pill - Moved to right side */}
         <div className="hidden sm:block">
           <StatusPill connectionState={connectionState} />
         </div>
 
         {/* Separator with enhanced design */}
-        <div className="hidden sm:flex flex-col items-center mx-0.5 md:mx-1">
+        <div className="hidden sm:flex flex-col items-center mx-1 md:mx-1.5">
           <div 
-            className={`h-5 md:h-6 w-px transition-all duration-500 ${
+            className={`h-6 md:h-7 w-[1.5px] rounded-full transition-all duration-700 ${
               isConnected 
-                ? 'bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent opacity-100' 
+                ? 'bg-gradient-to-b from-transparent via-emerald-400/60 to-transparent opacity-100' 
                 : isConnecting
-                ? 'bg-gradient-to-b from-transparent via-amber-400/40 to-transparent opacity-100'
-                : 'bg-gradient-to-b from-transparent via-white/15 to-transparent opacity-40'
+                ? 'bg-gradient-to-b from-transparent via-amber-400/60 to-transparent opacity-100'
+                : 'bg-gradient-to-b from-transparent via-white/20 to-transparent opacity-50'
             }`}
             style={{
               boxShadow: isConnected 
-                ? '0 0 8px rgba(34, 197, 94, 0.3)' 
+                ? '0 0 12px rgba(34, 197, 94, 0.5), 0 0 6px rgba(34, 197, 94, 0.3)' 
                 : isConnecting
-                ? '0 0 8px rgba(251, 191, 36, 0.3)'
+                ? '0 0 12px rgba(251, 191, 36, 0.5), 0 0 6px rgba(251, 191, 36, 0.3)'
                 : undefined
             }}
           />
         </div>
 
-        {/* Controls Container with glassmorphism */}
-        <div className="flex items-center gap-1 sm:gap-1 md:gap-1.5 px-1 sm:px-1.5 md:px-1.5 py-0.5 sm:py-0.5 md:py-1 rounded-md glass border border-white/8 backdrop-blur-sm transition-all duration-300 hover:border-white/15 glass-hover animate-slide-in-right"
+        {/* Controls Container with enhanced glassmorphism */}
+        <div 
+          className="flex items-center gap-1.5 sm:gap-2 md:gap-2 px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-xl glass-intense border border-white/10 backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:shadow-xl"
           style={{
             boxShadow: isConnected 
-              ? `0 2px 8px rgba(0, 0, 0, 0.2), 0 0 16px ${currentPersonality.themeColor}08`
-              : '0 2px 8px rgba(0, 0, 0, 0.15)'
+              ? `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 30px ${currentPersonality.themeColor}15, inset 0 1px 0 rgba(255, 255, 255, 0.1)`
+              : '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)'
           }}
         >
           {/* Action Toggles (Only when disconnected) */}
@@ -240,16 +284,20 @@ const Header: React.FC<HeaderProps> = ({
                  <button
                     onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
                     className={`
-                      p-1.5 rounded-md transition-all duration-300
+                      relative p-2 rounded-lg transition-all duration-500 group/btn
                       ${isFunctionCallingEnabled 
-                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
-                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                        ? 'bg-blue-500/25 text-blue-300 hover:bg-blue-500/35 border border-blue-400/40 shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
+                        : 'text-slate-400 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20'
                       }
+                      hover:scale-110 active:scale-95
                     `}
                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    <svg className="w-4 h-4 md:w-4.5 md:h-4.5 transition-transform duration-300 group-hover/btn:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
+                    {isFunctionCallingEnabled && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                    )}
                  </button>
               </Tooltip>
 
@@ -258,35 +306,39 @@ const Header: React.FC<HeaderProps> = ({
                  <button
                     onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
                     className={`
-                      p-1.5 rounded-md transition-all duration-300
+                      relative p-2 rounded-lg transition-all duration-500 group/btn
                       ${isGoogleSearchEnabled 
-                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' 
-                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                        ? 'bg-green-500/25 text-green-300 hover:bg-green-500/35 border border-green-400/40 shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
+                        : 'text-slate-400 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/20'
                       }
+                      hover:scale-110 active:scale-95
                     `}
                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg className="w-4 h-4 md:w-4.5 md:h-4.5 transition-transform duration-300 group-hover/btn:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
+                    {isGoogleSearchEnabled && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+                    )}
                  </button>
               </Tooltip>
 
-              <div className="h-4 w-px bg-white/10 mx-0.5" />
+              <div className="h-5 w-[1px] bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
             </>
           )}
 
           {/* View Functions List - Only visible when function calling is enabled */}
           {isFunctionCallingEnabled && (
             <>
-              <div className="h-4 w-px bg-white/10 mx-0.5" />
+              <div className="h-5 w-[1px] bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
               <Tooltip content="Voir la liste des fonctions disponibles" position="bottom">
                  <button
                     onClick={onOpenToolsList}
-                    className="p-1.5 rounded-md transition-all duration-300 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
+                    className="relative p-2 rounded-lg transition-all duration-500 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 border border-transparent hover:border-blue-400/30 hover:scale-110 active:scale-95 group/btn"
                     title="Voir toutes les fonctions disponibles"
                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg className="w-4 h-4 md:w-4.5 md:h-4.5 transition-transform duration-300 group-hover/btn:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                  </button>
               </Tooltip>
@@ -305,10 +357,10 @@ const Header: React.FC<HeaderProps> = ({
             >
               <div className="relative">
                 <div className={`
-                  relative p-0.5 sm:p-1 rounded-md transition-all duration-300
+                  relative p-1 sm:p-1.5 rounded-lg transition-all duration-500
                   ${isConnected 
                     ? 'opacity-50 cursor-not-allowed' 
-                    : 'opacity-100 hover:bg-white/5 active:scale-95 cursor-pointer'
+                    : 'opacity-100 hover:bg-indigo-500/10 active:scale-95 cursor-pointer border border-transparent hover:border-indigo-400/30'
                   }
                 `}>
                   <DocumentUploader
@@ -320,7 +372,10 @@ const Header: React.FC<HeaderProps> = ({
                   {/* Enhanced notification badge */}
                   {uploadedDocuments.length > 0 && (
                     <span 
-                      className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 bg-indigo-500 rounded-full border border-[#131c24] flex items-center justify-center text-[9px] font-bold text-white"
+                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full border-2 border-black/50 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-indigo-500/50 animate-pulse"
+                      style={{
+                        boxShadow: '0 0 12px rgba(99, 102, 241, 0.6)'
+                      }}
                     >
                       {uploadedDocuments.length}
                     </span>
@@ -328,7 +383,7 @@ const Header: React.FC<HeaderProps> = ({
                   
                   {/* Hover glow effect */}
                   {!isConnected && (
-                    <div className="absolute inset-0 rounded-lg bg-indigo-500/0 group-hover:bg-indigo-500/10 transition-colors duration-300 pointer-events-none" />
+                    <div className="absolute inset-0 rounded-lg bg-indigo-500/0 group-hover:bg-indigo-500/15 transition-all duration-500 pointer-events-none blur-sm" />
                   )}
                 </div>
               </div>
@@ -336,7 +391,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Mini separator between controls */}
-          <div className="h-4 w-px bg-white/10 mx-0.5" />
+          <div className="h-5 w-[1px] bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
 
           {/* Voice Selector with enhanced design */}
           <div className="relative group">
@@ -351,13 +406,13 @@ const Header: React.FC<HeaderProps> = ({
               position="bottom"
             >
               <div className={`
-                relative transition-all duration-300
+                relative transition-all duration-500
                 ${isConnected 
                   ? 'opacity-50 cursor-not-allowed' 
-                  : 'opacity-100 hover:scale-105 active:scale-95'
+                  : 'opacity-100 hover:scale-110 active:scale-95'
                 }
               `}>
-                <div className="p-0.5 rounded-md group-hover:bg-white/5 transition-colors duration-300">
+                <div className="p-1 rounded-lg group-hover:bg-white/10 border border-transparent group-hover:border-white/20 transition-all duration-500">
                   <VoiceSelector
                     currentVoice={selectedVoice}
                     onVoiceChange={onVoiceChange}
@@ -368,21 +423,22 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Lock indicator when connected */}
                 {isConnected && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <svg 
-                      className="w-3 h-3 text-slate-500 opacity-60" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                    <div className="p-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-slate-600/50">
+                      <svg 
+                        className="w-3 h-3 text-slate-400" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
                   </div>
                 )}
               </div>
             </Tooltip>
           </div>
-
-          <div className="h-4 w-px bg-white/10 mx-0.5" />
         </div>
       </div>
     </header>

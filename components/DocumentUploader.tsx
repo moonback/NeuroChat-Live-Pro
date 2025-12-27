@@ -110,7 +110,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   return (
     <div className="relative">
       {/* Bouton d'ouverture */}
-      <Tooltip content={documents.length > 0 ? `${documents.length} document(s) chargé(s)` : "Uploader un document pour que l'IA puisse répondre à vos questions"}>
+      {/* <Tooltip content={documents.length > 0 ? `${documents.length} document(s) chargé(s)` : "Uploader un document pour que l'IA puisse répondre à vos questions"}> */}
         <button
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
@@ -134,7 +134,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             Documents
           </span>
         </button>
-      </Tooltip>
+      {/* </Tooltip> */}
 
       {/* Panel de gestion des documents */}
       {isOpen && (
