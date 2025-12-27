@@ -11,7 +11,6 @@ import { DEFAULT_PERSONALITY } from './constants';
 import { createBlob, decodeAudioData, base64ToArrayBuffer } from './utils/audioUtils';
 import { buildSystemInstruction } from './systemConfig';
 import { WakeWordDetector } from './utils/wakeWordDetector';
-import DocumentUploader from './components/DocumentUploader';
 import type { ProcessedDocument } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
@@ -22,6 +21,20 @@ import AgendaViewer from './components/AgendaViewer';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
+import { useLocalStorageState } from './hooks/useLocalStorageState';
+import VideoOverlay from './components/VideoOverlay';
+
+const deserializeDocuments = (raw: string) => {
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((doc: any) => ({
+    ...doc,
+    uploadedAt: doc?.uploadedAt ? new Date(doc.uploadedAt) : new Date(),
+  })) as ProcessedDocument[];
+};
+
+const deserializeBoolean = (raw: string) => raw === 'true';
+const serializeBoolean = (v: boolean) => (v ? 'true' : 'false');
 
 const App: React.FC = () => {
   const sessionRef = useRef<any>(null);
@@ -42,34 +55,29 @@ const App: React.FC = () => {
   const {
     activateAudioContext,
     playBeep,
-    audioContextActivatedRef,
-    beepAudioRef,
   } = useAudioManager();
 
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
-  const [isVideoEnlarged, setIsVideoEnlarged] = useState(false);
-  
-  // Custom Personality State - Charger depuis localStorage ou utiliser la par défaut
-  const loadSavedPersonality = (): Personality => {
-    try {
-      const saved = localStorage.getItem('currentPersonality');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Vérifier que toutes les propriétés requises sont présentes
-        if (parsed && parsed.id && parsed.systemInstruction) {
-          console.log('[App] Personnalité chargée depuis localStorage:', parsed.name);
-          return parsed as Personality;
-        }
-      }
-    } catch (e) {
-      console.warn('Erreur lors du chargement de la personnalité:', e);
-    }
-    // Retourner la personnalité par défaut si aucune sauvegarde
-    console.log('[App] Utilisation de la personnalité par défaut');
-    return DEFAULT_PERSONALITY;
+
+  const isPersonality = (value: unknown): value is Personality => {
+    return Boolean(
+      value &&
+        typeof value === 'object' &&
+        'id' in (value as any) &&
+        'systemInstruction' in (value as any) &&
+        typeof (value as any).id === 'string' &&
+        typeof (value as any).systemInstruction === 'string',
+    );
   };
 
-  const [currentPersonality, setCurrentPersonality] = useState<Personality>(loadSavedPersonality);
+  const [currentPersonality, setCurrentPersonality] = useLocalStorageState<Personality>(
+    'currentPersonality',
+    DEFAULT_PERSONALITY,
+    {
+      validate: isPersonality,
+      onError: (e) => console.warn('Erreur lors du chargement de la personnalité:', e),
+    },
+  );
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
   const [isNotesViewerOpen, setIsNotesViewerOpen] = useState(false);
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
@@ -78,39 +86,39 @@ const App: React.FC = () => {
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   
   // Document Upload State
-  const [uploadedDocuments, setUploadedDocuments] = useState<ProcessedDocument[]>(() => {
-    // Charger les documents depuis localStorage
-    try {
-      const saved = localStorage.getItem('uploadedDocuments');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((doc: any) => ({
-          ...doc,
-          uploadedAt: new Date(doc.uploadedAt)
-        }));
-      }
-    } catch (e) {
-      console.warn('Erreur lors du chargement des documents:', e);
-    }
-    return [];
-  });
+  const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
+    'uploadedDocuments',
+    [],
+    {
+      deserialize: deserializeDocuments,
+      validate: (v): v is ProcessedDocument[] => Array.isArray(v),
+      onError: (e) => console.warn('Erreur lors du chargement des documents:', e),
+    },
+  );
   
   // Wake Word Detection State
-  const [isWakeWordEnabled, setIsWakeWordEnabled] = useState<boolean>(() => {
-    // Charger la préférence depuis localStorage, par défaut désactivé
-    const saved = localStorage.getItem('wakeWordEnabled');
-    return saved !== null ? saved === 'true' : false; // Désactivé par défaut
+  const [isWakeWordEnabled, setIsWakeWordEnabled] = useLocalStorageState<boolean>('wakeWordEnabled', false, {
+    deserialize: deserializeBoolean,
+    serialize: serializeBoolean,
   });
 
   // Tools State
-  const [isFunctionCallingEnabled, setIsFunctionCallingEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('functionCallingEnabled');
-    return saved !== null ? saved === 'true' : true; // Activé par défaut
-  });
-  const [isGoogleSearchEnabled, setIsGoogleSearchEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('googleSearchEnabled');
-    return saved !== null ? saved === 'true' : false; // Désactivé par défaut
-  });
+  const [isFunctionCallingEnabled, setIsFunctionCallingEnabled] = useLocalStorageState<boolean>(
+    'functionCallingEnabled',
+    true,
+    {
+      deserialize: deserializeBoolean,
+      serialize: serializeBoolean,
+    },
+  );
+  const [isGoogleSearchEnabled, setIsGoogleSearchEnabled] = useLocalStorageState<boolean>(
+    'googleSearchEnabled',
+    false,
+    {
+      deserialize: deserializeBoolean,
+      serialize: serializeBoolean,
+    },
+  );
 
   // Refs
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -128,9 +136,7 @@ const App: React.FC = () => {
   const reconnectAttemptsRef = useRef<number>(0);
   const isReconnectingRef = useRef<boolean>(false);
   const isIntentionalDisconnectRef = useRef<boolean>(false);
-  // Initialiser la ref avec la personnalité chargée (pas la par défaut)
-  const initialPersonality = loadSavedPersonality();
-  const currentPersonalityRef = useRef(initialPersonality); // Ref for seamless updates
+  const currentPersonalityRef = useRef(currentPersonality); // Ref for seamless updates
   const uploadedDocumentsRef = useRef<ProcessedDocument[]>([]); // Ref for documents
   const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
   const connectRef = useRef<(() => Promise<void>) | null>(null);
@@ -162,6 +168,8 @@ const App: React.FC = () => {
     canvasRef,
     videoStreamRef,
     screenStreamRef,
+    isVideoEnlarged,
+    setIsVideoEnlarged,
   } = useVisionManager({
     connectionState,
     addToast,
@@ -178,204 +186,8 @@ const App: React.FC = () => {
     uploadedDocumentsRef.current = uploadedDocuments;
   }, [uploadedDocuments]);
 
-  useEffect(() => {
-    currentPersonalityRef.current = currentPersonality;
-    console.log('[App] Ref personnalité mise à jour:', currentPersonality.name);
-  }, [currentPersonality]);
-
-  useEffect(() => {
-    uploadedDocumentsRef.current = uploadedDocuments;
-  }, [uploadedDocuments]);
-
-  // Fonction utilitaire pour normaliser le texte et améliorer la détection
-  const normalizeText = (text: string): string => {
-    return text
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
-      .replace(/[^\w\s]/g, ' ') // Remplacer la ponctuation par des espaces
-      .replace(/\s+/g, ' '); // Normaliser les espaces multiples
-  };
-
-  // Fonction améliorée pour détecter les commandes de vision (plus permissive)
-  const detectVisionCommand = (text: string): 'activate' | 'deactivate' | null => {
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      return null;
-    }
-    
-    const normalized = normalizeText(text);
-    console.log('[App] 🔍 Analyse de la commande vision - Texte original:', text);
-    console.log('[App] 🔍 Texte normalisé:', normalized);
-    
-    // Mots-clés d'activation simples (sans contexte requis)
-    const simpleActivateKeywords = [
-      
-      'activer la vision', 'active la camera', 'activer la camera',
-    ];
-    
-    // Mots-clés d'activation avec contexte requis (plus permissifs)
-    const activateKeywords = [
-      'active', 'activer', 'allume', 'allumer', 'ouvre', 'ouvrir', 
-      'demarre', 'demarrer', 'lance', 'lancer', 'mets', 'met', 'metre',
-      'peux tu activer', 'peux-tu activer', 'tu peux activer',
-      'je veux activer', 'je voudrais activer', 'j aimerais activer',
-      'peux tu allumer', 'peux-tu allumer', 'tu peux allumer'
-    ];
-    
-    // Mots-clés de désactivation simples (sans contexte requis)
-    const simpleDeactivateKeywords = [
-      
-      'desactiver la vision', 'desactive la camera', 'desactiver la camera',
-      
-    ];
-    
-    // Mots-clés de désactivation avec contexte requis
-    const deactivateKeywords = [
-      'desactive', 'desactiver', 'arrete', 'arreter', 'ferme', 'fermer',
-      'eteint', 'eteindre', 'coupe', 'couper', 'stop', 'stoppe', 'stopper'
-    ];
-    
-    // Préfixes négatifs à exclure
-    const negativePrefixes = ['ne ', 'non ', 'pas ', 'jamais ', 'plus ', 'n '];
-    const pastContextPrefixes = [
-      'viens de', 'vient de', 'venait de', 'venais de', 'venaient de',
-      'ai ', 'as ', 'a ', 'avons ', 'avez ', 'ont ', 'avait ', 'avais ',
-      'aviez ', 'avaient ', 'etait ', 'etais ', 'etiez ', 'etaient ',
-      'venait d', 'venais d', 'venaient d'
-    ];
-    
-    // Vérifier d'abord les phrases complètes (plus fiables)
-    for (const phrase of simpleActivateKeywords) {
-      if (normalized.includes(phrase)) {
-        const index = normalized.indexOf(phrase);
-        const beforeContext = normalized.substring(Math.max(0, index - 20), index).trim();
-        
-        const hasNegative = negativePrefixes.some(prefix => 
-          beforeContext.endsWith(prefix) || beforeContext.includes(' ' + prefix)
-        );
-        
-        const hasPastContext = pastContextPrefixes.some(prefix => 
-          beforeContext.includes(prefix) || beforeContext.endsWith(prefix)
-        );
-        
-        if (!hasNegative && !hasPastContext) {
-          console.log('[App] ✅ Commande d\'activation détectée (phrase complète):', phrase, 'dans:', text);
-          return 'activate';
-        }
-      }
-    }
-    
-    // Vérifier les mots-clés simples avec contexte (plus permissif)
-    for (const keyword of activateKeywords) {
-      const index = normalized.indexOf(keyword);
-      if (index !== -1) {
-        const beforeContext = normalized.substring(Math.max(0, index - 50), index).trim();
-        const afterContext = normalized.substring(index, Math.min(normalized.length, index + keyword.length + 50)).trim();
-        const fullContext = beforeContext + ' ' + afterContext;
-        
-        // Vérifier qu'il n'y a pas de préfixe négatif
-        const hasNegative = negativePrefixes.some(prefix => 
-          beforeContext.endsWith(prefix) || beforeContext.includes(' ' + prefix) ||
-          fullContext.includes(' ne ' + keyword) || fullContext.includes(' pas ' + keyword) ||
-          fullContext.includes(' non ' + keyword)
-        );
-        
-        // Vérifier qu'il n'y a pas de contexte passé
-        const hasPastContext = pastContextPrefixes.some(prefix => 
-          beforeContext.includes(prefix) || beforeContext.endsWith(prefix)
-        );
-        
-        // Vérifier qu'il y a un indicateur de vision/caméra dans le contexte (plus large)
-        const visionIndicators = ['vision', 'camera', 'video', 'caméra', 'vidéo', 'webcam', 'web cam', 'webcam', 'webcam'];
-        const keywordHasVision = visionIndicators.some(indicator => keyword.includes(indicator));
-        const hasVisionContext = keywordHasVision || visionIndicators.some(indicator => 
-          fullContext.includes(indicator)
-        );
-        
-        // Si le mot-clé est dans une phrase de demande explicite, on accepte même sans contexte vision
-        const requestPhrases = ['peux tu', 'peux-tu', 'tu peux', 'je veux', 'je voudrais', 'j aimerais', 'pourrais tu', 'pourrais-tu'];
-        const isExplicitRequest = requestPhrases.some(phrase => beforeContext.includes(phrase));
-        
-        // Si c'est un verbe d'action simple (active, allume, etc.) et qu'il n'y a pas de contexte négatif,
-        // on accepte même sans contexte vision explicite (plus permissif)
-        const simpleActionVerbs = ['active', 'activer', 'allume', 'allumer', 'ouvre', 'ouvrir', 'demarre', 'demarrer', 'lance', 'lancer'];
-        const isSimpleAction = simpleActionVerbs.some(verb => keyword.includes(verb));
-        
-        // Accepter si :
-        // 1. Il y a un contexte vision explicite, OU
-        // 2. C'est une demande explicite (peux-tu, je veux, etc.), OU
-        // 3. C'est un verbe d'action simple sans contexte négatif/passé
-        if (!hasNegative && !hasPastContext && (hasVisionContext || isExplicitRequest || isSimpleAction)) {
-          console.log('[App] ✅ Commande d\'activation détectée:', keyword, 'dans:', text, {
-            hasVisionContext,
-            isExplicitRequest,
-            isSimpleAction,
-            hasNegative,
-            hasPastContext
-          });
-          return 'activate';
-        }
-      }
-    }
-    
-    // Détection supplémentaire : chercher "vision" ou "camera" suivi d'un verbe d'action
-    const visionFirstPattern = /(vision|camera|video|caméra|vidéo)\s+(active|activer|allume|allumer|ouvre|ouvrir|demarre|demarrer|lance|lancer)/i;
-    if (visionFirstPattern.test(normalized)) {
-      const beforeMatch = normalized.substring(0, normalized.search(visionFirstPattern)).trim();
-      const hasNegative = negativePrefixes.some(prefix => beforeMatch.includes(prefix));
-      const hasPastContext = pastContextPrefixes.some(prefix => beforeMatch.includes(prefix));
-      
-      if (!hasNegative && !hasPastContext) {
-        console.log('[App] ✅ Commande d\'activation détectée (pattern vision d\'abord):', text);
-        return 'activate';
-      }
-    }
-    
-    // Vérifier la désactivation (phrases complètes d'abord)
-    for (const phrase of simpleDeactivateKeywords) {
-      if (normalized.includes(phrase)) {
-        console.log('[App] ✅ Commande de désactivation détectée (phrase complète):', phrase, 'dans:', text);
-        return 'deactivate';
-      }
-    }
-    
-    // Vérifier les mots-clés de désactivation avec contexte
-    for (const keyword of deactivateKeywords) {
-      const index = normalized.indexOf(keyword);
-      if (index !== -1) {
-        const beforeContext = normalized.substring(Math.max(0, index - 40), index).trim();
-        const afterContext = normalized.substring(index, Math.min(normalized.length, index + keyword.length + 40)).trim();
-        const fullContext = beforeContext + ' ' + afterContext;
-        
-        // Vérifier qu'il y a un indicateur de vision/caméra dans le contexte
-        const visionIndicators = ['vision', 'camera', 'video', 'caméra', 'vidéo', 'webcam', 'web cam'];
-        const keywordHasVision = visionIndicators.some(indicator => keyword.includes(indicator));
-        const hasVisionContext = keywordHasVision || visionIndicators.some(indicator => 
-          fullContext.includes(indicator)
-        );
-        
-        if (hasVisionContext) {
-          console.log('[App] ✅ Commande de désactivation détectée:', keyword, 'dans:', text);
-          return 'deactivate';
-        }
-      }
-    }
-    
-    console.log('[App] ❌ Aucune commande de vision détectée dans:', text);
-    return null;
-  };
-
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
-    // Sauvegarder la personnalité dans localStorage pour la persistance
-    try {
-      localStorage.setItem('currentPersonality', JSON.stringify(newPersonality));
-      console.log('[App] Personnalité sauvegardée dans localStorage');
-    } catch (e) {
-      console.warn('Erreur lors de la sauvegarde de la personnalité:', e);
-    }
-    
     setCurrentPersonality(newPersonality);
     addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}. La personnalité sera conservée jusqu'à modification.`);
     
@@ -420,12 +232,6 @@ const App: React.FC = () => {
   // Document Management
   const handleDocumentsChange = (documents: ProcessedDocument[]) => {
     setUploadedDocuments(documents);
-    // Sauvegarder dans localStorage
-    try {
-      localStorage.setItem('uploadedDocuments', JSON.stringify(documents));
-    } catch (e) {
-      console.warn('Erreur lors de la sauvegarde des documents:', e);
-    }
     
     // Si connecté, reconnecter pour inclure les nouveaux documents
     if (connectionState === ConnectionState.CONNECTED) {
@@ -514,18 +320,7 @@ const App: React.FC = () => {
   }, [connectionState, isWakeWordEnabled]);
 
   // Sauvegarder la préférence du wake word dans localStorage
-  useEffect(() => {
-    localStorage.setItem('wakeWordEnabled', isWakeWordEnabled.toString());
-  }, [isWakeWordEnabled]);
-
-  // Sauvegarder les préférences des outils dans localStorage
-  useEffect(() => {
-    localStorage.setItem('functionCallingEnabled', isFunctionCallingEnabled.toString());
-  }, [isFunctionCallingEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('googleSearchEnabled', isGoogleSearchEnabled.toString());
-  }, [isGoogleSearchEnabled]);
+  // (géré automatiquement par useLocalStorageState)
 
   useEffect(() => {
     return () => {
@@ -1214,145 +1009,18 @@ const App: React.FC = () => {
         }}
       />
 
-      {/* Hidden Video & Canvas for Computer Vision */}
-      <video ref={videoRef} className="hidden" muted playsInline autoPlay />
-      <canvas ref={canvasRef} className="hidden" />
-
-      {/* Premium Camera Preview (Picture-in-Picture) */}
-      {(isVideoActive || isScreenShareActive) && !isVideoEnlarged && (
-         <div 
-           onClick={() => setIsVideoEnlarged(true)}
-           className="absolute top-16 sm:top-20 right-3 sm:right-4 md:top-8 md:right-8 lg:top-24 lg:right-8 xl:top-28 xl:right-12 z-40 w-48 sm:w-32 md:w-56 lg:w-72 xl:w-80 aspect-video rounded-xl sm:rounded-2xl overflow-hidden glass-intense border border-white/20 shadow-2xl animate-in cursor-pointer group hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation"
-           style={{
-             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-           }}>
-             <div ref={(ref) => {
-                 if (ref && videoRef.current) {
-                    const stream = isScreenShareActive ? screenStreamRef.current : videoStreamRef.current;
-                    if (stream) {
-                        ref.innerHTML = '';
-                        const previewVideo = document.createElement('video');
-                        previewVideo.srcObject = stream;
-                        previewVideo.muted = true;
-                        previewVideo.play().catch(() => {});
-                        previewVideo.className = "w-full h-full object-cover";
-                        ref.appendChild(previewVideo);
-                    }
-                 }
-             }} className="w-full h-full bg-black/80" />
-             
-             {/* Premium Live Indicator */}
-             <div className="absolute inset-0 pointer-events-none">
-               {/* Top gradient fade */}
-               <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent"></div>
-               {/* Bottom gradient fade */}
-               <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent"></div>
-             </div>
-             
-             <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg glass-intense">
-               <div className="relative">
-                 <span className={`block w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}
-                   style={{ boxShadow: isScreenShareActive ? '0 0 10px rgba(99, 102, 241, 0.8)' : '0 0 10px rgba(239, 68, 68, 0.8)' }}></span>
-                 <span className={`absolute inset-0 w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full animate-ping ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}></span>
-               </div>
-               <span className="font-display text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white">
-                 {isScreenShareActive ? "Partage" : "Vision"}
-               </span>
-             </div>
-             
-             {/* Expand Icon Hint */}
-             <div className="absolute top-2 sm:top-3 right-2 sm:right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-               <div className="p-1.5 sm:p-2 rounded-md sm:rounded-lg glass-intense">
-                 <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                 </svg>
-               </div>
-             </div>
-         </div>
-      )}
-      
-      {/* Enlarged Camera View */}
-      {(isVideoActive || isScreenShareActive) && isVideoEnlarged && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl animate-in safe-area-inset"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsVideoEnlarged(false);
-            }
-          }}
-        >
-          <div className="relative w-full h-full max-w-6xl max-h-[90vh] m-2 sm:m-4 md:m-8">
-            {/* Enlarged Video Container */}
-            <div className="relative w-full h-full rounded-3xl overflow-hidden glass-intense border-2 border-white/20 shadow-2xl"
-              style={{
-                boxShadow: '0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-              }}>
-              <div ref={(ref) => {
-                  if (ref && videoRef.current) {
-                     const stream = isScreenShareActive ? screenStreamRef.current : videoStreamRef.current;
-                     if (stream) {
-                         ref.innerHTML = '';
-                         const enlargedVideo = document.createElement('video');
-                         enlargedVideo.srcObject = stream;
-                         enlargedVideo.muted = true;
-                         enlargedVideo.play().catch(() => {});
-                         enlargedVideo.className = "w-full h-full object-contain";
-                         ref.appendChild(enlargedVideo);
-                     }
-                  }
-              }} className="w-full h-full bg-black" />
-              
-              {/* Gradient overlays */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
-                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent"></div>
-              </div>
-              
-              {/* Live Indicator */}
-              <div className="absolute top-3 sm:top-4 md:top-6 left-3 sm:left-4 md:left-6 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense">
-                <div className="relative">
-                  <span className={`block w-2 sm:w-2.5 md:w-3 h-2 sm:h-2.5 md:h-3 rounded-full ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}
-                    style={{ boxShadow: isScreenShareActive ? '0 0 15px rgba(99, 102, 241, 0.9)' : '0 0 15px rgba(239, 68, 68, 0.9)' }}></span>
-                  <span className={`absolute inset-0 w-2 sm:w-2.5 md:w-3 h-2 sm:h-2.5 md:h-3 rounded-full animate-ping ${isScreenShareActive ? 'bg-indigo-500' : 'bg-red-500'}`}></span>
-                </div>
-                <span className="font-display text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white">
-                  {isScreenShareActive ? "Partage Écran" : "Vision Active"}
-                </span>
-              </div>
-              
-              {/* Close Button */}
-              <button
-                onClick={() => setIsVideoEnlarged(false)}
-                className="absolute top-3 sm:top-4 md:top-6 right-3 sm:right-4 md:right-6 group p-2.5 sm:p-3 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/30 transition-all duration-300 hover:scale-105 active:scale-95 touch-manipulation min-w-[44px] min-h-[44px]"
-                style={{
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
-                }}
-              >
-                <svg className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              {/* Camera Info */}
-              <div className="absolute bottom-3 sm:bottom-4 md:bottom-6 left-3 sm:left-4 md:left-6 right-3 sm:right-4 md:right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                <div className="px-3 sm:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense">
-                  <span className="font-body text-xs sm:text-sm text-slate-300">
-                    {isScreenShareActive 
-                      ? 'Partage d\'écran en cours' 
-                      : (availableCameras.find(cam => cam.deviceId === selectedCameraId)?.label || 'Caméra')}
-                  </span>
-                </div>
-                
-                <div className="px-3 sm:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense">
-                  <span className="font-body text-[10px] sm:text-xs text-slate-400">
-                    Cliquez à l'extérieur pour réduire
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <VideoOverlay
+        isVideoActive={isVideoActive}
+        isScreenShareActive={isScreenShareActive}
+        isVideoEnlarged={isVideoEnlarged}
+        setIsVideoEnlarged={setIsVideoEnlarged}
+        availableCameras={availableCameras}
+        selectedCameraId={selectedCameraId}
+        videoRef={videoRef}
+        canvasRef={canvasRef}
+        videoStreamRef={videoStreamRef}
+        screenStreamRef={screenStreamRef}
+      />
 
       {/* Main Layout */}
       <div className="relative z-10 w-full h-full flex flex-col lg:flex-row">
