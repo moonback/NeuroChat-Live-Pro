@@ -234,7 +234,7 @@ const Header: React.FC<HeaderProps> = ({
           {!isConnected && (
             <>
               {/* Function Calling */}
-              <Tooltip content={isFunctionCallingEnabled ? "Désactiver Fonctions" : "Activer Fonctions"}>
+              <Tooltip content={isFunctionCallingEnabled ? "Désactiver Fonctions" : "Activer Fonctions"} position="bottom">
                  <button
                     onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
                     className={`
@@ -252,7 +252,7 @@ const Header: React.FC<HeaderProps> = ({
               </Tooltip>
 
               {/* Google Search */}
-              <Tooltip content={isGoogleSearchEnabled ? "Désactiver Recherche" : "Activer Recherche"}>
+              <Tooltip content={isGoogleSearchEnabled ? "Désactiver Recherche" : "Activer Recherche"} position="bottom">
                  <button
                     onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
                     className={`
@@ -281,6 +281,7 @@ const Header: React.FC<HeaderProps> = ({
                   ? `${uploadedDocuments.length} document(s) chargé(s) - Cliquez pour gérer`
                   : "Ajouter des documents contextuels pour l'IA"
               }
+              position="bottom"
             >
               <div className="relative">
                 <div className={`
@@ -327,6 +328,7 @@ const Header: React.FC<HeaderProps> = ({
                   ? "Connexion en cours..."
                   : `Voix actuelle: ${selectedVoice} - Cliquez pour changer`
               }
+              position="bottom"
             >
               <div className={`
                 relative transition-all duration-300
