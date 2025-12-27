@@ -127,13 +127,13 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header 
-      className={`absolute top-0 left-0 w-full p-1 md:p-1.5 lg:p-1.5 xl:p-2 flex justify-between items-center pointer-events-none z-50 transition-all duration-300 ${
+      className={`absolute top-0 left-0 w-full px-3 py-2 md:px-6 md:py-4 flex justify-between items-center pointer-events-none z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'bg-gradient-to-b from-[#131c24f0] via-[#172233e0] to-transparent backdrop-blur-md border-b border-white/15' 
-          : 'bg-gradient-to-b from-[#131c24d0] via-[#17223380] to-transparent backdrop-blur-sm border-b border-white/8'
+          ? 'bg-[#000000]/80 backdrop-blur-xl border-b border-white/10' 
+          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-sm'
       }`}
       style={{
-        boxShadow: isScrolled ? `0 2px 16px rgba(0, 0, 0, 0.3), 0 0 24px ${currentPersonality.themeColor}08` : undefined
+        boxShadow: isScrolled ? `0 4px 30px rgba(0, 0, 0, 0.5)` : undefined
       }}
     >
       {/* Animated background gradient overlay */}
@@ -361,35 +361,6 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="h-4 w-px bg-white/10 mx-0.5" />
-
-          {/* Connect Button */}
-          <Tooltip content={isConnected ? "Déconnecter" : "Démarrer la session"}>
-            <button
-                onClick={isConnected ? onDisconnect : onConnect}
-                disabled={isConnecting}
-                className={`
-                    relative flex items-center justify-center w-8 h-8 rounded-md transition-all duration-300
-                    ${isConnected 
-                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' 
-                        : isConnecting
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-wait'
-                        : 'bg-white text-black hover:bg-slate-200 border border-transparent shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                    }
-                `}
-            >
-                {isConnecting ? (
-                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : isConnected ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                ) : (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                )}
-            </button>
-          </Tooltip>
         </div>
       </div>
     </header>
