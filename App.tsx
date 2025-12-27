@@ -366,6 +366,100 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Fonction de nettoyage des ressources audio (réutilisable)
+  const cleanupAudioResources = useCallback(() => {
+    // Arrêter toutes les sources audio en cours
+    audioSourcesRef.current.forEach(src => {
+        try { 
+          src.stop();
+          src.disconnect();
+        } catch(e) {
+          console.warn('[App] Erreur lors de l\'arrêt d\'une source audio:', e);
+        }
+    });
+    audioSourcesRef.current.clear();
+    nextStartTimeRef.current = 0;
+
+    // Nettoyer le processor et la source d'entrée
+    if (processorRef.current) {
+      try {
+        processorRef.current.disconnect();
+        processorRef.current.onaudioprocess = null; // Supprimer le handler pour éviter les fuites
+      } catch (e) {
+        console.warn('[App] Erreur lors du nettoyage du processor:', e);
+      }
+      processorRef.current = null;
+    }
+
+    if (activeSourceInputRef.current) {
+      try {
+        activeSourceInputRef.current.disconnect();
+      } catch (e) {
+        console.warn('[App] Erreur lors de la déconnexion de la source d\'entrée:', e);
+      }
+      activeSourceInputRef.current = null;
+    }
+
+    // Nettoyer les analysers
+    if (analyserRef.current) {
+      try {
+        analyserRef.current.disconnect();
+      } catch (e) {
+        console.warn('[App] Erreur lors du nettoyage de l\'analyser:', e);
+      }
+      analyserRef.current = null;
+    }
+
+    if (inputAnalyserRef.current) {
+      try {
+        inputAnalyserRef.current.disconnect();
+      } catch (e) {
+        console.warn('[App] Erreur lors du nettoyage de l\'input analyser:', e);
+      }
+      inputAnalyserRef.current = null;
+    }
+
+    // Nettoyer le gain node
+    if (gainNodeRef.current) {
+      try {
+        gainNodeRef.current.disconnect();
+      } catch (e) {
+        console.warn('[App] Erreur lors du nettoyage du gain node:', e);
+      }
+      gainNodeRef.current = null;
+    }
+
+    // Fermer les contextes audio
+    if (inputAudioContextRef.current) {
+      try {
+        inputAudioContextRef.current.close();
+      } catch (e) {
+        console.warn('[App] Erreur lors de la fermeture du contexte audio d\'entrée:', e);
+      }
+      inputAudioContextRef.current = null;
+    }
+    if (outputAudioContextRef.current) {
+      try {
+        outputAudioContextRef.current.close();
+      } catch (e) {
+        console.warn('[App] Erreur lors de la fermeture du contexte audio de sortie:', e);
+      }
+      outputAudioContextRef.current = null;
+    }
+
+    // Arrêter le stream média
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.warn('[App] Erreur lors de l\'arrêt d\'une piste média:', e);
+        }
+      });
+      mediaStreamRef.current = null;
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     try {
       if (!isReconnectingRef.current) {
@@ -405,24 +499,47 @@ const App: React.FC = () => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const handleReconnect = () => {
+        // Ne pas reconnecter si c'est une déconnexion intentionnelle
+        if (isIntentionalDisconnectRef.current) {
+          console.log('[App] Déconnexion intentionnelle, pas de reconnexion');
+          return;
+        }
+
         if (reconnectAttemptsRef.current < 5) {
             isReconnectingRef.current = true;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-            console.log(`Reconnecting in ${delay}ms... (Attempt ${reconnectAttemptsRef.current + 1}/5)`);
+            console.log(`[App] Reconnexion dans ${delay}ms... (Tentative ${reconnectAttemptsRef.current + 1}/5)`);
             
+            // Nettoyer proprement la session avant reconnexion
             if (sessionRef.current) {
-                 try { sessionRef.current.close(); } catch(e) {}
+                 try { 
+                   sessionRef.current.close(); 
+                 } catch(e) {
+                   console.warn('[App] Erreur lors de la fermeture de session:', e);
+                 }
                  sessionRef.current = null;
             }
             
+            // Nettoyer les ressources audio avant reconnexion
+            cleanupAudioResources();
+            
             reconnectTimeoutRef.current = setTimeout(() => {
                 reconnectAttemptsRef.current++;
-                connect();
+                // Vérifier que ce n'est toujours pas une déconnexion intentionnelle
+                if (!isIntentionalDisconnectRef.current) {
+                  connect();
+                } else {
+                  console.log('[App] Reconnexion annulée (déconnexion intentionnelle)');
+                  isReconnectingRef.current = false;
+                  reconnectAttemptsRef.current = 0;
+                }
             }, delay);
         } else {
-            console.error("Max reconnect attempts reached");
+            console.error("[App] Nombre maximum de tentatives de reconnexion atteint");
             setConnectionState(ConnectionState.ERROR);
             isReconnectingRef.current = false;
+            reconnectAttemptsRef.current = 0;
+            addToast('error', 'Échec de connexion', 'Impossible de se reconnecter après 5 tentatives. Veuillez réessayer manuellement.');
             disconnect();
         }
       };
@@ -453,25 +570,56 @@ const App: React.FC = () => {
                 source.connect(inputAnalyserRef.current);
             }
 
-            // OPTIMIZATION: Reduced buffer size to 2048 for lower latency
-            const processor = inputAudioContextRef.current.createScriptProcessor(2048, 1, 1);
+            // OPTIMIZATION: Buffer size adaptatif selon l'appareil (mobile vs desktop)
+            // Mobile: buffer plus petit pour réduire la latence, Desktop: buffer plus grand pour stabilité
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const bufferSize = isMobile ? 1024 : 2048; // Plus petit sur mobile pour meilleure performance
+            
+            const processor = inputAudioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
             processorRef.current = processor;
 
+            // Utiliser une ref pour éviter les closures qui capturent l'ancienne session
+            const currentSessionRef = { current: null as any };
+            sessionPromise.then((session) => {
+              currentSessionRef.current = session;
+            });
+
             processor.onaudioprocess = (e) => {
-              const inputData = e.inputBuffer.getChannelData(0);
-              
-              // Simple VAD for Latency Tracking
-              let sum = 0;
-              for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
-              const rms = Math.sqrt(sum / inputData.length);
-              if (rms > 0.02) {
-                  lastUserAudioTimeRef.current = Date.now();
+              // Vérifier que la session est toujours active
+              if (!currentSessionRef.current || !sessionRef.current) {
+                return;
               }
 
-              const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
-              sessionPromise.then((session) => {
-                 session.sendRealtimeInput({ media: pcmBlob });
-              });
+              try {
+                const inputData = e.inputBuffer.getChannelData(0);
+                
+                // Simple VAD for Latency Tracking (optimisé pour mobile)
+                let sum = 0;
+                const dataLength = inputData.length;
+                // Échantillonnage pour améliorer les performances sur mobile
+                const step = isMobile ? 4 : 1;
+                for(let i = 0; i < dataLength; i += step) {
+                  sum += inputData[i] * inputData[i];
+                }
+                const rms = Math.sqrt(sum / (dataLength / step));
+                if (rms > 0.02) {
+                    lastUserAudioTimeRef.current = Date.now();
+                }
+
+                const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
+                
+                // Envoyer de manière asynchrone pour ne pas bloquer
+                if (currentSessionRef.current) {
+                  currentSessionRef.current.sendRealtimeInput({ media: pcmBlob }).catch((err: any) => {
+                    // Ignorer les erreurs silencieuses (session fermée, etc.)
+                    if (err && err.message && !err.message.includes('closed')) {
+                      console.warn('[App] Erreur lors de l\'envoi audio:', err);
+                    }
+                  });
+                }
+              } catch (error) {
+                console.warn('[App] Erreur dans onaudioprocess:', error);
+              }
             };
 
             source.connect(processor);
@@ -794,21 +942,55 @@ const App: React.FC = () => {
               setIsTalking(false);
             }
           },
-          onclose: () => {
-            console.log('Session closed');
-            if (!isIntentionalDisconnectRef.current) {
+          onclose: (event) => {
+            console.log('[App] Session fermée', event);
+            // Ne pas reconnecter si c'est une déconnexion intentionnelle
+            if (!isIntentionalDisconnectRef.current && !isReconnectingRef.current) {
+                console.log('[App] Fermeture inattendue, tentative de reconnexion...');
                 handleReconnect();
             } else {
-                disconnect();
+                console.log('[App] Fermeture intentionnelle ou reconnexion en cours');
             }
           },
           onerror: (err) => {
-            console.error('Session error', err);
-            addToast('error', 'Erreur Session', 'Une erreur est survenue avec Gemini Live.');
-            if (!isIntentionalDisconnectRef.current) {
+            console.error('[App] Erreur de session:', err);
+            
+            // Analyser le type d'erreur pour un message plus précis
+            let errorMessage = 'Une erreur est survenue avec Gemini Live.';
+            if (err && typeof err === 'object') {
+              const errorObj = err as any;
+              if (errorObj.message) {
+                errorMessage = errorObj.message;
+              } else if (errorObj.code) {
+                switch (errorObj.code) {
+                  case 'NETWORK_ERROR':
+                    errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+                    break;
+                  case 'AUTH_ERROR':
+                    errorMessage = 'Erreur d\'authentification. Vérifiez votre clé API.';
+                    break;
+                  case 'RATE_LIMIT':
+                    errorMessage = 'Limite de requêtes atteinte. Veuillez réessayer plus tard.';
+                    break;
+                  default:
+                    errorMessage = `Erreur: ${errorObj.code}`;
+                }
+              }
+            }
+            
+            addToast('error', 'Erreur Session', errorMessage);
+            
+            // Ne pas reconnecter si c'est une déconnexion intentionnelle ou une erreur d'authentification
+            if (!isIntentionalDisconnectRef.current && !isReconnectingRef.current) {
+              const shouldReconnect = !(err && typeof err === 'object' && (err as any).code === 'AUTH_ERROR');
+              if (shouldReconnect) {
                 handleReconnect();
-            } else {
-                disconnect();
+              } else {
+                setConnectionState(ConnectionState.ERROR);
+                setTimeout(() => {
+                  setConnectionState(ConnectionState.DISCONNECTED);
+                }, 5000);
+              }
             }
           }
         },
@@ -827,78 +1009,134 @@ const App: React.FC = () => {
 
       sessionPromise.then(session => {
         sessionRef.current = session;
+      }).catch((error) => {
+        console.error('[App] Erreur lors de la création de session:', error);
+        // Nettoyer les ressources si la session échoue
+        cleanupAudioResources();
+        setConnectionState(ConnectionState.ERROR);
+        addToast('error', 'Erreur Session', 'Impossible de créer la session. Vérifiez votre clé API.');
+        
+        if (!isIntentionalDisconnectRef.current) {
+          setTimeout(() => {
+            setConnectionState(ConnectionState.DISCONNECTED);
+          }, 3000);
+        }
       });
 
     } catch (error) {
-      console.error("Connection failed:", error);
-      addToast('error', 'Échec Connexion', "Impossible de se connecter au serveur.");
+      console.error("[App] Échec de connexion:", error);
       
-      if (isReconnectingRef.current && reconnectAttemptsRef.current < 5) {
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-        reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current++;
-            connect();
-        }, delay);
+      // Nettoyer les ressources partiellement créées
+      cleanupAudioResources();
+      
+      // Analyser le type d'erreur
+      let errorMessage = "Impossible de se connecter au serveur.";
+      let shouldRetry = true;
+      
+      if (error instanceof Error) {
+        const errorName = error.name;
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorName === 'NotAllowedError' || errorMsg.includes('permission') || errorMsg.includes('microphone')) {
+          errorMessage = "Permission microphone refusée. Veuillez autoriser l'accès au microphone.";
+          shouldRetry = false;
+        } else if (errorName === 'NotFoundError' || errorMsg.includes('not found')) {
+          errorMessage = "Microphone non trouvé. Vérifiez vos périphériques audio.";
+          shouldRetry = false;
+        } else if (errorName === 'NotReadableError' || errorMsg.includes('not readable')) {
+          errorMessage = "Microphone non accessible. Il est peut-être utilisé par une autre application.";
+          shouldRetry = true;
+        } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+          errorMessage = "Erreur réseau. Vérifiez votre connexion internet.";
+          shouldRetry = true;
+        } else if (errorMsg.includes('api key') || errorMsg.includes('authentication')) {
+          errorMessage = "Erreur d'authentification. Vérifiez votre clé API Gemini.";
+          shouldRetry = false;
+        }
+      }
+      
+      addToast('error', 'Échec Connexion', errorMessage);
+      
+      // Gérer les reconnexions automatiques
+      if (shouldRetry && !isIntentionalDisconnectRef.current) {
+        if (isReconnectingRef.current && reconnectAttemptsRef.current < 5) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+          console.log(`[App] Nouvelle tentative de connexion dans ${delay}ms...`);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (!isIntentionalDisconnectRef.current) {
+              reconnectAttemptsRef.current++;
+              connect();
+            }
+          }, delay);
+        } else if (!isReconnectingRef.current) {
+          // Première tentative de reconnexion
+          handleReconnect();
+        } else {
+          // Maximum de tentatives atteint
+          setConnectionState(ConnectionState.ERROR);
+          isReconnectingRef.current = false;
+          reconnectAttemptsRef.current = 0;
+          setTimeout(() => {
+            setConnectionState(ConnectionState.DISCONNECTED);
+          }, 5000);
+        }
       } else {
+        // Pas de reconnexion automatique (erreur non récupérable)
         setConnectionState(ConnectionState.ERROR);
         setTimeout(() => {
-             setConnectionState(ConnectionState.DISCONNECTED);
-        }, 3000);
+          setConnectionState(ConnectionState.DISCONNECTED);
+        }, 5000);
       }
     }
-  }, [isVideoActive, selectedVoice, loadDocumentsContext]);
+  }, [isVideoActive, selectedVoice, loadDocumentsContext, cleanupAudioResources, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency]);
 
   // Mettre à jour la ref pour le wake word detector
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
-  const disconnect = (shouldReload: boolean = false) => {
+  const disconnect = useCallback((shouldReload: boolean = false) => {
+    // Marquer comme déconnexion intentionnelle pour éviter les reconnexions automatiques
+    isIntentionalDisconnectRef.current = true;
+
     // Arrêter la reconnaissance vocale du chatbot
     if (chatbotSpeechRecognitionRef.current) {
       try {
         chatbotSpeechRecognitionRef.current.stop();
         chatbotSpeechRecognitionRef.current = null;
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[App] Erreur lors de l\'arrêt de la reconnaissance vocale:', e);
+      }
     }
 
+    // Fermer la session Gemini
     if (sessionRef.current) {
-        try { sessionRef.current.close(); } catch (e) {}
+        try { 
+          sessionRef.current.close(); 
+        } catch (e) {
+          console.warn('[App] Erreur lors de la fermeture de session:', e);
+        }
         sessionRef.current = null;
     }
 
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      mediaStreamRef.current = null;
-    }
-    if (processorRef.current && activeSourceInputRef.current) {
-        activeSourceInputRef.current.disconnect();
-        processorRef.current.disconnect();
-    }
+    // Nettoyer toutes les ressources audio
+    cleanupAudioResources();
 
-    audioSourcesRef.current.forEach(src => {
-        try { src.stop(); } catch(e) {}
-    });
-    audioSourcesRef.current.clear();
-
-    if (inputAudioContextRef.current) {
-        inputAudioContextRef.current.close();
-        inputAudioContextRef.current = null;
-    }
-    if (outputAudioContextRef.current) {
-        outputAudioContextRef.current.close();
-        outputAudioContextRef.current = null;
-    }
-
+    // Annuler les tentatives de reconnexion
     if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
     }
+    isReconnectingRef.current = false;
+    reconnectAttemptsRef.current = 0;
 
+    // Réinitialiser l'état de vision
     resetVisionState();
 
+    // Mettre à jour l'état
     setConnectionState(ConnectionState.DISCONNECTED);
     setIsTalking(false);
+    setLatency(0);
     
     // Rafraîchir la page uniquement si demandé explicitement (clic sur bouton ou commande vocale)
     if (shouldReload) {
@@ -915,7 +1153,7 @@ const App: React.FC = () => {
             window.location.reload();
         }, 500);
     }
-  };
+  }, [cleanupAudioResources, resetVisionState, setConnectionState, setIsTalking, setLatency, addToast]);
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">

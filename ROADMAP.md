@@ -44,10 +44,10 @@ Feuille de route et plan de développement pour les prochaines versions.
 ### Priorités
 
 #### 🔧 Corrections de bugs
-- [ ] Gérer les erreurs de connexion réseau de manière plus robuste
-- [ ] Améliorer la gestion des reconnexions automatiques
-- [ ] Corriger les fuites mémoire dans la gestion audio
-- [ ] Optimiser les performances sur mobile (iOS/Android)
+- [x] Gérer les erreurs de connexion réseau de manière plus robuste
+- [x] Améliorer la gestion des reconnexions automatiques
+- [x] Corriger les fuites mémoire dans la gestion audio
+- [x] Optimiser les performances sur mobile (iOS/Android)
 
 #### 🧪 Tests
 - [ ] Tests unitaires pour les hooks personnalisés
