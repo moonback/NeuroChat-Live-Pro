@@ -19,6 +19,7 @@ interface HeaderProps {
   isGoogleSearchEnabled: boolean;
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
+  onEditPersonality?: () => void;
 }
 
 const StatusPill: React.FC<{ connectionState: ConnectionState }> = ({ connectionState }) => {
@@ -132,6 +133,7 @@ const Header: React.FC<HeaderProps> = ({
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
   onOpenToolsList,
+  onEditPersonality,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -469,6 +471,24 @@ const Header: React.FC<HeaderProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                  </button>
+              </Tooltip>
+            </>
+          )}
+
+          {/* Personality Editor Button */}
+          {onEditPersonality && (
+            <>
+              <div className="h-5 w-[1px] bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
+              <Tooltip content="Modifier la personnalité" position="bottom">
+                <button
+                  onClick={onEditPersonality}
+                  className="relative p-2 rounded-lg transition-all duration-500 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 border border-transparent hover:border-indigo-400/30 hover:scale-110 active:scale-95 group/btn"
+                  title="Modifier la personnalité"
+                >
+                  <svg className="w-4 h-4 md:w-4.5 md:h-4.5 transition-transform duration-300 group-hover/btn:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
               </Tooltip>
             </>
           )}

@@ -16,8 +16,6 @@ import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
 import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
-import TasksViewer from './components/TasksViewer';
-import AgendaViewer from './components/AgendaViewer';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
@@ -81,8 +79,6 @@ const App: React.FC = () => {
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
   const [isNotesViewerOpen, setIsNotesViewerOpen] = useState(false);
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
-  const [isTasksViewerOpen, setIsTasksViewerOpen] = useState(false);
-  const [isAgendaViewerOpen, setIsAgendaViewerOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
@@ -1266,21 +1262,7 @@ const App: React.FC = () => {
         onClose={() => setIsToolsListOpen(false)}
       />
 
-      <TasksViewer
-        isOpen={isTasksViewerOpen}
-        onClose={() => setIsTasksViewerOpen(false)}
-        onTasksChange={() => {
-          // Rafraîchir si nécessaire
-        }}
-      />
 
-      <AgendaViewer
-        isOpen={isAgendaViewerOpen}
-        onClose={() => setIsAgendaViewerOpen(false)}
-        onEventsChange={() => {
-          // Rafraîchir si nécessaire
-        }}
-      />
 
       <VideoOverlay
         isVideoActive={isVideoActive}
@@ -1318,6 +1300,7 @@ const App: React.FC = () => {
             onToggleFunctionCalling={handleFunctionCallingToggle}
             isGoogleSearchEnabled={isGoogleSearchEnabled}
             onToggleGoogleSearch={handleGoogleSearchToggle}
+            onEditPersonality={() => setIsPersonalityEditorOpen(true)}
             onOpenToolsList={() => setIsToolsListOpen(true)}
         />
 
