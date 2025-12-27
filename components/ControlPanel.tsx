@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { ConnectionState, Personality } from '../types';
+import { AVAILABLE_PERSONALITIES } from '../constants';
 import Loader from './Loader';
 import Tooltip from './Tooltip';
 import LatencyIndicator from './LatencyIndicator';
@@ -24,6 +25,7 @@ interface ControlPanelProps {
   onCameraChange?: (cameraId: string) => void;
   onToggleWakeWord?: () => void;
   onEditPersonality?: () => void;
+  onSelectPersonality?: (personality: Personality) => void;
   onToggleFunctionCalling?: (enabled: boolean) => void;
   onToggleGoogleSearch?: (enabled: boolean) => void;
   onOpenMobileActions?: () => void;
@@ -72,6 +74,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onCameraChange,
   onToggleWakeWord,
   onEditPersonality,
+  onSelectPersonality,
   onToggleFunctionCalling,
   onToggleGoogleSearch,
   onOpenMobileActions,
@@ -172,16 +175,50 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Assistant personality */}
-        <div className="relative mb-1.5 sm:mb-2 md:mb-2.5 lg:mb-3 xl:mb-4 w-full z-10 animate-fade-in">
-          <h1
-            className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight mb-0.5 sm:mb-0.5 md:mb-1 lg:mb-1 relative transition-all duration-300 px-2 hover-scale-sm"
-            style={{
-              color: currentPersonality.themeColor,
-              textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
-            }}
-          >
-            {currentPersonality.name}
-          </h1>
+        <div className="relative mb-1.5 sm:mb-2 md:mb-2.5 lg:mb-3 xl:mb-4 w-full z-10 animate-fade-in flex flex-col items-center">
+          {!isConnected && onSelectPersonality ? (
+            <div className="relative group cursor-pointer">
+                <select
+                    value={currentPersonality.id}
+                    onChange={(e) => {
+                        const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
+                        if (selected) onSelectPersonality(selected);
+                    }}
+                    className="appearance-none bg-transparent text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 pr-8 py-1"
+                    style={{
+                            color: currentPersonality.themeColor,
+                            textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
+                    }}
+                >
+                    {AVAILABLE_PERSONALITIES.map(p => (
+                        <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
+                            {p.name}
+                        </option>
+                    ))}
+                    {/* Keep custom personality if it's not in the list */}
+                    {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
+                        <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
+                            {currentPersonality.name} (Personnalisé)
+                        </option>
+                    )}
+                </select>
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: currentPersonality.themeColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
+          ) : (
+            <h1
+                className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight mb-0.5 sm:mb-0.5 md:mb-1 lg:mb-1 relative transition-all duration-300 px-2"
+                style={{
+                color: currentPersonality.themeColor,
+                textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
+                }}
+            >
+                {currentPersonality.name}
+            </h1>
+          )}
           <p className="text-slate-400 font-body text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-sm font-light max-w-md lg:max-w-lg xl:max-w-xl mx-auto leading-relaxed transition-all duration-300 px-2">
             {currentPersonality.description}
           </p>

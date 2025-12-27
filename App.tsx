@@ -1531,6 +1531,7 @@ const App: React.FC = () => {
               onEditPersonality={() => setIsPersonalityEditorOpen(true)}
               isWakeWordEnabled={isWakeWordEnabled}
               onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
+              onSelectPersonality={handlePersonalityChange}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}
               onToggleFunctionCalling={handleFunctionCallingToggle}

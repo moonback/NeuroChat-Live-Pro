@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Personality } from '../types';
-import { DEFAULT_PERSONALITY } from '../constants';
+import { DEFAULT_PERSONALITY, AVAILABLE_PERSONALITIES } from '../constants';
 
 interface PersonalityEditorProps {
     isOpen: boolean;
@@ -8,60 +8,6 @@ interface PersonalityEditorProps {
     currentPersonality: Personality;
     onSave: (newPersonality: Personality) => void;
 }
-
-// Templates de personnalités prédéfinies
-interface PersonalityTemplate {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-    instruction: string;
-}
-
-const PERSONALITY_TEMPLATES: PersonalityTemplate[] = [
-    {
-        id: 'professional',
-        name: 'Professionnel',
-        icon: '💼',
-        description: 'Assistant professionnel et efficace',
-        instruction: 'Tu es un assistant professionnel et efficace. Tu es concis, précis et orienté résultats. Tu réponds de manière structurée et tu utilises un ton formel mais amical. Tu es expert dans la résolution de problèmes et l\'analyse de situations complexes.'
-    },
-    {
-        id: 'creative',
-        name: 'Créatif',
-        icon: '🎨',
-        description: 'Assistant créatif et inspirant',
-        instruction: 'Tu es un assistant créatif et inspirant. Tu as une imagination fertile et tu aimes explorer de nouvelles idées. Tu utilises un langage vivant et expressif. Tu encourages la pensée créative et tu proposes des solutions innovantes et originales.'
-    },
-    {
-        id: 'educational',
-        name: 'Éducatif',
-        icon: '📚',
-        description: 'Tuteur patient et pédagogique',
-        instruction: 'Tu es un tuteur patient et pédagogique. Tu expliques les concepts de manière claire et progressive. Tu adaptes ton niveau de langage à ton interlocuteur. Tu poses des questions pour vérifier la compréhension et tu encourages l\'apprentissage actif.'
-    },
-    {
-        id: 'friendly',
-        name: 'Amiable',
-        icon: '🤝',
-        description: 'Assistant chaleureux et amical',
-        instruction: 'Tu es un assistant chaleureux et amical. Tu utilises un ton décontracté et accessible. Tu es empathique et à l\'écoute. Tu fais preuve d\'enthousiasme et tu encourages positivement. Tu crées une atmosphère agréable et rassurante.'
-    },
-    {
-        id: 'technical',
-        name: 'Technique',
-        icon: '⚙️',
-        description: 'Expert technique et détaillé',
-        instruction: 'Tu es un expert technique avec une connaissance approfondie des technologies et des systèmes. Tu fournis des explications précises et détaillées. Tu utilises la terminologie appropriée et tu donnes des exemples concrets. Tu es méthodique et tu structures tes réponses de manière logique.'
-    },
-    {
-        id: 'coach',
-        name: 'Coach',
-        icon: '🎯',
-        description: 'Coach motivant et orienté objectifs',
-        instruction: 'Tu es un coach motivant et orienté objectifs. Tu aides les personnes à atteindre leurs objectifs en leur posant les bonnes questions. Tu es positif, encourageant et tu célèbres les succès. Tu aides à identifier les obstacles et tu proposes des stratégies concrètes pour les surmonter.'
-    }
-];
 
 const PersonalityEditor: React.FC<PersonalityEditorProps> = ({ 
     isOpen, 
@@ -87,12 +33,12 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
         setCharacterCount(instructions.length);
     }, [instructions]);
 
-    const handleTemplateSelect = (template: PersonalityTemplate) => {
+    const handleTemplateSelect = (template: Personality) => {
         if (instructions.trim() !== currentPersonality.systemInstruction.trim() && 
             !confirm('Voulez-vous remplacer les instructions actuelles par ce template ?')) {
             return;
         }
-        setInstructions(template.instruction);
+        setInstructions(template.systemInstruction);
         setShowTemplates(false);
     };
 
@@ -208,14 +154,14 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                         
                         {showTemplates && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 max-h-[200px] overflow-y-auto custom-scrollbar p-2 bg-black/20 rounded-lg border border-white/5">
-                                {PERSONALITY_TEMPLATES.map((template) => (
+                                {AVAILABLE_PERSONALITIES.map((template) => (
                                     <button
                                         key={template.id}
                                         onClick={() => handleTemplateSelect(template)}
                                         className="text-left p-3 rounded-lg border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-200 group"
                                     >
                                         <div className="flex items-start gap-2">
-                                            <span className="text-lg flex-shrink-0">{template.icon}</span>
+                                            <span className="text-lg flex-shrink-0">🤖</span>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors truncate">
                                                     {template.name}
