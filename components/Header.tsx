@@ -158,24 +158,152 @@ const Header: React.FC<HeaderProps> = ({
           : undefined
       }}
     >
-      {/* Animated background gradient overlay */}
+      {/* Enhanced animated background gradient overlay */}
       <div 
-        className="absolute inset-0 opacity-0 transition-opacity duration-1000 pointer-events-none"
+        className="absolute inset-0 pointer-events-none overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${currentPersonality.themeColor}12 0%, transparent 50%, ${currentPersonality.themeColor}12 100%)`,
-          opacity: isConnected ? 0.4 : 0
+          opacity: isConnected ? 1 : 0,
+          transition: 'opacity 1s ease-in-out'
         }}
-      />
-      
-      {/* Subtle animated border glow when connected */}
-      {isConnected && (
+      >
+        {/* Animated gradient wave */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent pointer-events-none"
+          className="absolute inset-0"
           style={{
-            boxShadow: `0 0 20px ${currentPersonality.themeColor}40`
+            background: `linear-gradient(
+              135deg,
+              ${currentPersonality.themeColor}15 0%,
+              transparent 30%,
+              transparent 70%,
+              ${currentPersonality.themeColor}15 100%
+            )`,
+            animation: 'gradientWave 8s ease-in-out infinite',
+            backgroundSize: '200% 200%'
           }}
         />
+        
+        {/* Secondary animated layer for depth */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(
+              ellipse at top right,
+              ${currentPersonality.themeColor}20 0%,
+              transparent 50%
+            )`,
+            animation: 'pulseGlow 4s ease-in-out infinite',
+            animationDelay: '1s'
+          }}
+        />
+        
+        {/* Third layer for shimmer effect */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(
+              90deg,
+              transparent 0%,
+              ${currentPersonality.themeColor}10 25%,
+              ${currentPersonality.themeColor}15 50%,
+              ${currentPersonality.themeColor}10 75%,
+              transparent 100%
+            )`,
+            animation: 'shimmer 6s linear infinite',
+            backgroundSize: '200% 100%'
+          }}
+        />
+      </div>
+      
+      {/* Enhanced animated border glow when connected */}
+      {isConnected && (
+        <>
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+            style={{
+              background: `linear-gradient(
+                90deg,
+                transparent 0%,
+                ${currentPersonality.themeColor}60 20%,
+                ${currentPersonality.themeColor}80 50%,
+                ${currentPersonality.themeColor}60 80%,
+                transparent 100%
+              )`,
+              boxShadow: `0 0 20px ${currentPersonality.themeColor}60, 0 0 40px ${currentPersonality.themeColor}30`,
+              animation: 'borderPulse 3s ease-in-out infinite'
+            }}
+          />
+          {/* Animated scanning line */}
+          <div 
+            className="absolute bottom-0 left-0 h-px pointer-events-none"
+            style={{
+              width: '30%',
+              background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}80, transparent)`,
+              boxShadow: `0 0 15px ${currentPersonality.themeColor}80`,
+              animation: 'scanLine 4s linear infinite'
+            }}
+          />
+        </>
       )}
+      
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes gradientWave {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        
+        @keyframes pulseGlow {
+          0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+        }
+        
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        
+        @keyframes borderPulse {
+          0%, 100% {
+            opacity: 0.6;
+            box-shadow: 0 0 20px ${currentPersonality.themeColor}60, 0 0 40px ${currentPersonality.themeColor}30;
+          }
+          50% {
+            opacity: 1;
+            box-shadow: 0 0 30px ${currentPersonality.themeColor}80, 0 0 60px ${currentPersonality.themeColor}50;
+          }
+        }
+        
+        @keyframes scanLine {
+          0% {
+            left: -30%;
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          90% {
+            opacity: 1;
+          }
+          100% {
+            left: 100%;
+            opacity: 0;
+          }
+        }
+      `}</style>
 
       {/* Left: Brand & Identity */}
       <div className="flex items-center gap-2 lg:gap-2.5 pointer-events-auto group select-none relative z-10">

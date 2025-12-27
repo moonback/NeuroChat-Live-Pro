@@ -164,16 +164,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </span>
             </div>
 
-            {/* Compact Glass Card */}
-            <div className="group relative overflow-hidden rounded-2xl bg-[#0a0a0a]/60 border border-white/10 shadow-2xl transition-all duration-500 hover:border-white/20 hover:bg-[#0a0a0a]/80 backdrop-blur-xl">
+            {/* Compact Glass Card - Plus transparent sur desktop pour laisser voir la sphère */}
+            <div 
+                className="group relative overflow-hidden rounded-2xl border border-white/10 md:border-white/5 shadow-2xl transition-all duration-500 hover:border-white/20 backdrop-blur-xl md:backdrop-blur-md"
+                style={{
+                    background: 'radial-gradient(circle at center, rgba(10, 10, 10, 0.2) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(10, 10, 10, 0.6) 100%)'
+                }}
+            >
                 
-                {/* Ambient Glow */}
+                {/* Ambient Glow - Réduit sur desktop */}
                 <div 
-                    className="absolute -top-20 -left-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-20 blur-[50px] transition-all duration-700 group-hover:opacity-30"
+                    className="absolute -top-20 -left-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-20 md:opacity-10 blur-[50px] transition-all duration-700 group-hover:opacity-30 md:group-hover:opacity-15"
                     style={{ background: currentPersonality.themeColor }}
                 />
                 <div 
-                    className="absolute -bottom-20 -right-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-10 blur-[50px] transition-all duration-700 group-hover:opacity-20"
+                    className="absolute -bottom-20 -right-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-10 md:opacity-5 blur-[50px] transition-all duration-700 group-hover:opacity-20 md:group-hover:opacity-10"
                     style={{ background: currentPersonality.themeColor }}
                 />
 
