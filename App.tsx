@@ -84,6 +84,8 @@ const App: React.FC = () => {
   const [isTasksViewerOpen, setIsTasksViewerOpen] = useState(false);
   const [isAgendaViewerOpen, setIsAgendaViewerOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
+  const sidebarCloseTimeoutRef = useRef<number | null>(null);
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
@@ -263,6 +265,39 @@ const App: React.FC = () => {
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, [activateAudioContext]);
+
+  // Sidebar Desktop: auto repli (fermer à la connexion, et après sortie de la zone)
+  useEffect(() => {
+    if (connectionState === ConnectionState.CONNECTED) {
+      setIsDesktopSidebarOpen(false);
+    }
+  }, [connectionState]);
+
+  const openDesktopSidebar = useCallback(() => {
+    if (sidebarCloseTimeoutRef.current) {
+      window.clearTimeout(sidebarCloseTimeoutRef.current);
+      sidebarCloseTimeoutRef.current = null;
+    }
+    setIsDesktopSidebarOpen(true);
+  }, []);
+
+  const scheduleCloseDesktopSidebar = useCallback(() => {
+    if (sidebarCloseTimeoutRef.current) {
+      window.clearTimeout(sidebarCloseTimeoutRef.current);
+    }
+    sidebarCloseTimeoutRef.current = window.setTimeout(() => {
+      setIsDesktopSidebarOpen(false);
+      sidebarCloseTimeoutRef.current = null;
+    }, 700);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (sidebarCloseTimeoutRef.current) {
+        window.clearTimeout(sidebarCloseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Wake Word Detection - Écoute pour "Neurochat"
   useEffect(() => {
@@ -1035,9 +1070,43 @@ const App: React.FC = () => {
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
-        <div className="flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
+        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
+          {/* Hotzone (Desktop) - survol bord gauche pour ouvrir */}
+          <div
+            className={`hidden lg:block absolute left-0 top-0 h-full ${isDesktopSidebarOpen ? 'w-0' : 'w-3'} z-30`}
+            onMouseEnter={openDesktopSidebar}
+          />
+
           {/* Desktop Sidebar - Contrôles et informations */}
-          <aside className="hidden lg:flex lg:flex-col lg:w-72 xl:w-80 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-4 xl:p-6 lg:gap-6 xl:gap-8 lg:overflow-y-auto custom-scrollbar animate-slide-in-left z-20 shadow-[5px_0_30px_rgba(0,0,0,0.5)]">
+          <aside
+            onMouseEnter={openDesktopSidebar}
+            onMouseLeave={scheduleCloseDesktopSidebar}
+            className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 transition-all duration-300 ease-out ${
+              isDesktopSidebarOpen
+                ? 'lg:w-72 xl:w-80 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-4 xl:p-6 lg:gap-6 xl:gap-8 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
+                : 'lg:w-0 xl:w-0 lg:p-0 lg:border-r-0 lg:bg-transparent lg:backdrop-blur-0 shadow-none'
+            }`}
+          >
+            {/* Toggle button (quand ouvert) */}
+            <div
+              className={`hidden lg:flex items-center justify-end ${
+                isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              } transition-opacity duration-200`}
+            >
+              <button
+                onClick={() => setIsDesktopSidebarOpen(false)}
+                className="mb-3 p-2 rounded-lg glass border border-white/10 text-slate-300 hover:text-white hover:border-white/25"
+                aria-label="Replier la sidebar"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              className={`${isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-200`}
+            >
             {/* Status Panel */}
             <div className="glass-intense rounded-2xl p-5 space-y-4 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
               <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -1195,6 +1264,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
+            </div>
           </aside>
 
           {/* Main Content Area */}

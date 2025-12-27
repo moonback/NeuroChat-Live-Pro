@@ -112,438 +112,311 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       : "Partager votre écran - L'IA pourra voir ce que vous affichez"
     );
 
-  // Main render
+  // Main render - Redesigned as a modern floating dock
   return (
-    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-4 sm:pb-4 md:pb-8 lg:pb-6 xl:pb-8 space-y-2 sm:space-y-2 md:space-y-4 lg:space-y-4 xl:space-y-5 w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-0 pointer-events-none safe-area-bottom">
-      {/* Main Panel */}
+    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 w-full pointer-events-none safe-area-bottom">
+      
+      {/* Dynamic Status Island (Above Controls) */}
+      <div className={`pointer-events-auto mb-6 transition-all duration-500 ease-out transform ${isConnected ? 'scale-100 opacity-100' : 'scale-95 opacity-0 h-0 overflow-hidden'}`}>
+        <div className="flex items-center gap-4 px-5 py-2.5 rounded-full glass-intense border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+             <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+                <div className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </div>
+                <span className="text-xs font-medium text-emerald-100 tracking-wide">LIVE</span>
+             </div>
+
+             <div className="hidden sm:flex items-center gap-2 pr-4 border-r border-white/10">
+               <span
+                 className="w-2.5 h-2.5 rounded-full"
+                 style={{
+                   backgroundColor: currentPersonality.themeColor,
+                   boxShadow: `0 0 12px ${currentPersonality.themeColor}66`,
+                 }}
+               />
+               <span className="text-xs font-medium text-white/80 max-w-[180px] truncate">
+                 {currentPersonality.name}
+               </span>
+             </div>
+             
+             <div className="flex items-center gap-3">
+               <Tooltip content="Latence">
+                  <LatencyIndicator latencyMs={latencyMs} />
+               </Tooltip>
+               <div className="h-3 w-[1px] bg-white/10"></div>
+               <Tooltip content="Volume">
+                 <div className="w-16 h-6 flex items-center">
+                    <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
+                 </div>
+               </Tooltip>
+             </div>
+        </div>
+      </div>
+
+      {/* Personality Selector (Visible when disconnected) */}
+      {!isConnected && (
+         <div className="pointer-events-auto mb-8 text-center animate-fade-in space-y-2">
+            {onSelectPersonality ? (
+                <div className="relative group inline-block">
+                    <select
+                        value={currentPersonality.id}
+                        onChange={(e) => {
+                            const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
+                            if (selected) onSelectPersonality(selected);
+                        }}
+                        className="appearance-none bg-transparent text-3xl md:text-4xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 py-2 px-8 rounded-2xl hover:bg-white/5"
+                        style={{
+                                color: currentPersonality.themeColor,
+                                textShadow: `0 0 30px ${currentPersonality.themeColor}40`,
+                        }}
+                    >
+                        {AVAILABLE_PERSONALITIES.map(p => (
+                            <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
+                                {p.name}
+                            </option>
+                        ))}
+                         {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
+                            <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
+                                {currentPersonality.name} (Personnalisé)
+                            </option>
+                        )}
+                    </select>
+                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+            ) : (
+                <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight" style={{ color: currentPersonality.themeColor }}>
+                    {currentPersonality.name}
+                </h1>
+            )}
+            <p className="text-slate-400 font-light text-sm max-w-md mx-auto leading-relaxed px-4">
+                {currentPersonality.description}
+            </p>
+         </div>
+      )}
+
+      {/* Main Control Dock */}
       <div
-        className="pointer-events-auto glass-intense rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 xl:p-7 w-full text-center transition-all duration-300 flex flex-col items-center animate-fade-in relative group max-h-[85vh] sm:max-h-none overflow-y-auto hover-lift"
+        className="pointer-events-auto rounded-full p-[1px] animate-slide-up"
         style={{
-          boxShadow: `0 4px 20px rgba(0,0,0,0.3), 0 0 32px ${currentPersonality.themeColor}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
+          background: isConnected
+            ? `linear-gradient(90deg, ${currentPersonality.themeColor}55, rgba(255,255,255,0.12), ${currentPersonality.themeColor}55)`
+            : 'linear-gradient(90deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05), rgba(255,255,255,0.14))',
+          boxShadow: isConnected
+            ? `0 24px 60px rgba(0,0,0,0.35), 0 0 60px ${currentPersonality.themeColor}22`
+            : '0 24px 60px rgba(0,0,0,0.35)',
         }}
       >
-        {/* Background */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          aria-hidden="true"
+          className="relative flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-full glass-intense border border-white/10 backdrop-blur-2xl transition-all duration-500 hover:scale-[1.01] hover:border-white/20"
           style={{
-            background: `radial-gradient(circle at 50% 50%, ${currentPersonality.themeColor}05, transparent 70%)`,
+            boxShadow: `0 20px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04), 0 0 40px ${
+              isConnected ? currentPersonality.themeColor + '12' : 'transparent'
+            }`,
           }}
-        ></div>
-
-        {/* Status, latency, input */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3 mb-2 sm:mb-2 md:mb-3 lg:mb-4 relative z-10 animate-slide-in-bottom">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative animate-breathe" aria-label={status.text}>
-              <span
-                className={`block w-3 h-3 rounded-full transition-all duration-300 ${status.class} animate-glow-pulse-subtle`}
-                aria-live="assertive"
-              ></span>
-              {(isConnected || isConnecting) && (
-                <>
-                  <span className={`absolute inset-0 rounded-full animate-ping ${status.pulse}`}></span>
-                  <span
-                    className={`absolute inset-0 rounded-full ${status.pulse} opacity-20 animate-ping`}
-                    style={{ animationDelay: "0.5s" }}
-                  ></span>
-                </>
-              )}
-            </div>
-            <div
-              className="text-xs font-display font-medium tracking-[0.2em] uppercase transition-all duration-300"
-              style={{
-                color: status.color,
-                textShadow: status.textShadow,
-              }}
-              aria-live="polite"
-            >
-              {status.text}
-            </div>
-          </div>
-          {isConnected && (
-            <div className="flex items-center gap-2 sm:gap-3 sm:pl-4 sm:border-l border-white/10 animate-slide-in-right pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10 sm:border-l">
-              <Tooltip content="Latence de réponse">
-                <LatencyIndicator latencyMs={latencyMs} />
-              </Tooltip>
-              <Tooltip content="Volume Micro">
-                <div className="bg-black/20 backdrop-blur-sm rounded-md border border-white/5 px-1 pt-1 h-[26px] transition-all duration-300 hover:border-white/20">
-                  <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
-                </div>
-              </Tooltip>
-            </div>
-          )}
-        </div>
-
-        {/* Assistant personality */}
-        <div className="relative mb-1.5 sm:mb-2 md:mb-2.5 lg:mb-3 xl:mb-4 w-full z-10 animate-fade-in flex flex-col items-center">
-          {!isConnected && onSelectPersonality ? (
-            <div className="relative group cursor-pointer">
-                <select
-                    value={currentPersonality.id}
-                    onChange={(e) => {
-                        const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
-                        if (selected) onSelectPersonality(selected);
-                    }}
-                    className="appearance-none bg-transparent text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 pr-8 py-1"
-                    style={{
-                            color: currentPersonality.themeColor,
-                            textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
-                    }}
-                >
-                    {AVAILABLE_PERSONALITIES.map(p => (
-                        <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
-                            {p.name}
-                        </option>
-                    ))}
-                    {/* Keep custom personality if it's not in the list */}
-                    {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
-                        <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
-                            {currentPersonality.name} (Personnalisé)
-                        </option>
-                    )}
-                </select>
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: currentPersonality.themeColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </div>
-            </div>
-          ) : (
-            <h1
-                className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-display font-bold tracking-tight mb-0.5 sm:mb-0.5 md:mb-1 lg:mb-1 relative transition-all duration-300 px-2"
-                style={{
-                color: currentPersonality.themeColor,
-                textShadow: `0 1px 2px rgba(0,0,0,0.3)`,
-                }}
-            >
-                {currentPersonality.name}
-            </h1>
-          )}
-          <p className="text-slate-400 font-body text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-sm font-light max-w-md lg:max-w-lg xl:max-w-xl mx-auto leading-relaxed transition-all duration-300 px-2">
-            {currentPersonality.description}
-          </p>
-        </div>
-
-        {/* Controls Row */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 md:gap-2 lg:gap-2.5 xl:gap-3 mb-1.5 sm:mb-2 md:mb-2 lg:mb-3 xl:mb-4 relative z-10 px-2 animate-slide-in-bottom" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-
-          {/* CAMERA TOGGLE */}
-          {isConnected && (
-            <Tooltip content={getCameraTooltip()}>
-              <button
-                onClick={onToggleVideo}
-                aria-label={getCameraButtonLabel()}
-                className={`${baseBtn} ${
-                  isVideoActive
-                    ? 'border-red-500/50 text-red-200 hover:border-red-500/70'
-                    : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
-                }`}
-                style={{
-                  boxShadow: isVideoActive
-                    ? '0 0 16px rgba(239, 68, 68, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.1)'
-                }}
-              >
-                {isVideoActive && (
-                  <div className="absolute inset-0 bg-red-500/5"></div>
-                )}
-                {isVideoActive ? (
-                  <>
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" tabIndex={-1}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                    </svg>
-                    <span className="relative z-10">Arrêter la vision</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" tabIndex={-1}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span className="relative z-10">Activer la vision</span>
-                  </>
-                )}
-              </button>
-            </Tooltip>
-          )}
-
-          {/* CAMERA SELECTOR */}
-          {renderCameraSelector && (
-            <Tooltip content="Changer de caméra">
-              <div className="relative min-w-[120px]">
-                <select
-                  value={selectedCameraId}
-                  onChange={(e) => onCameraChange && onCameraChange(e.target.value)}
-                  className={`${baseBtn} min-h-[44px] appearance-none pr-6 sm:pr-8 bg-transparent border-white/10 text-slate-300 hover:border-white/30 hover:text-white cursor-pointer`}
-                  style={{ paddingRight: 40 }}
-                  aria-label="Changer de caméra"
-                >
-                  {availableCameras.map((camera, idx) => (
-                    <option
-                      key={camera.deviceId}
-                      value={camera.deviceId}
-                      className="bg-slate-900 text-white"
+        >
+          {/* Soft inner highlight */}
+          <div
+            className="absolute inset-[1px] rounded-full pointer-events-none opacity-70"
+            aria-hidden="true"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 35%, rgba(0,0,0,0.10))',
+            }}
+          />
+          {/* Top specular line */}
+          <div
+            className="absolute top-[1px] left-6 right-6 h-px rounded-full pointer-events-none opacity-60"
+            aria-hidden="true"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)' }}
+          />
+        
+        {/* Left Controls Group */}
+        <div className="relative flex items-center gap-2">
+            {/* Camera Toggle */}
+            {isConnected && (
+                <Tooltip content={getCameraTooltip()}>
+                    <button
+                        onClick={onToggleVideo}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            isVideoActive 
+                                ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' 
+                                : 'bg-white/5 text-white hover:bg-white/10 hover:scale-110'
+                        }`}
                     >
-                      {camera.label || `Caméra ${idx + 1}`}
-                    </option>
-                  ))}
-                </select>
-                <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </Tooltip>
-          )}
-
-          {/* SCREEN SHARE */}
-          {isConnected && onToggleScreenShare && (
-            <Tooltip content={getScreenShareTooltip()}>
-              <button
-                onClick={onToggleScreenShare}
-                aria-label={isScreenShareActive ? "Arrêter le partage d'écran" : "Partager l'écran"}
-                className={`hidden sm:flex ${baseBtn} ${
-                  isScreenShareActive
-                    ? 'border-indigo-500/50 text-indigo-200 hover:border-indigo-500/70'
-                    : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
-                }`}
-                style={{
-                  boxShadow: isScreenShareActive
-                    ? '0 0 16px rgba(99, 102, 241, 0.2), 0 2px 8px rgba(0,0,0,0.15)'
-                    : '0 2px 8px rgba(0,0,0,0.1)'
-                }}
-              >
-                {isScreenShareActive && (
-                  <div className="absolute inset-0 bg-indigo-500/5"></div>
-                )}
-                {isScreenShareActive ? (
-                  <>
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span className="relative z-10">Arrêter Partage</span>
-                  </>
-                ) : (
-                  <>
-                  <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span className="relative z-10">Partager Écran</span>
-                  </>
-                )}
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Wake Word Toggle */}
-          {!isConnected && onToggleWakeWord && (
-            <Tooltip content={
-              isWakeWordEnabled
-                ? "Désactiver la détection vocale - Dites 'Bonjour' pour démarrer automatiquement"
-                : "Activer la détection vocale - Dites 'Bonjour' pour démarrer automatiquement"
-            }>
-              <button
-                onClick={onToggleWakeWord}
-                aria-label={isWakeWordEnabled ? "Désactiver la détection vocale" : "Activer la détection vocale"}
-                className={`${baseBtn} ${
-                  isWakeWordEnabled
-                    ? 'border-emerald-500/50 text-emerald-200 hover:border-emerald-500/70'
-                    : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
-                }`}
-                style={{
-                  boxShadow: isWakeWordEnabled
-                    ? '0 0 16px rgba(16,185,129,0.2), 0 2px 8px rgba(0,0,0,0.15)'
-                    : '0 2px 8px rgba(0,0,0,0.1)'
-                }}
-              >
-                {isWakeWordEnabled && (
-                  <div className="absolute inset-0 bg-emerald-500/5"></div>
-                )}
-                {isWakeWordEnabled ? (
-                  <>
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span className="relative z-10">Désactiver 'Bonjour'</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                    </svg>
-                    <span className="relative z-10">Activer 'Bonjour'</span>
-                  </>
-                )}
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Edit Personality Button */}
-          {!isConnected && onEditPersonality && (
-            <Tooltip content="Modifier la personnalité de l'assistant">
-              <button
-                onClick={onEditPersonality}
-                aria-label="Modifier la personnalité"
-                className={`${baseBtn} border-white/10 text-slate-300 hover:border-white/30 hover:text-white`}
-                style={{
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-              >
-                <svg className="w-4 h-4 relative z-10 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span className="relative z-10 hidden sm:inline">Modifier</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Mobile Actions */}
-          {!isConnected && onOpenMobileActions && (
-            <Tooltip content="Ouvrir les actions rapides">
-              <button
-                onClick={onOpenMobileActions}
-                aria-label="Ouvrir les actions rapides"
-                className={`lg:hidden ${baseBtn} border-white/10 text-slate-300 hover:border-white/30 hover:text-white`}
-                style={{
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-              >
-                <svg className="w-4 h-4 relative z-10 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span className="relative z-10 hidden sm:inline">Actions</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Extra Tools toggles */}
-          {!isConnected && (
-            <>
-              {onToggleFunctionCalling && (
-                <Tooltip content={
-                  isFunctionCallingEnabled
-                    ? "Désactiver l'appel de fonction - L'IA pourra appeler des fonctions personnalisées"
-                    : "Activer l'appel de fonction - L'IA pourra appeler des fonctions personnalisées"
-                }>
-                  <button
-                    onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
-                    aria-label={isFunctionCallingEnabled ? "Désactiver l'appel de fonction" : "Activer l'appel de fonction"}
-                    className={`${baseBtn} ${
-                      isFunctionCallingEnabled
-                        ? "border-blue-500/50 text-blue-200 hover:border-blue-500/70"
-                        : "border-white/10 text-slate-300 hover:border-white/30 hover:text-white"
-                    }`}
-                    style={{
-                      boxShadow: isFunctionCallingEnabled
-                        ? '0 0 16px rgba(59,130,246,0.2), 0 2px 8px rgba(0,0,0,0.15)'
-                        : '0 2px 8px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    {isFunctionCallingEnabled && (
-                      <div className="absolute inset-0 bg-blue-500/5"></div>
-                    )}
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    <span className="relative z-10 hidden sm:inline">Fonctions</span>
-                  </button>
+                        {isVideoActive ? (
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                            </svg>
+                        ) : (
+                             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        )}
+                    </button>
                 </Tooltip>
-              )}
-              {onToggleGoogleSearch && (
-                <Tooltip content={
-                  isGoogleSearchEnabled
-                    ? "Désactiver Google Search - L'IA pourra rechercher des informations en temps réel"
-                    : "Activer Google Search - L'IA pourra rechercher des informations en temps réel"
-                }>
-                  <button
-                    onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
-                    aria-label={isGoogleSearchEnabled ? "Désactiver Google Search" : "Activer Google Search"}
-                    className={`${baseBtn} ${
-                      isGoogleSearchEnabled
-                        ? "border-green-500/50 text-green-200 hover:border-green-500/70"
-                        : "border-white/10 text-slate-300 hover:border-white/30 hover:text-white"
-                    }`}
-                    style={{
-                      boxShadow: isGoogleSearchEnabled
-                        ? '0 0 16px rgba(34,197,94,0.2), 0 2px 8px rgba(0,0,0,0.15)'
-                        : '0 2px 8px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    {isGoogleSearchEnabled && (
-                      <div className="absolute inset-0 bg-green-500/5"></div>
-                    )}
-                    <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span className="relative z-10 hidden sm:inline">Search</span>
-                  </button>
+            )}
+
+            {/* Screen Share */}
+            {isConnected && onToggleScreenShare && (
+                <Tooltip content={getScreenShareTooltip()}>
+                    <button
+                        onClick={onToggleScreenShare}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            isScreenShareActive 
+                                ? 'bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]' 
+                                : 'bg-white/5 text-white hover:bg-white/10 hover:scale-110'
+                        }`}
+                    >
+                         {isScreenShareActive ? (
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        )}
+                    </button>
                 </Tooltip>
-              )}
-            </>
-          )}
+            )}
+
+            {/* Wake Word (Disconnected) */}
+            {!isConnected && onToggleWakeWord && (
+                <Tooltip content={isWakeWordEnabled ? "Désactiver 'Bonjour'" : "Activer 'Bonjour'"}>
+                    <button
+                        onClick={onToggleWakeWord}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            isWakeWordEnabled 
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
+                                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
+                        }`}
+                    >
+                         <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
+                </Tooltip>
+            )}
         </div>
 
-        {/* Main Action Button */}
-        <div className="w-full flex justify-center relative z-10 mt-1 sm:mt-0 animate-slide-in-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-          {!isConnected ? (
-            <button
-              onClick={onConnect}
-              disabled={isConnecting}
-              aria-label={isConnecting ? "Connexion en cours..." : "Activer NeuroChat"}
-              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-5 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-3.5 rounded-lg sm:rounded-xl font-display font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[40px] sm:min-h-[44px] md:min-h-[48px] lg:min-h-[52px] xl:min-h-[56px] hover-lift hover-glow ripple"
-              style={{
-                background: isConnecting
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(226,232,240,0.9))'
-                  : 'linear-gradient(135deg,#fff,#f1f5f9)',
-                color: '#0f0f19',
-                boxShadow: isConnecting
-                  ? '0 4px 16px rgba(255,255,255,0.2), 0 0 24px rgba(255,255,255,0.1)'
-                  : '0 4px 20px rgba(255,255,255,0.25), 0 0 32px rgba(255,255,255,0.15)',
-              }}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-3">
-                {isConnecting ? (
-                  <>
-                    <Loader size="sm" color="#4f46e5" />
-                    <span>Initialisation...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-6 h-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+        {/* Main Action Button (Center) */}
+        <div className="relative mx-2 sm:mx-4">
+             {!isConnected ? (
+                <button
+                    onClick={onConnect}
+                    disabled={isConnecting}
+                    className="relative group flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-black font-display font-bold text-base sm:text-lg tracking-wide shadow-[0_0_40px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_70px_rgba(255,255,255,0.45)] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {isConnecting ? (
+                        <>
+                            <Loader size="sm" color="#000000" />
+                            <span>Connexion...</span>
+                        </>
+                    ) : (
+                        <>
+                            <div className="w-2 h-2 rounded-full bg-black animate-pulse"></div>
+                            <span>Démarrer</span>
+                        </>
+                    )}
+                </button>
+             ) : (
+                 <button
+                    onClick={onDisconnect}
+                    className="relative group flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.4)] transition-all duration-300 hover:scale-110 hover:bg-red-600 hover:shadow-[0_0_60px_rgba(239,68,68,0.6)] active:scale-90"
+                 >
+                     <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <span className="relative">
-                      Activer
-                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-500"></span>
-                    </span>
-                  </>
-                )}
-              </span>
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-xl -z-10"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.6), transparent)'
-                }}
-              ></div>
-            </button>
-          ) : (
-            <button
-              onClick={onDisconnect}
-              aria-label="Terminer la session"
-              className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg px-4 sm:px-5 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-2.5 md:py-3 lg:py-3 xl:py-3.5 glass-intense rounded-lg sm:rounded-xl font-display font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl tracking-wide text-red-400 border border-red-500/40 transition-all duration-200 hover:scale-[1.02] hover:border-red-500/60 active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-2 focus:ring-red-500/20 touch-manipulation min-h-[40px] sm:min-h-[44px] md:min-h-[48px] lg:min-h-[52px] xl:min-h-[56px] hover-lift ripple"
-              style={{
-                boxShadow: '0 4px 16px rgba(239,68,68,0.15), 0 0 24px rgba(239,68,68,0.1)'
-              }}
-            >
-              <div className="absolute inset-0 bg-red-500/0 group-hover:bg-red-500/5 transition-colors duration-200"></div>
-              <span className="relative z-10 flex items-center justify-center gap-3">
-                <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-                <span>Terminer la session</span>
-              </span>
-            </button>
-          )}
+                 </button>
+             )}
+        </div>
+
+        {/* Right Controls Group */}
+        <div className="relative flex items-center gap-2">
+            {/* Camera Switcher (Only if multiple cameras) */}
+            {renderCameraSelector && onCameraChange && (
+                 <div className="relative group">
+                    <Tooltip content="Changer de caméra">
+                        <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-110 transition-all duration-300">
+                             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </Tooltip>
+                    <select
+                        value={selectedCameraId}
+                        onChange={(e) => onCameraChange(e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    >
+                        {availableCameras.map((camera) => (
+                            <option key={camera.deviceId} value={camera.deviceId}>
+                                {camera.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+             {/* Settings / Extra Tools (Disconnected only) */}
+             {!isConnected && (
+                 <>
+                    {/* Function Calling Toggle */}
+                    {onToggleFunctionCalling && (
+                        <Tooltip content={isFunctionCallingEnabled ? "Désactiver Fonctions" : "Activer Fonctions"}>
+                            <button
+                                onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                    isFunctionCallingEnabled
+                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
+                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
+                                }`}
+                            >
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                            </button>
+                        </Tooltip>
+                    )}
+                    
+                    {/* Google Search Toggle */}
+                    {onToggleGoogleSearch && (
+                         <Tooltip content={isGoogleSearchEnabled ? "Désactiver Recherche" : "Activer Recherche"}>
+                            <button
+                                onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                    isGoogleSearchEnabled
+                                        ? 'bg-green-500/20 text-green-400 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]'
+                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
+                                }`}
+                            >
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </button>
+                        </Tooltip>
+                    )}
+                 </>
+             )}
+
+            {/* Mobile Menu Trigger */}
+            {!isConnected && onOpenMobileActions && (
+                 <button
+                    onClick={onOpenMobileActions}
+                    className="lg:hidden w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-110 transition-all duration-300"
+                >
+                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </button>
+            )}
+        </div>
         </div>
       </div>
     </div>
