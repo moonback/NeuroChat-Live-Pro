@@ -20,6 +20,7 @@
 - [Lancement](#7-lancement)
 - [Structure du projet](#8-structure-du-projet)
 - [Variables d'environnement](#9-variables-denvironnement)
+- [Docs complémentaires](#9b-docs-complémentaires)
 - [Bonnes pratiques de contribution](#10-bonnes-pratiques-de-contribution)
 - [Licence & ressources](#11-licence--ressources)
 
@@ -57,10 +58,11 @@ Chaque session couple traitement audio bas niveau et animation haut de gamme pou
 
 ### Structure principale
 
-- **`App.tsx`** : Point d'orchestration unique (connexion Gemini, pipelines audio/vidéo, visualisations, notification & reconnection).
+- **`App.tsx`** : Orchestrateur (connexion Gemini Live, pipeline audio, intégration vision, toasts, PWA, UI layout).
 - **`components/`** : UI découpée en modules réutilisables :
   - `ControlPanel.tsx` : Contrôles principaux (connexion, audio, vision)
   - `Visualizer.tsx` : Visualisations audio premium (particules, spectre)
+  - `VideoOverlay.tsx` : Overlay vision (PiP + plein écran + `<video>/<canvas>` cachés)
   - `PersonalityEditor.tsx` & `PersonalitySelector.tsx` : Gestion des personnalités
   - `VoiceSelector.tsx` : Sélection des voix Gemini
   - `DocumentUploader.tsx` : Upload et traitement de documents
@@ -71,6 +73,7 @@ Chaque session couple traitement audio bas niveau et animation haut de gamme pou
   - `useAudioManager.ts` : Gestion du contexte audio et des sons système
   - `useStatusManager.ts` : Gestion de l'état de connexion et des notifications
   - `useVisionManager.ts` : Gestion de la capture vidéo et du partage d'écran
+  - `useLocalStorageState.ts` : Hook générique de persistance localStorage (sûr, typé, avec fallback)
 - **`utils/`** : Utilitaires métier :
   - `audioUtils.ts` : Conversions PCM/Float32, encodage Base64, création de blobs et décodage audio
   - `documentProcessor.ts` : Traitement et extraction de contenu depuis les documents uploadés
@@ -377,6 +380,9 @@ NeuroChat-Live-Pro/
 | --- | --- | --- | --- |
 | `GEMINI_API_KEY` | Clé API Gemini Live (WebSocket streaming) | ✅ | `AIzaSy...` |
 
+> 🔐 **Note sécurité (important)** : dans l’état actuel, la clé est injectée côté frontend via `vite.config.ts` (`define: process.env.API_KEY`).  
+> Pour un déploiement public/production, il est **recommandé** de passer par un **backend proxy** (serverless/edge) afin de ne pas exposer la clé dans le bundle.
+
 ### Comment obtenir votre clé API
 
 1. **Accédez à Google AI Studio** : [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
@@ -396,6 +402,14 @@ NeuroChat-Live-Pro/
 - ✅ Utilisez des **secrets** sur les plateformes de déploiement
 - ✅ Limitez les **restrictions** de votre clé API dans Google Cloud Console
 - ✅ Surveillez l'**utilisation** de votre clé via Google Cloud Console
+
+---
+
+## 9b. Docs complémentaires
+
+- **Architecture** : voir `ARCHITECTURE.md` (diagrammes + flux clés + recommandations prod)
+- **Stockage local / “endpoints”** : voir `localstorage_DOCS.md` (inventaire `localStorage` + fonctions tool-calling)
+- **Roadmap** : voir `ROADMAP.md`
 
 ---
 
@@ -474,31 +488,7 @@ Utilisez le format [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ### Licence
 
-Projet diffusé sous licence **MIT**. Voir ci-dessous pour le texte complet.
-
-```
-MIT License
-
-Copyright (c) 2025 NeuroChat Pro
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Projet diffusé sous licence **MIT**. Voir `LICENSE`.
 
 ### Ressources utiles
 
