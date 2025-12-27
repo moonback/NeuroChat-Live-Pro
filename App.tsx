@@ -1037,135 +1037,160 @@ const App: React.FC = () => {
         {/* Desktop Layout: Sidebar + Main Content */}
         <div className="flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
           {/* Desktop Sidebar - Contrôles et informations */}
-          <aside className="hidden lg:flex lg:flex-col lg:w-72 xl:w-80 lg:border-r lg:border-white/8 lg:bg-black/20 lg:backdrop-blur-sm lg:p-4 xl:p-5 lg:gap-4 xl:gap-5 lg:overflow-y-auto custom-scrollbar animate-slide-in-left">
+          <aside className="hidden lg:flex lg:flex-col lg:w-72 xl:w-80 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-4 xl:p-6 lg:gap-6 xl:gap-8 lg:overflow-y-auto custom-scrollbar animate-slide-in-left z-20 shadow-[5px_0_30px_rgba(0,0,0,0.5)]">
             {/* Status Panel */}
-            <div className="glass-intense rounded-xl p-4 xl:p-4 space-y-3 hover-lift glass-hover animate-fade-in">
-              <h3 className="text-sm xl:text-base font-display font-bold text-white uppercase tracking-wider mb-4">
+            <div className="glass-intense rounded-2xl p-5 space-y-4 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1 h-4 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
                 État du Système
               </h3>
               
-              {/* Connection Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs xl:text-sm text-slate-400 font-medium">Connexion</span>
-                <div className="flex items-center gap-2">
-                  <span className={`block w-2.5 h-2.5 rounded-full ${
-                    connectionState === ConnectionState.CONNECTED ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 
-                    connectionState === ConnectionState.CONNECTING ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-pulse' : 
-                    'bg-slate-500'
-                  }`}></span>
-                  <span className="text-xs xl:text-sm font-medium text-white">
-                    {connectionState === ConnectionState.CONNECTED ? 'Actif' : 
-                    connectionState === ConnectionState.CONNECTING ? 'Connexion...' : 'Veille'}
-                  </span>
+              <div className="space-y-3">
+                {/* Connection Status */}
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                  <span className="text-xs text-slate-300 font-medium">Connexion</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`relative flex h-2.5 w-2.5`}>
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        connectionState === ConnectionState.CONNECTED ? 'bg-emerald-400' : 
+                        connectionState === ConnectionState.CONNECTING ? 'bg-amber-400' : 'hidden'
+                      }`}></span>
+                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                        connectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 
+                        connectionState === ConnectionState.CONNECTING ? 'bg-amber-500' : 
+                        'bg-slate-600'
+                      }`}></span>
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      connectionState === ConnectionState.CONNECTED ? 'text-emerald-400' : 
+                      connectionState === ConnectionState.CONNECTING ? 'text-amber-400' : 'text-slate-500'
+                    }`}>
+                      {connectionState === ConnectionState.CONNECTED ? 'ONLINE' : 
+                       connectionState === ConnectionState.CONNECTING ? 'SYNC...' : 'OFFLINE'}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Latency */}
-              {connectionState === ConnectionState.CONNECTED && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs xl:text-sm text-slate-400 font-medium">Latence</span>
-                  <span className="text-xs xl:text-sm font-bold text-white">
-                    {latency > 0 ? `${latency}ms` : '---'}
-                  </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Latency */}
+                  <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                     <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Latence</span>
+                     <span className={`text-sm font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                       {connectionState === ConnectionState.CONNECTED && latency > 0 ? `${latency}ms` : '-'}
+                     </span>
+                  </div>
+
+                   {/* Vision Status */}
+                   <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                     <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Vision</span>
+                     <span className={`text-xs font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                       {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'ON' : 'OFF'}
+                     </span>
+                  </div>
                 </div>
-              )}
 
-              {/* Video Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs xl:text-sm text-slate-400 font-medium">Vision</span>
-                <span className={`text-xs xl:text-sm font-medium ${
-                  isVideoActive || isScreenShareActive ? 'text-red-400' : 'text-slate-500'
-                }`}>
-                  {isScreenShareActive ? 'Partage d\'écran' : isVideoActive ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              {/* Wake Word Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs xl:text-sm text-slate-400 font-medium">Wake Word</span>
-                <span className={`text-xs xl:text-sm font-medium ${
-                  isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'
-                }`}>
-                  {isWakeWordEnabled ? 'Activé' : 'Désactivé'}
-                </span>
-              </div>
-
-              {/* Function Calling Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs xl:text-sm text-slate-400 font-medium">Appel de fonction</span>
-                <span className={`text-xs xl:text-sm font-medium ${
-                  isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'
-                }`}>
-                  {isFunctionCallingEnabled ? 'Activé' : 'Désactivé'}
-                </span>
-              </div>
-
-              {/* Google Search Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs xl:text-sm text-slate-400 font-medium">Google Search</span>
-                <span className={`text-xs xl:text-sm font-medium ${
-                  isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'
-                }`}>
-                  {isGoogleSearchEnabled ? 'Activé' : 'Désactivé'}
-                </span>
+                {/* Toggles Status Compact */}
+                <div className="grid grid-cols-1 gap-1.5 mt-2">
+                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isWakeWordEnabled ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[10px] text-slate-300">Wake Word</span>
+                      <span className={`text-[10px] font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
+                   </div>
+                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isFunctionCallingEnabled ? 'border-blue-500/20 bg-blue-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[10px] text-slate-300">Fonctions</span>
+                      <span className={`text-[10px] font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
+                   </div>
+                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isGoogleSearchEnabled ? 'border-green-500/20 bg-green-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[10px] text-slate-300">Recherche</span>
+                      <span className={`text-[10px] font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
+                   </div>
+                </div>
               </div>
             </div>
 
-            
-
             {/* Quick Actions */}
             {connectionState === ConnectionState.DISCONNECTED && (
-              <div className="glass-intense rounded-2xl p-5 xl:p-6 space-y-3">
-                <h3 className="text-sm xl:text-base font-display font-bold text-white uppercase tracking-wider mb-4">
-                  Actions Rapides
+              <div className="glass-intense rounded-2xl p-5 space-y-4 animate-slide-in-bottom" style={{ animationDelay: '0.1s' }}>
+                <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <span className="w-1 h-4 bg-gradient-to-b from-orange-400 to-pink-500 rounded-full"></span>
+                  Actions
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   <button
                     onClick={() => setIsPersonalityEditorOpen(true)}
-                    className="w-full px-4 py-2.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-white/20 hover:bg-white/5 text-slate-300 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/0 group-hover:via-purple-500/5 transition-all duration-500"></div>
+                    <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-purple-500/20 transition-colors duration-300 text-purple-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold tracking-wide">Personnalité</span>
+                        <span className="text-[10px] text-slate-500 group-hover:text-slate-400">Modifier le prompt</span>
+                    </div>
+                    <svg className="w-4 h-4 ml-auto text-slate-600 group-hover:text-white transition-colors transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    Modifier la personnalité
                   </button>
                   
                   <button
                     onClick={() => handleFunctionCallingToggle(!isFunctionCallingEnabled)}
-                    className={`w-full px-4 py-2.5 rounded-lg glass border font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2 ${
+                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
                       isFunctionCallingEnabled 
-                        ? 'border-blue-500/50 text-blue-300 hover:border-blue-500/70' 
-                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                        ? 'border-blue-500/30 text-blue-100 hover:shadow-blue-500/10' 
+                        : 'border-white/5 text-slate-300 hover:border-white/20'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    {isFunctionCallingEnabled ? 'Désactiver' : 'Activer'} Appel de fonction
+                    <div className={`p-1.5 rounded-lg transition-colors duration-300 ${isFunctionCallingEnabled ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-400 group-hover:text-blue-400 group-hover:bg-blue-500/10'}`}>
+                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                       </svg>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold tracking-wide">Fonctions</span>
+                        <span className={`text-[10px] ${isFunctionCallingEnabled ? 'text-blue-300/70' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'Activé' : 'Désactivé'}</span>
+                    </div>
+                     <div className={`w-8 h-4 rounded-full ml-auto relative transition-colors duration-300 ${isFunctionCallingEnabled ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-300 ${isFunctionCallingEnabled ? 'left-4.5' : 'left-0.5'}`} style={{ left: isFunctionCallingEnabled ? 'calc(100% - 3.5px - 12px)' : '2px' }}></div>
+                     </div>
                   </button>
                   
                   <button
                     onClick={() => handleGoogleSearchToggle(!isGoogleSearchEnabled)}
-                    className={`w-full px-4 py-2.5 rounded-lg glass border font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2 ${
+                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
                       isGoogleSearchEnabled 
-                        ? 'border-green-500/50 text-green-300 hover:border-green-500/70' 
-                        : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                        ? 'border-green-500/30 text-green-100 hover:shadow-green-500/10' 
+                        : 'border-white/5 text-slate-300 hover:border-white/20'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    {isGoogleSearchEnabled ? 'Désactiver' : 'Activer'} Google Search
+                     <div className={`p-1.5 rounded-lg transition-colors duration-300 ${isGoogleSearchEnabled ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-slate-400 group-hover:text-green-400 group-hover:bg-green-500/10'}`}>
+                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                       </svg>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold tracking-wide">Recherche</span>
+                        <span className={`text-[10px] ${isGoogleSearchEnabled ? 'text-green-300/70' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'Activé' : 'Désactivé'}</span>
+                    </div>
+                    <div className={`w-8 h-4 rounded-full ml-auto relative transition-colors duration-300 ${isGoogleSearchEnabled ? 'bg-green-500' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-300`} style={{ left: isGoogleSearchEnabled ? 'calc(100% - 3.5px - 12px)' : '2px' }}></div>
+                     </div>
                   </button>
                   
                   <button
                     onClick={() => setIsToolsListOpen(true)}
-                    className="w-full px-4 py-2.5 rounded-lg glass border border-blue-500/30 text-blue-300 hover:border-blue-500/50 hover:text-blue-200 font-body text-xs xl:text-sm font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-left flex items-center gap-2"
+                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-blue-400/30 hover:bg-blue-500/5 text-slate-300 hover:text-blue-100 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 active:scale-[0.98] text-left flex items-center gap-3 mt-2"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                     <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors duration-300 text-slate-400 group-hover:text-blue-400">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <span className="text-xs font-bold tracking-wide">Bibliothèque</span>
+                    <svg className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
-                    Voir les fonctions disponibles
                   </button>
                 </div>
               </div>
