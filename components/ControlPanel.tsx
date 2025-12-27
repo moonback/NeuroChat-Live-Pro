@@ -156,46 +156,70 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Personality Selector (Visible when disconnected) */}
       {!isConnected && (
-         <div className="pointer-events-auto mb-8 text-center animate-fade-in space-y-2">
-            {onSelectPersonality ? (
-                <div className="relative group inline-block">
-                    <select
-                        value={currentPersonality.id}
-                        onChange={(e) => {
-                            const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
-                            if (selected) onSelectPersonality(selected);
-                        }}
-                        className="appearance-none bg-transparent text-3xl md:text-4xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 py-2 px-8 rounded-2xl hover:bg-white/5"
-                        style={{
-                                color: currentPersonality.themeColor,
-                                textShadow: `0 0 30px ${currentPersonality.themeColor}40`,
-                        }}
-                    >
-                        {AVAILABLE_PERSONALITIES.map(p => (
-                            <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base">
-                                {p.name}
-                            </option>
-                        ))}
-                         {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
-                            <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
-                                {currentPersonality.name} (Personnalisé)
-                            </option>
-                        )}
-                    </select>
-                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+         <div className="pointer-events-auto mb-12 text-center animate-fade-in flex flex-col items-center justify-center w-full px-4">
+            
+            {/* Glass Card Container */}
+            <div className="relative p-6 sm:p-8 rounded-3xl glass-intense border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl max-w-xl w-full mx-auto overflow-hidden group hover:border-white/20 transition-all duration-500">
+                
+                {/* Glow effect based on personality color */}
+                <div 
+                    className="absolute inset-0 opacity-10 transition-opacity duration-500 group-hover:opacity-20 pointer-events-none"
+                    style={{
+                        background: `radial-gradient(circle at center, ${currentPersonality.themeColor}30, transparent 70%)`
+                    }}
+                />
+
+                <span className="relative z-10 block text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-4 sm:mb-6">
+                    Personnalité Active
+                </span>
+
+                {onSelectPersonality ? (
+                    <div className="relative z-10 flex flex-col items-center w-full">
+                        <div className="relative w-full group/select">
+                            <select
+                                value={currentPersonality.id}
+                                onChange={(e) => {
+                                    const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
+                                    if (selected) onSelectPersonality(selected);
+                                }}
+                                className="w-full appearance-none bg-black/40 text-2xl sm:text-3xl md:text-4xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20 transition-all duration-300 py-4 px-10 rounded-2xl border border-white/5 hover:bg-black/60 hover:border-white/20 hover:scale-[1.02]"
+                                style={{
+                                        color: currentPersonality.themeColor,
+                                        textShadow: `0 0 40px ${currentPersonality.themeColor}50`,
+                                }}
+                            >
+                                {AVAILABLE_PERSONALITIES.map(p => (
+                                    <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base py-2">
+                                        {p.name}
+                                    </option>
+                                ))}
+                                 {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
+                                    <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
+                                        {currentPersonality.name} (Personnalisé)
+                                    </option>
+                                )}
+                            </select>
+                            
+                            {/* Custom Chevron for better visibility */}
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover/select:text-white/80 transition-all duration-300 group-hover/select:translate-x-1">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    <h1 className="relative z-10 text-3xl md:text-4xl font-display font-bold tracking-tight mb-2" style={{ color: currentPersonality.themeColor }}>
+                        {currentPersonality.name}
+                    </h1>
+                )}
+                
+                <div className="relative z-10 mt-6 pt-6 border-t border-white/10">
+                    <p className="text-slate-300 font-light text-sm sm:text-base leading-relaxed max-w-md mx-auto">
+                        {currentPersonality.description}
+                    </p>
                 </div>
-            ) : (
-                <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight" style={{ color: currentPersonality.themeColor }}>
-                    {currentPersonality.name}
-                </h1>
-            )}
-            <p className="text-slate-400 font-light text-sm max-w-md mx-auto leading-relaxed px-4">
-                {currentPersonality.description}
-            </p>
+            </div>
          </div>
       )}
 
@@ -235,8 +259,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)' }}
           />
         
-        {/* Left Controls Group */}
-        <div className="relative flex items-center gap-2">
+        {/* Media Controls Group */}
+        <div className="relative flex items-center gap-3 sm:gap-4 px-2">
             {/* Camera Toggle */}
             {isConnected && (
                 <Tooltip content={getCameraTooltip()}>
@@ -304,42 +328,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     </button>
                 </Tooltip>
             )}
-        </div>
 
-        {/* Main Action Button (Center) */}
-        <div className="relative mx-2 sm:mx-4">
-             {!isConnected ? (
-                <button
-                    onClick={onConnect}
-                    disabled={isConnecting}
-                    className="relative group flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-black font-display font-bold text-base sm:text-lg tracking-wide shadow-[0_0_40px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_70px_rgba(255,255,255,0.45)] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    {isConnecting ? (
-                        <>
-                            <Loader size="sm" color="#000000" />
-                            <span>Connexion...</span>
-                        </>
-                    ) : (
-                        <>
-                            <div className="w-2 h-2 rounded-full bg-black animate-pulse"></div>
-                            <span>Démarrer</span>
-                        </>
-                    )}
-                </button>
-             ) : (
-                 <button
-                    onClick={onDisconnect}
-                    className="relative group flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.4)] transition-all duration-300 hover:scale-110 hover:bg-red-600 hover:shadow-[0_0_60px_rgba(239,68,68,0.6)] active:scale-90"
-                 >
-                     <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                 </button>
-             )}
-        </div>
-
-        {/* Right Controls Group */}
-        <div className="relative flex items-center gap-2">
             {/* Camera Switcher (Only if multiple cameras) */}
             {renderCameraSelector && onCameraChange && (
                  <div className="relative group">
@@ -363,47 +352,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     </select>
                 </div>
             )}
-
-             {/* Settings / Extra Tools (Disconnected only) */}
-             {!isConnected && (
-                 <>
-                    {/* Function Calling Toggle */}
-                    {onToggleFunctionCalling && (
-                        <Tooltip content={isFunctionCallingEnabled ? "Désactiver Fonctions" : "Activer Fonctions"}>
-                            <button
-                                onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
-                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                    isFunctionCallingEnabled
-                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
-                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
-                                }`}
-                            >
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                </svg>
-                            </button>
-                        </Tooltip>
-                    )}
-                    
-                    {/* Google Search Toggle */}
-                    {onToggleGoogleSearch && (
-                         <Tooltip content={isGoogleSearchEnabled ? "Désactiver Recherche" : "Activer Recherche"}>
-                            <button
-                                onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
-                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                    isGoogleSearchEnabled
-                                        ? 'bg-green-500/20 text-green-400 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]'
-                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
-                                }`}
-                            >
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </button>
-                        </Tooltip>
-                    )}
-                 </>
-             )}
 
             {/* Mobile Menu Trigger */}
             {!isConnected && onOpenMobileActions && (

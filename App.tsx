@@ -1067,6 +1067,19 @@ const App: React.FC = () => {
             onVoiceChange={setSelectedVoice}
             uploadedDocuments={uploadedDocuments}
             onDocumentsChange={handleDocumentsChange}
+            onConnect={() => {
+                  isIntentionalDisconnectRef.current = false;
+                  activateAudioContext();
+                  connect();
+            }}
+            onDisconnect={() => {
+                  isIntentionalDisconnectRef.current = true;
+                  disconnect(true);
+            }}
+            isFunctionCallingEnabled={isFunctionCallingEnabled}
+            onToggleFunctionCalling={handleFunctionCallingToggle}
+            isGoogleSearchEnabled={isGoogleSearchEnabled}
+            onToggleGoogleSearch={handleGoogleSearchToggle}
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
@@ -1176,94 +1189,10 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            {connectionState === ConnectionState.DISCONNECTED && (
-              <div className="glass-intense rounded-2xl p-5 space-y-4 animate-slide-in-bottom" style={{ animationDelay: '0.1s' }}>
-                <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <span className="w-1 h-4 bg-gradient-to-b from-orange-400 to-pink-500 rounded-full"></span>
-                  Actions
-                </h3>
-                <div className="flex flex-col gap-2.5">
-                  <button
-                    onClick={() => setIsPersonalityEditorOpen(true)}
-                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-white/20 hover:bg-white/5 text-slate-300 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/0 group-hover:via-purple-500/5 transition-all duration-500"></div>
-                    <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-purple-500/20 transition-colors duration-300 text-purple-400">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold tracking-wide">Personnalité</span>
-                        <span className="text-[10px] text-slate-500 group-hover:text-slate-400">Modifier le prompt</span>
-                    </div>
-                    <svg className="w-4 h-4 ml-auto text-slate-600 group-hover:text-white transition-colors transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleFunctionCallingToggle(!isFunctionCallingEnabled)}
-                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
-                      isFunctionCallingEnabled 
-                        ? 'border-blue-500/30 text-blue-100 hover:shadow-blue-500/10' 
-                        : 'border-white/5 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <div className={`p-1.5 rounded-lg transition-colors duration-300 ${isFunctionCallingEnabled ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-400 group-hover:text-blue-400 group-hover:bg-blue-500/10'}`}>
-                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                       </svg>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold tracking-wide">Fonctions</span>
-                        <span className={`text-[10px] ${isFunctionCallingEnabled ? 'text-blue-300/70' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'Activé' : 'Désactivé'}</span>
-                    </div>
-                     <div className={`w-8 h-4 rounded-full ml-auto relative transition-colors duration-300 ${isFunctionCallingEnabled ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-300 ${isFunctionCallingEnabled ? 'left-4.5' : 'left-0.5'}`} style={{ left: isFunctionCallingEnabled ? 'calc(100% - 3.5px - 12px)' : '2px' }}></div>
-                     </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleGoogleSearchToggle(!isGoogleSearchEnabled)}
-                    className={`group w-full px-4 py-3 rounded-xl glass border hover:bg-white/5 transition-all duration-300 hover:shadow-lg active:scale-[0.98] text-left flex items-center gap-3 relative overflow-hidden ${
-                      isGoogleSearchEnabled 
-                        ? 'border-green-500/30 text-green-100 hover:shadow-green-500/10' 
-                        : 'border-white/5 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                     <div className={`p-1.5 rounded-lg transition-colors duration-300 ${isGoogleSearchEnabled ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-slate-400 group-hover:text-green-400 group-hover:bg-green-500/10'}`}>
-                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                       </svg>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold tracking-wide">Recherche</span>
-                        <span className={`text-[10px] ${isGoogleSearchEnabled ? 'text-green-300/70' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'Activé' : 'Désactivé'}</span>
-                    </div>
-                    <div className={`w-8 h-4 rounded-full ml-auto relative transition-colors duration-300 ${isGoogleSearchEnabled ? 'bg-green-500' : 'bg-slate-700'}`}>
-                        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-300`} style={{ left: isGoogleSearchEnabled ? 'calc(100% - 3.5px - 12px)' : '2px' }}></div>
-                     </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => setIsToolsListOpen(true)}
-                    className="group w-full px-4 py-3 rounded-xl glass border border-white/5 hover:border-blue-400/30 hover:bg-blue-500/5 text-slate-300 hover:text-blue-100 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 active:scale-[0.98] text-left flex items-center gap-3 mt-2"
-                  >
-                     <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors duration-300 text-slate-400 group-hover:text-blue-400">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                    </div>
-                    <span className="text-xs font-bold tracking-wide">Bibliothèque</span>
-                    <svg className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Quick Actions - Déplacé dans le Header */}
+            {/* {connectionState === ConnectionState.DISCONNECTED && (
+               ...
+            )} */}
             </div>
           </aside>
 

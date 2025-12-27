@@ -12,6 +12,12 @@ interface HeaderProps {
   onVoiceChange: (voice: string) => void;
   uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  isFunctionCallingEnabled: boolean;
+  onToggleFunctionCalling: (enabled: boolean) => void;
+  isGoogleSearchEnabled: boolean;
+  onToggleGoogleSearch: (enabled: boolean) => void;
 }
 
 const StatusPill: React.FC<{ connectionState: ConnectionState }> = ({ connectionState }) => {
@@ -100,6 +106,12 @@ const Header: React.FC<HeaderProps> = ({
   onVoiceChange,
   uploadedDocuments,
   onDocumentsChange,
+  onConnect,
+  onDisconnect,
+  isFunctionCallingEnabled,
+  onToggleFunctionCalling,
+  isGoogleSearchEnabled,
+  onToggleGoogleSearch,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -218,6 +230,49 @@ const Header: React.FC<HeaderProps> = ({
               : '0 2px 8px rgba(0, 0, 0, 0.15)'
           }}
         >
+          {/* Action Toggles (Only when disconnected) */}
+          {!isConnected && (
+            <>
+              {/* Function Calling */}
+              <Tooltip content={isFunctionCallingEnabled ? "Désactiver Fonctions" : "Activer Fonctions"}>
+                 <button
+                    onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                    className={`
+                      p-1.5 rounded-md transition-all duration-300
+                      ${isFunctionCallingEnabled 
+                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      }
+                    `}
+                 >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                 </button>
+              </Tooltip>
+
+              {/* Google Search */}
+              <Tooltip content={isGoogleSearchEnabled ? "Désactiver Recherche" : "Activer Recherche"}>
+                 <button
+                    onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                    className={`
+                      p-1.5 rounded-md transition-all duration-300
+                      ${isGoogleSearchEnabled 
+                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' 
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      }
+                    `}
+                 >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                 </button>
+              </Tooltip>
+
+              <div className="h-4 w-px bg-white/10 mx-0.5" />
+            </>
+          )}
+
           {/* Document Uploader with enhanced design */}
           <div className="relative group">
             <Tooltip 
@@ -304,6 +359,37 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </Tooltip>
           </div>
+
+          <div className="h-4 w-px bg-white/10 mx-0.5" />
+
+          {/* Connect Button */}
+          <Tooltip content={isConnected ? "Déconnecter" : "Démarrer la session"}>
+            <button
+                onClick={isConnected ? onDisconnect : onConnect}
+                disabled={isConnecting}
+                className={`
+                    relative flex items-center justify-center w-8 h-8 rounded-md transition-all duration-300
+                    ${isConnected 
+                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' 
+                        : isConnecting
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-wait'
+                        : 'bg-white text-black hover:bg-slate-200 border border-transparent shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                    }
+                `}
+            >
+                {isConnecting ? (
+                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : isConnected ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                ) : (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                )}
+            </button>
+          </Tooltip>
         </div>
       </div>
     </header>
