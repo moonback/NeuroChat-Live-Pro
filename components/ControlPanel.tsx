@@ -156,68 +156,111 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Personality Selector (Visible when disconnected) */}
       {!isConnected && (
-         <div className="pointer-events-auto mb-12 text-center animate-fade-in flex flex-col items-center justify-center w-full px-4">
-            
-            {/* Glass Card Container */}
-            <div className="relative p-6 sm:p-8 rounded-3xl glass-intense border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl max-w-xl w-full mx-auto overflow-hidden group hover:border-white/20 transition-all duration-500">
+         <div className="pointer-events-auto mb-10 w-full max-w-md mx-auto animate-fade-in z-20">
+            {/* Label discret */}
+            <div className="flex justify-center mb-3">
+                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold uppercase tracking-widest text-slate-400 backdrop-blur-md">
+                    Assistant Actif
+                </span>
+            </div>
+
+            {/* Compact Glass Card */}
+            <div className="group relative overflow-hidden rounded-2xl bg-[#0a0a0a]/60 border border-white/10 shadow-2xl transition-all duration-500 hover:border-white/20 hover:bg-[#0a0a0a]/80 backdrop-blur-xl">
                 
-                {/* Glow effect based on personality color */}
+                {/* Ambient Glow */}
                 <div 
-                    className="absolute inset-0 opacity-10 transition-opacity duration-500 group-hover:opacity-20 pointer-events-none"
-                    style={{
-                        background: `radial-gradient(circle at center, ${currentPersonality.themeColor}30, transparent 70%)`
-                    }}
+                    className="absolute -top-20 -left-20 w-40 h-40 rounded-full opacity-20 blur-[50px] transition-all duration-700 group-hover:opacity-30"
+                    style={{ background: currentPersonality.themeColor }}
+                />
+                <div 
+                    className="absolute -bottom-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-[50px] transition-all duration-700 group-hover:opacity-20"
+                    style={{ background: currentPersonality.themeColor }}
                 />
 
-                <span className="relative z-10 block text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-4 sm:mb-6">
-                    Personnalité Active
-                </span>
-
-                {onSelectPersonality ? (
-                    <div className="relative z-10 flex flex-col items-center w-full">
-                        <div className="relative w-full group/select">
+                {/* Content */}
+                <div className="relative z-10">
+                    {onSelectPersonality ? (
+                        <div className="relative w-full">
+                            {/* Invisible Select Overlay */}
                             <select
                                 value={currentPersonality.id}
                                 onChange={(e) => {
                                     const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
                                     if (selected) onSelectPersonality(selected);
                                 }}
-                                className="w-full appearance-none bg-black/40 text-2xl sm:text-3xl md:text-4xl font-display font-bold tracking-tight text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20 transition-all duration-300 py-4 px-10 rounded-2xl border border-white/5 hover:bg-black/60 hover:border-white/20 hover:scale-[1.02]"
-                                style={{
-                                        color: currentPersonality.themeColor,
-                                        textShadow: `0 0 40px ${currentPersonality.themeColor}50`,
-                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                                title="Changer de personnalité"
                             >
                                 {AVAILABLE_PERSONALITIES.map(p => (
                                     <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base py-2">
                                         {p.name}
                                     </option>
                                 ))}
-                                 {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
+                                {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
                                     <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
                                         {currentPersonality.name} (Personnalisé)
                                     </option>
                                 )}
                             </select>
-                            
-                            {/* Custom Chevron for better visibility */}
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover/select:text-white/80 transition-all duration-300 group-hover/select:translate-x-1">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
+
+                            {/* Visual Representation */}
+                            <div className="flex flex-col items-center py-5 px-6 pointer-events-none">
+                                {/* Header with Arrows */}
+                                <div className="flex items-center justify-between w-full mb-3">
+                                    <div className="p-2 rounded-full bg-white/5 text-white/30 group-hover:text-white/60 group-hover:bg-white/10 transition-all duration-300">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <h2 
+                                            className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-center transition-all duration-300 transform group-hover:scale-105"
+                                            style={{ 
+                                                color: currentPersonality.themeColor,
+                                                textShadow: `0 0 25px ${currentPersonality.themeColor}40`
+                                            }}
+                                        >
+                                            {currentPersonality.name}
+                                        </h2>
+                                    </div>
+
+                                    <div className="p-2 rounded-full bg-white/5 text-white/30 group-hover:text-white/60 group-hover:bg-white/10 transition-all duration-300">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="w-16 h-0.5 rounded-full bg-white/10 mb-3 group-hover:w-24 transition-all duration-500" />
+
+                                {/* Description */}
+                                <p className="text-slate-300 text-sm font-light text-center leading-relaxed max-w-sm">
+                                    {currentPersonality.description}
+                                </p>
+
+                                {/* Hint */}
+                                <div className="mt-4 opacity-70 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-2 group-hover:translate-y-0">
+                                    <span className="text-[9px] uppercase tracking-widest text-white/50 font-medium">
+                                        Cliquez pour changer
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ) : (
-                    <h1 className="relative z-10 text-3xl md:text-4xl font-display font-bold tracking-tight mb-2" style={{ color: currentPersonality.themeColor }}>
-                        {currentPersonality.name}
-                    </h1>
-                )}
-                
-                <div className="relative z-10 mt-6 pt-6 border-t border-white/10">
-                    <p className="text-slate-300 font-light text-sm sm:text-base leading-relaxed max-w-md mx-auto">
-                        {currentPersonality.description}
-                    </p>
+                    ) : (
+                        <div className="flex flex-col items-center py-6 px-6">
+                            <h2 
+                                className="text-3xl font-display font-bold tracking-tight mb-2"
+                                style={{ color: currentPersonality.themeColor }}
+                            >
+                                {currentPersonality.name}
+                            </h2>
+                            <p className="text-slate-300 text-sm font-light text-center leading-relaxed">
+                                {currentPersonality.description}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
          </div>
