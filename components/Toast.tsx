@@ -74,9 +74,12 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   return (
     <div 
       className={`
-        relative flex items-start gap-2 sm:gap-3 p-3 sm:p-4 mb-2 sm:mb-3 rounded-lg sm:rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] touch-manipulation sm:max-w-[400px]
+        relative flex items-start gap-2 sm:gap-3 p-3 sm:p-4 mb-2 sm:mb-3 rounded-lg sm:rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] touch-manipulation sm:max-w-[400px]
         ${getStyles()}
-        ${isExiting ? 'opacity-0 translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}
+        ${isExiting 
+          ? 'opacity-0 translate-x-full scale-95 pointer-events-none' 
+          : 'opacity-100 translate-x-0 scale-100 animate-slide-up-fade'
+        }
       `}
       style={{ minWidth: '280px', maxWidth: 'calc(100vw - 2rem)' }}
       onClick={handleClose}

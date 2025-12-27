@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ToastMessage } from './Toast';
+import Input from './Input';
+import Card from './Card';
+import Button from './Button';
 
 interface Note {
   id: string;
@@ -101,18 +104,17 @@ const NotesViewer: React.FC<NotesViewerProps> = ({ isOpen, onClose, onNotesChang
 
         {/* Search Bar */}
         <div className="p-4 border-b border-white/10">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Rechercher dans les notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg glass border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-            />
-          </div>
+          <Input
+            type="text"
+            placeholder="Rechercher dans les notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            leftIcon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            }
+          />
         </div>
 
         {/* Content */}
@@ -129,15 +131,18 @@ const NotesViewer: React.FC<NotesViewerProps> = ({ isOpen, onClose, onNotesChang
                 </p>
               </div>
             ) : (
-              <div className="p-2">
+              <div className="p-2 space-y-2">
                 {filteredNotes.map((note) => (
-                  <button
+                  <Card
                     key={note.id}
+                    variant={selectedNote?.id === note.id ? "elevated" : "interactive"}
+                    size="sm"
+                    hover
                     onClick={() => setSelectedNote(note)}
-                    className={`w-full p-4 mb-2 rounded-lg text-left transition-all duration-300 ${
+                    className={`cursor-pointer ${
                       selectedNote?.id === note.id
-                        ? 'glass-intense border border-indigo-500/50 bg-indigo-500/10'
-                        : 'glass border border-white/10 hover:border-white/20 hover:bg-white/5'
+                        ? 'border-indigo-500/50 bg-indigo-500/10'
+                        : ''
                     }`}
                   >
                     <h3 className="font-semibold text-white mb-1 line-clamp-1">
@@ -155,7 +160,7 @@ const NotesViewer: React.FC<NotesViewerProps> = ({ isOpen, onClose, onNotesChang
                         minute: '2-digit'
                       })}
                     </p>
-                  </button>
+                  </Card>
                 ))}
               </div>
             )}
@@ -181,15 +186,16 @@ const NotesViewer: React.FC<NotesViewerProps> = ({ isOpen, onClose, onNotesChang
                       })}
                     </p>
                   </div>
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => deleteNote(selectedNote.id)}
-                    className="p-2 rounded-lg glass border border-red-500/30 text-red-300 hover:border-red-500/50 hover:text-red-200 hover:bg-red-500/10 transition-all duration-300 hover:scale-105 active:scale-95"
                     title="Supprimer cette note"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
                   <div className="prose prose-invert max-w-none">

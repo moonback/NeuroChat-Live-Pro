@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Input from './Input';
+import Select from './Select';
+import Card from './Card';
+import Button from './Button';
 
 interface WorkHoursEntry {
   id: string;
@@ -159,18 +163,17 @@ const TasksViewer: React.FC<TasksViewerProps> = ({ isOpen, onClose, onTasksChang
 
         {/* Search and Filter Bar */}
         <div className="p-4 border-b border-white/10 space-y-3">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Rechercher dans les tâches..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg glass border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all"
-            />
-          </div>
+          <Input
+            type="text"
+            placeholder="Rechercher dans les tâches..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            leftIcon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            }
+          />
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFilterPeriod('all')}
@@ -223,18 +226,16 @@ const TasksViewer: React.FC<TasksViewerProps> = ({ isOpen, onClose, onTasksChang
               Année
             </button>
             {allProjects.length > 0 && (
-              <select
+              <Select
                 value={filterProject}
                 onChange={(e) => setFilterProject(e.target.value)}
-                className="px-4 py-1.5 rounded-lg glass border border-white/10 text-white text-sm font-semibold bg-slate-800/50 focus:outline-none focus:border-emerald-500/50"
-              >
-                <option value="">Tous les projets</option>
-                {allProjects.map(project => (
-                  <option key={project} value={project} className="bg-slate-800">
-                    {project}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Tous les projets' },
+                  ...allProjects.map(project => ({ value: project, label: project }))
+                ]}
+                placeholder="Tous les projets"
+                className="min-w-[150px]"
+              />
             )}
           </div>
           {totalHours > 0 && (

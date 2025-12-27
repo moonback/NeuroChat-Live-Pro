@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Input from './Input';
+import Select from './Select';
+import Card from './Card';
+import Button from './Button';
 
 interface Event {
   id: string;
@@ -182,34 +186,36 @@ const AgendaViewer: React.FC<AgendaViewerProps> = ({ isOpen, onClose, onEventsCh
         {/* Search and Filter Bar */}
         <div className="p-4 border-b border-white/10 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Rechercher dans l'agenda..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg glass border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
-              />
-            </div>
-            <input
+            <Input
+              type="text"
+              placeholder="Rechercher dans l'agenda..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftIcon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              }
+              className="flex-1"
+            />
+            <Input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="px-4 py-2.5 rounded-lg glass border border-white/10 text-white bg-slate-800/50 focus:outline-none focus:border-purple-500/50 transition-all"
+              className="min-w-[150px]"
             />
-            <select
+            <Select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2.5 rounded-lg glass border border-white/10 text-white bg-slate-800/50 focus:outline-none focus:border-purple-500/50 transition-all"
-            >
-              <option value="all">Tous les types</option>
-              <option value="work">Travail</option>
-              <option value="meeting">Réunion</option>
-              <option value="personal">Personnel</option>
-            </select>
+              options={[
+                { value: 'all', label: 'Tous les types' },
+                { value: 'work', label: 'Travail' },
+                { value: 'meeting', label: 'Réunion' },
+                { value: 'personal', label: 'Personnel' }
+              ]}
+              placeholder="Type"
+              className="min-w-[150px]"
+            />
             <button
               onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
               className="px-4 py-2.5 rounded-lg glass border border-white/10 text-white hover:border-purple-500/50 transition-all"
