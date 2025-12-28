@@ -109,10 +109,10 @@ const ControlButton = ({
   <Tooltip content={tooltip} position="bottom">
     <button
       onClick={onClick}
-      className={`p-1 md:p-1.5 rounded-md md:rounded-lg transition-all duration-300 border hover:scale-110 active:scale-95 ${
+      className={`p-2 rounded-lg transition-all duration-300 border hover:scale-110 active:scale-95 ${
         active 
           ? `${activeClass} shadow-lg` 
-          : 'text-slate-400 border-transparent hover:bg-white/5 hover:text-white'
+          : 'text-slate-300 border-white/10 hover:bg-white/8 hover:text-white hover:border-white/20'
       }`}
     >
       {icon}
@@ -294,15 +294,15 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* DESKTOP HEADER */}
-      <div className="hidden md:flex max-w-7xl mx-auto justify-between items-center min-h-[56px]">
+      <div className="hidden md:flex max-w-7xl mx-auto justify-between items-center min-h-[64px] py-2">
         {/* Left: Branding */}
-        <div className="flex flex-col gap-0.5 pointer-events-auto group">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-black tracking-tighter text-white flex items-center gap-1.5">
-              <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+        <div className="flex items-center gap-3 pointer-events-auto group">
+          <div className="flex items-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
+            <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
                 NEUROCHAT
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded border border-sky-500/50 bg-sky-500/10 text-sky-400 font-bold tracking-widest">
+              <span className="text-[10px] px-2 py-1 rounded-md border border-sky-500/60 bg-gradient-to-br from-sky-500/20 to-sky-600/10 text-sky-300 font-bold tracking-widest shadow-[0_0_12px_rgba(14,165,233,0.2)] backdrop-blur-sm">
                 PRO
               </span>
             </h1>
@@ -310,26 +310,28 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
         {/* Right: Actions */}
-        <div className="flex items-center gap-2.5 pointer-events-auto">
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl">
+        <div className="flex items-center gap-3 pointer-events-auto">
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-gradient-to-br from-white/8 via-white/5 to-white/3 border border-white/20 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all duration-500 hover:border-white/30 hover:from-white/12 hover:via-white/8 hover:to-white/5">
             {/* AI Tools Group */}
             {!isConnected && (
               <>
-                <ControlButton
-                  tooltip="Google Search"
-                  active={isGoogleSearchEnabled}
-                  onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
-                  activeClass="bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  icon={<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
-                />
-                <ControlButton
-                  tooltip="Function Calling"
-                  active={isFunctionCallingEnabled}
-                  onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
-                  activeClass="bg-blue-500/20 text-blue-400 border-blue-500/30"
-                  icon={<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>}
-                />
-                <div className="w-px h-5 bg-white/10 mx-0.5" />
+                <div className="flex items-center gap-1.5">
+                  <ControlButton
+                    tooltip="Google Search"
+                    active={isGoogleSearchEnabled}
+                    onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                    activeClass="bg-emerald-500/25 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                    icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+                  />
+                  <ControlButton
+                    tooltip="Function Calling"
+                    active={isFunctionCallingEnabled}
+                    onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                    activeClass="bg-blue-500/25 text-blue-300 border-blue-500/40 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+                    icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>}
+                  />
+                </div>
+                <div className="w-[1px] h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
               </>
             )}
 
@@ -341,16 +343,16 @@ const Header: React.FC<HeaderProps> = ({
                 disabled={isConnected}
               />
               {uploadedDocuments.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-bold text-white ring-1 ring-black animate-in zoom-in">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-[9px] font-bold text-white ring-2 ring-black/50 shadow-lg animate-in zoom-in">
                   {uploadedDocuments.length}
                 </span>
               )}
             </div>
 
             {/* Voice & Personality */}
-            <div className="w-px h-5 bg-white/10 mx-0.5" />
+            <div className="w-[1px] h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
 
-            <div className={`transition-opacity duration-300 ${isConnected ? 'opacity-50 grayscale' : 'opacity-100'}`}>
+            <div className={`transition-all duration-300 ${isConnected ? 'opacity-50 grayscale' : 'opacity-100'}`}>
               <VoiceSelector
                 currentVoice={selectedVoice}
                 onVoiceChange={onVoiceChange}
@@ -359,12 +361,15 @@ const Header: React.FC<HeaderProps> = ({
             </div>
 
             {onEditPersonality && (
-              <ControlButton
-                tooltip="Modifier Personnalité"
-                onClick={onEditPersonality}
-                activeClass=""
-                icon={<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
-              />
+              <>
+                <div className="w-[1px] h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
+                <ControlButton
+                  tooltip="Modifier Personnalité"
+                  onClick={onEditPersonality}
+                  activeClass=""
+                  icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
+                />
+              </>
             )}
           </div>
         </div>
