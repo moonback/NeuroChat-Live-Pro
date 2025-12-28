@@ -518,16 +518,28 @@ button, a, input[type="button"], input[type="submit"], select {
   min-width: 44px;
 }
 
-/* Responsive text sizes */
+/* Responsive text sizes - Réduites pour mobile et desktop */
 @media (max-width: 640px) {
   html {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   html {
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 641px) {
+  html {
     font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 14px;
   }
 }
 

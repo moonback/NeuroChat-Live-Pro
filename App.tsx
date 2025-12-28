@@ -1305,7 +1305,7 @@ const App: React.FC = () => {
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
-        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-12 xl:pt-14">
+        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-10 xl:pt-12">
           {/* Hotzone (Desktop) - survol bord gauche pour ouvrir */}
           <div
             className={`hidden lg:block absolute left-0 top-0 h-full ${isDesktopSidebarOpen ? 'w-0' : 'w-3'} z-30`}
@@ -1318,7 +1318,7 @@ const App: React.FC = () => {
             onMouseLeave={scheduleCloseDesktopSidebar}
             className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 transition-all duration-300 ease-out ${
               isDesktopSidebarOpen
-                ? 'lg:w-72 xl:w-80 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-4 xl:p-6 lg:gap-6 xl:gap-8 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
+                ? 'lg:w-64 xl:w-72 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-3 xl:p-4 lg:gap-4 xl:gap-5 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
                 : 'lg:w-0 xl:w-0 lg:p-0 lg:border-r-0 lg:bg-transparent lg:backdrop-blur-0 shadow-none'
             }`}
           >
@@ -1343,29 +1343,29 @@ const App: React.FC = () => {
               className={`${isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-200`}
             >
             {/* Status Panel */}
-            <div className="glass-intense rounded-2xl p-5 space-y-4 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="w-1 h-4 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
+            <div className="glass-intense rounded-xl p-3 space-y-3 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <h3 className="text-[10px] font-display font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <span className="w-0.5 h-3 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
                 État du Système
               </h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Connection Status */}
-                <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                  <span className="text-xs text-slate-300 font-medium">Connexion</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`relative flex h-2.5 w-2.5`}>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                  <span className="text-[10px] text-slate-300 font-medium">Connexion</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`relative flex h-2 w-2`}>
                       <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                         connectionState === ConnectionState.CONNECTED ? 'bg-emerald-400' : 
                         connectionState === ConnectionState.CONNECTING ? 'bg-amber-400' : 'hidden'
                       }`}></span>
-                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${
                         connectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 
                         connectionState === ConnectionState.CONNECTING ? 'bg-amber-500' : 
                         'bg-slate-600'
                       }`}></span>
                     </span>
-                    <span className={`text-xs font-bold ${
+                    <span className={`text-[10px] font-bold ${
                       connectionState === ConnectionState.CONNECTED ? 'text-emerald-400' : 
                       connectionState === ConnectionState.CONNECTING ? 'text-amber-400' : 'text-slate-500'
                     }`}>
@@ -1375,37 +1375,37 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   {/* Latency */}
-                  <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                     <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Latence</span>
-                     <span className={`text-sm font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  <div className="flex flex-col items-center justify-center p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                     <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">Latence</span>
+                     <span className={`text-xs font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
                        {connectionState === ConnectionState.CONNECTED && latency > 0 ? `${latency}ms` : '-'}
                      </span>
                   </div>
 
                    {/* Vision Status */}
-                   <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                     <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Vision</span>
-                     <span className={`text-xs font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                   <div className="flex flex-col items-center justify-center p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                     <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">Vision</span>
+                     <span className={`text-[10px] font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
                        {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'ON' : 'OFF'}
                      </span>
                   </div>
                 </div>
 
                 {/* Toggles Status Compact */}
-                <div className="grid grid-cols-1 gap-1.5 mt-2">
-                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isWakeWordEnabled ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[10px] text-slate-300">Wake Word</span>
-                      <span className={`text-[10px] font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
+                <div className="grid grid-cols-1 gap-1 mt-1.5">
+                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isWakeWordEnabled ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[9px] text-slate-300">Wake Word</span>
+                      <span className={`text-[9px] font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
                    </div>
-                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isFunctionCallingEnabled ? 'border-blue-500/20 bg-blue-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[10px] text-slate-300">Fonctions</span>
-                      <span className={`text-[10px] font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
+                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isFunctionCallingEnabled ? 'border-blue-500/20 bg-blue-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[9px] text-slate-300">Fonctions</span>
+                      <span className={`text-[9px] font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
                    </div>
-                   <div className={`flex items-center justify-between px-2 py-1.5 rounded border ${isGoogleSearchEnabled ? 'border-green-500/20 bg-green-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[10px] text-slate-300">Recherche</span>
-                      <span className={`text-[10px] font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
+                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isGoogleSearchEnabled ? 'border-green-500/20 bg-green-500/5' : 'border-white/5 bg-transparent'}`}>
+                      <span className="text-[9px] text-slate-300">Recherche</span>
+                      <span className={`text-[9px] font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
                    </div>
                 </div>
               </div>
@@ -1419,7 +1419,7 @@ const App: React.FC = () => {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-10 safe-area-bottom lg:px-8 xl:px-12">
+          <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-1.5 md:pb-3 lg:pb-4 xl:pb-6 safe-area-bottom lg:px-6 xl:px-8">
             <ControlPanel 
               connectionState={connectionState}
               currentPersonality={currentPersonality}
@@ -1470,30 +1470,30 @@ const App: React.FC = () => {
                 boxShadow: '0 -20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2)'
               }}>
               {/* Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-                <h3 className="text-lg font-display font-bold text-white uppercase tracking-wider">
+              <div className="sticky top-0 z-10 flex items-center justify-between p-3 border-b border-white/10 bg-black/40 backdrop-blur-xl">
+                <h3 className="text-sm font-display font-bold text-white uppercase tracking-wider">
                   Actions Rapides
                 </h3>
                 <button
                   onClick={() => setIsMobileActionsDrawerOpen(false)}
-                  className="p-2 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white transition-all duration-300 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-1.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white transition-all duration-300 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-2">
+              <div className="p-3 space-y-1.5">
                 <button
                   onClick={() => {
                     setIsPersonalityEditorOpen(true);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className="w-full px-4 py-3 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-sm font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-3 touch-manipulation min-h-[44px]"
+                  className="w-full px-3 py-2.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px]"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   Modifier la personnalité
@@ -1504,13 +1504,13 @@ const App: React.FC = () => {
                     handleFunctionCallingToggle(!isFunctionCallingEnabled);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className={`w-full px-4 py-3 rounded-lg glass border font-body text-sm font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-3 touch-manipulation min-h-[44px] ${
+                  className={`w-full px-3 py-2.5 rounded-lg glass border font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px] ${
                     isFunctionCallingEnabled 
                       ? 'border-blue-500/50 text-blue-300 hover:border-blue-500/70' 
                       : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                   {isFunctionCallingEnabled ? 'Désactiver' : 'Activer'} Appel de fonction
@@ -1521,13 +1521,13 @@ const App: React.FC = () => {
                     handleGoogleSearchToggle(!isGoogleSearchEnabled);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className={`w-full px-4 py-3 rounded-lg glass border font-body text-sm font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-3 touch-manipulation min-h-[44px] ${
+                  className={`w-full px-3 py-2.5 rounded-lg glass border font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px] ${
                     isGoogleSearchEnabled 
                       ? 'border-green-500/50 text-green-300 hover:border-green-500/70' 
                       : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   {isGoogleSearchEnabled ? 'Désactiver' : 'Activer'} Google Search
@@ -1538,9 +1538,9 @@ const App: React.FC = () => {
                     setIsToolsListOpen(true);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className="w-full px-4 py-3 rounded-lg glass border border-blue-500/30 text-blue-300 hover:border-blue-500/50 hover:text-blue-200 font-body text-sm font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-3 touch-manipulation min-h-[44px]"
+                  className="w-full px-3 py-2.5 rounded-lg glass border border-blue-500/30 text-blue-300 hover:border-blue-500/50 hover:text-blue-200 font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px]"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                   Voir les fonctions disponibles

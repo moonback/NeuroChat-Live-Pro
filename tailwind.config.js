@@ -11,6 +11,32 @@ export default {
         sans: ['Inter', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'sans-serif'],
       },
+      fontSize: {
+        '2xs': ['0.625rem', { lineHeight: '0.75rem' }], // 10px
+        'xs': ['0.6875rem', { lineHeight: '0.875rem' }], // 11px
+        'sm': ['0.75rem', { lineHeight: '1rem' }], // 12px
+        'base': ['0.8125rem', { lineHeight: '1.125rem' }], // 13px
+        'lg': ['0.875rem', { lineHeight: '1.25rem' }], // 14px
+        'xl': ['1rem', { lineHeight: '1.375rem' }], // 16px
+        '2xl': ['1.125rem', { lineHeight: '1.5rem' }], // 18px
+        '3xl': ['1.25rem', { lineHeight: '1.625rem' }], // 20px
+        '4xl': ['1.5rem', { lineHeight: '1.875rem' }], // 24px
+      },
+      spacing: {
+        '0.5': '0.125rem', // 2px
+        '1': '0.25rem', // 4px
+        '1.5': '0.375rem', // 6px
+        '2': '0.5rem', // 8px
+        '2.5': '0.625rem', // 10px
+        '3': '0.75rem', // 12px
+        '3.5': '0.875rem', // 14px
+        '4': '1rem', // 16px
+        '5': '1.25rem', // 20px
+        '6': '1.5rem', // 24px
+        '8': '2rem', // 32px
+        '10': '2.5rem', // 40px
+        '12': '3rem', // 48px
+      },
       colors: {
         brand: {
           50: '#f0f9ff',
