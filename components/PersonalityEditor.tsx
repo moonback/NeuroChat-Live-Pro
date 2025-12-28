@@ -108,7 +108,7 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in">
             <div 
-                className="relative w-full max-w-lg mx-2 sm:mx-4 bg-[#0f0f19] border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]"
+                className="relative w-full max-w-[95vw] mx-2 sm:mx-4 bg-[#0f0f19] border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]"
                 style={{
                     boxShadow: `0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px ${currentPersonality.themeColor}20`
                 }}
