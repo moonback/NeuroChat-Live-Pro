@@ -51,6 +51,11 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
     // Optimisations du contexte
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    
+    // Système de frame skipping pour maintenir 60fps
+    let lastFrameTime = performance.now();
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
@@ -61,8 +66,8 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
 
     // Premium Particles System - Optimisé pour performance
     let particles: Particle[] = [];
-    const particleCount = 120; // Réduit pour meilleure performance
-    const orbitParticleCount = 20; // Réduit pour meilleure performance
+    const particleCount = 80; // Réduit pour meilleure performance
+    const orbitParticleCount = 15; // Réduit pour meilleure performance
     
     // Calculer baseRadius pour les particules orbitales
     const baseRadiusForParticles = Math.min(canvas.width, canvas.height) / 7;
@@ -125,6 +130,15 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
     
     const draw = () => {
       if (!ctx || !canvas) return;
+
+      // Frame skipping pour maintenir 60fps
+      const now = performance.now();
+      const elapsed = now - lastFrameTime;
+      if (elapsed < frameInterval) {
+        animationRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameTime = now - (elapsed % frameInterval);
 
       const currentColor = colorRef.current;
       const currentIsActive = isActiveRef.current;
@@ -248,15 +262,20 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       if (currentIsActive) {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
-        for (let i = 0; i < 6; i++) { // Réduit de 8 à 6
-          const rayAngle = (Math.PI * 2 / 6) * i + time * 0.1;
+        const rayCount = 4; // Réduit de 6 à 4 pour meilleure performance
+        const rayAngleStep = (Math.PI * 2) / rayCount;
+        const rayTimeOffset = time * 0.1;
+        
+        for (let i = 0; i < rayCount; i++) {
+          const rayAngle = rayAngleStep * i + rayTimeOffset;
+          const cosRay = Math.cos(rayAngle);
+          const sinRay = Math.sin(rayAngle);
           const rayGradient = ctx.createLinearGradient(
             centerX, centerY,
-            centerX + Math.cos(rayAngle) * coreRadius * 4,
-            centerY + Math.sin(rayAngle) * coreRadius * 4
+            centerX + cosRay * coreRadius * 4,
+            centerY + sinRay * coreRadius * 4
           );
           rayGradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
-          rayGradient.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.05)`);
           rayGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = rayGradient;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -268,34 +287,42 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
 
-      // Calcul des points 3D pour la grille de la sphère - Optimisé
-      const gridDetail = 14; // Réduit pour meilleure performance
+      // Calcul des points 3D pour la grille de la sphère - Optimisé avec pré-calcul
+      const gridDetail = 10; // Réduit pour meilleure performance (14 -> 10)
       const points3D: { x: number; y: number; z: number; brightness: number }[] = [];
+      
+      // Pré-calculer les valeurs trigonométriques pour la rotation (optimisation majeure)
+      const cosX = Math.cos(sphereRotationX);
+      const sinX = Math.sin(sphereRotationX);
+      const cosY = Math.cos(sphereRotationY);
+      const sinY = Math.sin(sphereRotationY);
+      const cosZ = Math.cos(sphereRotationZ);
+      const sinZ = Math.sin(sphereRotationZ);
       
       for (let lat = 0; lat <= gridDetail; lat++) {
         for (let lon = 0; lon <= gridDetail; lon++) {
           const theta = (lat / gridDetail) * Math.PI;
           const phi = (lon / gridDetail) * Math.PI * 2;
           
-          // Rotation 3D
+          // Rotation 3D - valeurs trigonométriques pré-calculées
           let x = Math.sin(theta) * Math.cos(phi);
           let y = Math.cos(theta);
           let z = Math.sin(theta) * Math.sin(phi);
           
-          // Rotation autour de X
-          let y1 = y * Math.cos(sphereRotationX) - z * Math.sin(sphereRotationX);
-          let z1 = y * Math.sin(sphereRotationX) + z * Math.cos(sphereRotationX);
+          // Rotation autour de X (optimisé avec valeurs pré-calculées)
+          let y1 = y * cosX - z * sinX;
+          let z1 = y * sinX + z * cosX;
           
           // Rotation autour de Y
-          let x1 = x * Math.cos(sphereRotationY) + z1 * Math.sin(sphereRotationY);
-          z = -x * Math.sin(sphereRotationY) + z1 * Math.cos(sphereRotationY);
+          let x1 = x * cosY + z1 * sinY;
+          z = -x * sinY + z1 * cosY;
           
           // Rotation autour de Z
-          x = x1 * Math.cos(sphereRotationZ) - y1 * Math.sin(sphereRotationZ);
-          y = x1 * Math.sin(sphereRotationZ) + y1 * Math.cos(sphereRotationZ);
+          x = x1 * cosZ - y1 * sinZ;
+          y = x1 * sinZ + y1 * cosZ;
           
           // Calcul de la luminosité basée sur la position Z (profondeur)
-          const brightness = (z + 1) / 2; // Normaliser entre 0 et 1
+          const brightness = (z + 1) * 0.5; // Normaliser entre 0 et 1 (optimisé: *0.5 au lieu de /2)
           
           points3D.push({ x, y, z, brightness });
         }
@@ -345,37 +372,37 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
 
       // Enhanced points lumineux - Optimisé (moins de points, shadow réduit)
       const pointSizeMultiplier = currentIsActive ? 1 + (frequencyAvg / 80) : 1;
-      for (let i = 0; i < points3D.length; i += 3) { // Augmenté de 2 à 3 pour moins de points
-        const point = points3D[i];
-        if (point.z > -0.3) { // Seulement les points visibles
-          const screenX = centerX + point.x * coreRadius;
-          const screenY = centerY + point.y * coreRadius;
-          const pointBrightness = point.brightness * 0.8 + 0.2;
-          const dynamicSize = (2 + pointBrightness) * pointSizeMultiplier;
-          
-          // Optimisé: gradient simplifié
-          const pointGlow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, dynamicSize * 2);
-          pointGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pointBrightness * 0.7})`);
-          pointGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          
-          ctx.save();
-          // Shadow seulement pour les points les plus brillants
-          if (pointBrightness > 0.6) {
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pointBrightness * 0.4})`;
-          }
-          ctx.fillStyle = pointGlow;
-          ctx.beginPath();
-          ctx.arc(screenX, screenY, dynamicSize * 2, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Core point
-          ctx.fillStyle = `rgba(255, 255, 255, ${pointBrightness * 0.9})`;
-          ctx.beginPath();
-          ctx.arc(screenX, screenY, dynamicSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
+      // Filtrer les points visibles une seule fois pour éviter les recalculs
+      const visiblePoints = points3D.filter(p => p.z > -0.3);
+      for (let i = 0; i < visiblePoints.length; i += 2) { // Augmenté de 3 à 2 pour meilleur rendu mais optimisé
+        const point = visiblePoints[i];
+        const screenX = centerX + point.x * coreRadius;
+        const screenY = centerY + point.y * coreRadius;
+        const pointBrightness = point.brightness * 0.8 + 0.2;
+        const dynamicSize = (2 + pointBrightness) * pointSizeMultiplier;
+        
+        // Optimisé: gradient simplifié avec moins de color stops
+        const pointGlow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, dynamicSize * 2);
+        pointGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pointBrightness * 0.7})`);
+        pointGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.save();
+        // Shadow seulement pour les points les plus brillants (réduit)
+        if (pointBrightness > 0.7) {
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pointBrightness * 0.3})`;
         }
+        ctx.fillStyle = pointGlow;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, dynamicSize * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core point
+        ctx.fillStyle = `rgba(255, 255, 255, ${pointBrightness * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, dynamicSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       // Enhanced Main Core Gradient with pulse effect
@@ -435,35 +462,43 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.restore();
 
       // Enhanced Geometric Rings with multiple layers - Optimisé
-      const ringCount = 4; // Réduit pour meilleure performance
+      const ringCount = 3; // Réduit de 4 à 3 pour meilleure performance
+      // Pré-calculer les valeurs sin/cos pour les anneaux
+      const sinTime = Math.sin(time * 0.3);
+      const sinTime2 = Math.sin(time * 2);
+      
       for (let r = 0; r < ringCount; r++) {
-        const ringRadius = coreRadius + (r * 35) + (midFreqAvg * 0.8) + Math.sin(time * 0.3 + r) * 5;
+        const ringRadius = coreRadius + (r * 35) + (midFreqAvg * 0.8) + sinTime * 5;
         const lineWidth = 2 - (r * 0.25);
         const baseOpacity = 0.7 - (r * 0.12);
-        const pulseOpacity = currentIsActive ? baseOpacity + Math.sin(time * 2 + r) * 0.15 : baseOpacity;
+        const pulseOpacity = currentIsActive ? baseOpacity + sinTime2 * 0.15 : baseOpacity;
 
         // Main ring with wave distortion - Optimisé (shadow réduit)
         ctx.save();
         ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pulseOpacity})`;
         ctx.lineWidth = lineWidth;
-        // Shadow réduit pour meilleure performance (seulement pour les 2 premiers anneaux)
-        if (r < 2) {
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pulseOpacity * 0.5})`;
+        // Shadow réduit pour meilleure performance (seulement pour le premier anneau)
+        if (r < 1) {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pulseOpacity * 0.4})`;
         }
         ctx.beginPath();
 
-        // Optimisé: moins de points pour meilleure performance
-        for (let i = 0; i <= 360; i += 3) { // Augmenté de 2 à 3
+        // Optimisé: moins de points pour meilleure performance (4 degrés au lieu de 3)
+        for (let i = 0; i <= 360; i += 4) {
           const angle = (i * Math.PI) / 180;
+          // Pré-calculer cos/sin de l'angle
+          const cosAngle = Math.cos(angle);
+          const sinAngle = Math.sin(angle);
+          
           const waveOffset = currentIsActive 
             ? Math.sin(i * 0.08 + time * 2 + r * 0.5) * (midFreqAvg * 0.4) + 
               Math.sin(i * 0.15 + time * 3) * (highFreqAvg * 0.2)
             : Math.sin(i * 0.05 + time + r * 0.3) * 4;
           
           const radius = ringRadius + waveOffset;
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
+          const x = centerX + cosAngle * radius;
+          const y = centerY + sinAngle * radius;
 
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
@@ -473,13 +508,12 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         ctx.restore();
         
         // Inner glow for each ring - Optimisé (seulement pour le premier anneau)
-        if (r < 1) { // Réduit de 3 à 1
+        if (r < 1) {
           const glowGradient = ctx.createRadialGradient(
             centerX, centerY, ringRadius - 10,
             centerX, centerY, ringRadius + 10
           );
           glowGradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pulseOpacity * 0.3})`);
-          glowGradient.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${pulseOpacity * 0.1})`);
           glowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = glowGradient;
           ctx.fillRect(centerX - ringRadius - 20, centerY - ringRadius - 20, (ringRadius + 20) * 2, (ringRadius + 20) * 2);
@@ -488,14 +522,15 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       
       // Rotating energy rings - Optimisé (moins d'anneaux)
       if (currentIsActive) {
-        for (let i = 0; i < 2; i++) { // Réduit de 3 à 2
-          const rotAngle = time * 0.5 + (i * Math.PI * 2 / 2);
-          const rotRadius = coreRadius + 60 + i * 30;
+        const rotRingCount = 1; // Réduit de 2 à 1 pour meilleure performance
+        for (let i = 0; i < rotRingCount; i++) {
+          const rotAngle = time * 0.5;
+          const rotRadius = coreRadius + 60;
           
           ctx.save();
           ctx.translate(centerX, centerY);
           ctx.rotate(rotAngle);
-          ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.4 - i * 0.1})`;
+          ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 10]);
           ctx.beginPath();
@@ -537,15 +572,15 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
 
         // Enhanced connection lines - Optimisé (sans gradient pour performance)
         if (dist < maxConnectionDist) {
-          const connectionOpacity = (1 - dist / maxConnectionDist) * p.opacity * (currentIsActive ? 0.4 : 0.25);
+          const connectionOpacity = (1 - dist / maxConnectionDist) * p.opacity * (currentIsActive ? 0.35 : 0.2);
           
           ctx.save();
           ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${connectionOpacity})`;
-          ctx.lineWidth = currentIsActive ? 0.9 + (frequencyAvg / 120) : 0.7;
-          // Shadow réduit pour performance
-          if (dist < maxConnectionDist * 0.5) {
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${connectionOpacity * 0.4})`;
+          ctx.lineWidth = currentIsActive ? 0.8 + (frequencyAvg / 150) : 0.6;
+          // Shadow réduit pour performance (seulement pour les connexions proches)
+          if (dist < maxConnectionDist * 0.3) {
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${connectionOpacity * 0.3})`;
           }
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
@@ -555,19 +590,26 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         }
 
         // Enhanced network effect - Optimisé (limite les connexions)
-        const maxConnections = 5; // Limite le nombre de connexions par particule
+        const maxConnections = 3; // Réduit de 5 à 3 pour meilleure performance
         let connectionCount = 0;
+        const maxDist = currentIsActive ? 100 : 80; // Distance réduite
+        const maxDistSq = maxDist * maxDist; // Utiliser distance au carré pour éviter sqrt
+        
         for (let j = index + 1; j < particles.length && connectionCount < maxConnections; j++) {
           const other = particles[j];
-          const particleDist = Math.hypot(p.x - other.x, p.y - other.y);
+          // Utiliser distance au carré pour éviter Math.hypot (plus rapide)
+          const dx = p.x - other.x;
+          const dy = p.y - other.y;
+          const particleDistSq = dx * dx + dy * dy;
           
-          if (particleDist < (currentIsActive ? 120 : 100)) { // Distance réduite
+          if (particleDistSq < maxDistSq) {
             connectionCount++;
-            const lineOpacity = (1 - particleDist / (currentIsActive ? 120 : 100)) * (currentIsActive ? 0.15 : 0.1);
+            const particleDist = Math.sqrt(particleDistSq); // Calculer sqrt seulement si nécessaire
+            const lineOpacity = (1 - particleDist / maxDist) * (currentIsActive ? 0.12 : 0.08);
             
             ctx.save();
             ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${lineOpacity})`;
-            ctx.lineWidth = currentIsActive ? 0.5 + (frequencyAvg / 250) : 0.4;
+            ctx.lineWidth = currentIsActive ? 0.5 + (frequencyAvg / 300) : 0.4;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(other.x, other.y);
@@ -586,15 +628,13 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         const particleOpacity = isOrbital ? p.opacity * 1.2 : p.opacity;
         const particleSize = isOrbital ? p.size * 1.3 : p.size;
 
-        // Enhanced particle glow with pulse effect
-        const pulseEffect = currentIsActive ? 1 + Math.sin(time * 3 + p.rotation) * 0.2 : 1;
-        const dynamicGlowSize = particleSize * (4 + (currentIsActive ? frequencyAvg / 50 : 0)) * pulseEffect;
+        // Enhanced particle glow with pulse effect - Optimisé (moins de color stops)
+        const pulseEffect = currentIsActive ? 1 + Math.sin(time * 3 + p.rotation) * 0.15 : 1;
+        const dynamicGlowSize = particleSize * (3.5 + (currentIsActive ? frequencyAvg / 60 : 0)) * pulseEffect;
         
         const particleGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, dynamicGlowSize);
-        particleGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * (isOrbital ? 0.9 : 0.7) * pulseEffect})`);
-        particleGlow.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.5 * pulseEffect})`);
-        particleGlow.addColorStop(0.6, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.25 * pulseEffect})`);
-        particleGlow.addColorStop(0.8, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.1})`);
+        particleGlow.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * (isOrbital ? 0.8 : 0.6) * pulseEffect})`);
+        particleGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.3 * pulseEffect})`);
         particleGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.save();
@@ -609,12 +649,11 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         ctx.fill();
         ctx.restore();
 
-        // Enhanced core particle glow
-        const coreGlowSize = particleSize * (1.5 + (currentIsActive ? frequencyAvg / 150 : 0));
+        // Enhanced core particle glow - Optimisé (moins de color stops)
+        const coreGlowSize = particleSize * (1.4 + (currentIsActive ? frequencyAvg / 180 : 0));
         const coreParticleGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, coreGlowSize);
-        coreParticleGlow.addColorStop(0, `rgba(255, 255, 255, ${particleOpacity * 1.0 * pulseEffect})`);
-        coreParticleGlow.addColorStop(0.3, `rgba(255, 255, 255, ${particleOpacity * 0.8 * pulseEffect})`);
-        coreParticleGlow.addColorStop(0.6, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.6})`);
+        coreParticleGlow.addColorStop(0, `rgba(255, 255, 255, ${particleOpacity * 0.95 * pulseEffect})`);
+        coreParticleGlow.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${particleOpacity * 0.5})`);
         coreParticleGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
         ctx.fillStyle = coreParticleGlow;
