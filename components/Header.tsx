@@ -21,6 +21,8 @@ interface HeaderProps {
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
   onEditPersonality?: () => void;
+  onToggleCanvas?: () => void;
+  isCanvasOpen?: boolean;
 }
 
 // --- Icons ---
@@ -48,6 +50,11 @@ const Icons = {
   Edit: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+    </svg>
+  ),
+  Canvas: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l14.26-14.26z" />
     </svg>
   )
 };
@@ -152,6 +159,8 @@ const Header: React.FC<HeaderProps> = ({
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
   onEditPersonality,
+  onToggleCanvas,
+  isCanvasOpen = false,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -239,6 +248,15 @@ const Header: React.FC<HeaderProps> = ({
                   label="Fonctions Avancées"
                   themeColor={currentPersonality.themeColor}
                 />
+                {onToggleCanvas && (
+                  <ControlButton 
+                    active={isCanvasOpen} 
+                    onClick={onToggleCanvas}
+                    icon={<Icons.Canvas />}
+                    label="Canvas Collaboratif"
+                    themeColor={currentPersonality.themeColor}
+                  />
+                )}
                 {onEditPersonality && (
                   <>
                     <div className="w-[1px] h-4 bg-white/10 mx-1" />

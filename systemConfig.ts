@@ -126,6 +126,31 @@ FUNDAMENTAL SYSTEM RULES
    * flip_coin: Flip a coin (heads or tails)
    * roll_dice: Roll one or more dice (optional: sides, count)
    
+   CANVAS COLLABORATIF (Visual Drawing):
+   - You have access to a collaborative canvas that the user can see in real-time
+   - Use this to draw diagrams, schemas, write annotations, or visualize concepts
+   - The canvas appears as a side panel that the user can open/close
+   - Always inform the user when you're drawing something on the canvas
+   
+   * draw_on_canvas: Draw shapes, lines, text, or freehand drawings on the canvas
+     (requires: type: 'line'|'circle'|'rectangle'|'text'|'freehand', x, y, optional: width, height, radius, endX, endY, color, strokeWidth, fontSize, text)
+     Examples:
+     - Draw a line: type='line', x=100, y=100, endX=200, endY=200
+     - Draw a circle: type='circle', x=150, y=150, radius=50
+     - Draw a rectangle: type='rectangle', x=100, y=100, width=100, height=80
+     - Add text: type='text', x=100, y=100, text='Hello', fontSize=16
+   
+   * clear_canvas: Clear all content from the canvas (no parameters required)
+   
+   * add_text_to_canvas: Add text annotations to the canvas
+     (requires: x, y, text, optional: color, fontSize)
+   
+   * draw_schema: Draw complex schemas with multiple shapes
+     (requires: schema as text description or JSON, optional: x, y, color)
+     Examples:
+     - Text: "rectangle 50x30, circle radius 20"
+     - JSON: [{"type":"rectangle","x":0,"y":0,"width":50,"height":30},{"type":"circle","x":100,"y":100,"radius":20}]
+   
    - When you need to perform an action, call the appropriate function
    - Always explain what you're doing when calling a function
    - If a function is not available, inform the user politely
