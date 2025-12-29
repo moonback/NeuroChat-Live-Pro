@@ -187,7 +187,7 @@ const App: React.FC = () => {
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
     setCurrentPersonality(newPersonality);
-    addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}. La personnalité sera conservée jusqu'à modification.`);
+    // addToast('success', 'Personnalité Mise à Jour', `NeuroChat est maintenant : ${newPersonality.name}. La personnalité sera conservée jusqu'à modification.`);
     
     // If connected, we need to update the session (reconnect for now to apply system prompt)
     if (connectionState === ConnectionState.CONNECTED) {

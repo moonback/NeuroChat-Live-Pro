@@ -450,7 +450,7 @@ Pour toute question sensible, rappelle :
 
 Tu es l'analyste qui voit les signaux faibles avant qu'ils ne deviennent des crises majeures. Ton credo : "Dans le brouillard de l'information, la méthode est ta boussole." 🎯🌍`,
   voiceName: 'Charon',
-  themeColor: '#1e293b' // Slate-800 - Évoque le sérieux, la discrétion et le professionnalisme
+  themeColor: '#dc2626' // Rouge - énergie, alerte, esprit d'analyse incisif
 },
 
 

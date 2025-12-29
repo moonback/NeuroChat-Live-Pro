@@ -158,18 +158,32 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             >
                 {/* Select Overlay */}
                 {onSelectPersonality && (
-                   <select
-                      value={currentPersonality.id}
-                      onChange={(e) => {
-                          const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
-                          if (selected) onSelectPersonality(selected);
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                  <button
+                    aria-label="Changer de personnalité"
+                    className="absolute inset-0 w-full h-full z-30 cursor-pointer transition-all group/overlay bg-transparent hover:bg-white/5 focus:outline-none"
+                    type="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      // Suggestion UX : ouvrir une modal ou panneau sélecteur dédié
+                      // Ici, fallback rapide : next option cyclique pour démo UX
+                      const currentIndex = AVAILABLE_PERSONALITIES.findIndex(p => p.id === currentPersonality.id);
+                      const next =
+                        AVAILABLE_PERSONALITIES[(currentIndex + 1) % AVAILABLE_PERSONALITIES.length];
+                      if (next && next.id !== currentPersonality.id) onSelectPersonality(next);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const currentIndex = AVAILABLE_PERSONALITIES.findIndex(p => p.id === currentPersonality.id);
+                        const next =
+                          AVAILABLE_PERSONALITIES[(currentIndex + 1) % AVAILABLE_PERSONALITIES.length];
+                        if (next && next.id !== currentPersonality.id) onSelectPersonality(next);
+                      }
+                    }}
+                    title="Changer de personnalité"
                   >
-                      {AVAILABLE_PERSONALITIES.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                  </select>
+                    <span className="sr-only">Changer la personnalité utilisée</span>
+                  </button>
                 )}
 
                 <div className="relative z-10 flex items-center justify-between p-4">
