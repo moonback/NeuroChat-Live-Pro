@@ -5,6 +5,7 @@ import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
 import { ToastContainer } from './components/Toast';
 import QuickStartGuide from './components/QuickStartGuide';
+import HackerMode from './components/HackerMode';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import { WakeWordDetector } from './utils/wakeWordDetector';
@@ -17,6 +18,7 @@ import { useVisionManager } from './hooks/useVisionManager';
 import { useGeminiLiveSession } from './hooks/useGeminiLiveSession';
 import VideoOverlay from './components/VideoOverlay';
 import { useAppStore } from './stores/appStore';
+import { useLocalStorageState } from './hooks/useLocalStorageState';
 import {
   showFunctionCallingToggle,
   showGoogleSearchToggle,
@@ -75,6 +77,7 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
+  const [isHackerMode, setIsHackerMode] = useLocalStorageState<boolean>('hackerMode', false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
 
   // Documents Context
@@ -348,6 +351,61 @@ const App: React.FC = () => {
     };
   }, [disconnect]);
 
+  // Hacker Mode Toggle (Keyboard shortcut: H or ESC)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Toggle avec H ou ESC
+      if (e.key === 'h' || e.key === 'H' || e.key === 'Escape') {
+        // Si on est en mode hacker et qu'on appuie sur ESC, on sort
+        if (isHackerMode && e.key === 'Escape') {
+          setIsHackerMode(false);
+        } 
+        // Sinon, on bascule avec H
+        else if (!isHackerMode && (e.key === 'h' || e.key === 'H')) {
+          setIsHackerMode(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isHackerMode]);
+
+  // Appliquer la classe hacker-mode au body quand activé
+  useEffect(() => {
+    if (isHackerMode) {
+      document.body.classList.add('hacker-mode');
+    } else {
+      document.body.classList.remove('hacker-mode');
+    }
+    return () => {
+      document.body.classList.remove('hacker-mode');
+    };
+  }, [isHackerMode]);
+
+  // Si le mode hacker est activé, afficher uniquement le composant HackerMode
+  if (isHackerMode) {
+    return (
+      <HackerMode
+        connectionState={storeConnectionState}
+        isTalking={isTalking}
+        latency={latency}
+        isMicMuted={isMicMuted}
+        onConnect={() => {
+          setIsIntentionalDisconnect(false);
+          activateAudioContext();
+          connect();
+        }}
+        onDisconnect={() => {
+          setIsIntentionalDisconnect(true);
+          disconnect(true);
+        }}
+        onToggleMic={handleToggleMic}
+        currentPersonality={currentPersonality}
+      />
+    );
+  }
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
       {/* Premium Multi-Layer Background System */}
@@ -421,6 +479,13 @@ const App: React.FC = () => {
       {isScreenShareActive && (
          <div className="absolute inset-0 pointer-events-none z-30 border-[6px] border-indigo-500/50 shadow-[inset_0_0_100px_rgba(99,102,241,0.2)] animate-pulse" />
       )}
+
+      {/* Hacker Mode Indicator */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-none">
+        <div className="text-[10px] text-white/30 font-mono uppercase tracking-wider">
+          Press [H] for Hacker Mode
+        </div>
+      </div>
 
       {/* Premium Visualizer */}
       <Visualizer 
