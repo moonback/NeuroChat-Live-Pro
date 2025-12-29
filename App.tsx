@@ -149,6 +149,18 @@ const App: React.FC = () => {
     startFrameTransmission,
     resetVisionState,
     sessionRef,
+    onPersonalityChange: (newPersonality) => {
+      // Changer la personnalité
+      setPersonality(newPersonality);
+      
+      // Si connecté, reconnecter pour appliquer le nouveau system prompt
+      if (storeConnectionState === ConnectionState.CONNECTED) {
+        disconnect();
+        setTimeout(() => {
+          connect();
+        }, 500);
+      }
+    },
   });
 
   // Microphone mute state

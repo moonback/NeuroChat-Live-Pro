@@ -3,7 +3,7 @@ import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from '../types';
 import { createBlob, decodeAudioData, base64ToArrayBuffer } from '../utils/audioUtils';
 import { buildSystemInstruction } from '../systemConfig';
-import { buildToolsConfig, executeFunction } from '../utils/tools';
+import { buildToolsConfig, executeFunction, PersonalityChangeCallback } from '../utils/tools';
 import { ToastMessage } from '../components/Toast';
 import { useReconnection } from './useReconnection';
 import {
@@ -34,6 +34,7 @@ interface UseGeminiLiveSessionProps {
   startFrameTransmission: () => void;
   resetVisionState: () => void;
   sessionRef: React.MutableRefObject<any>;
+  onPersonalityChange?: PersonalityChangeCallback;
 }
 
 export const useGeminiLiveSession = ({
@@ -52,6 +53,7 @@ export const useGeminiLiveSession = ({
   startFrameTransmission,
   resetVisionState,
   sessionRef,
+  onPersonalityChange,
 }: UseGeminiLiveSessionProps) => {
   // Refs for audio
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -455,6 +457,8 @@ export const useGeminiLiveSession = ({
                     id: functionId,
                     name: functionName,
                     args: functionArgs
+                  }, {
+                    onPersonalityChange: onPersonalityChange
                   });
                   
                   const response = {
