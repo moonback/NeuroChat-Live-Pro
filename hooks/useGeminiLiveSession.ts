@@ -6,6 +6,17 @@ import { buildSystemInstruction } from '../systemConfig';
 import { buildToolsConfig, executeFunction } from '../utils/tools';
 import { ToastMessage } from '../components/Toast';
 import { useReconnection } from './useReconnection';
+import {
+  showReconnectionFailure,
+  showDisconnection,
+  showConnectionSuccess,
+  showFunctionExecuted,
+  showFunctionError,
+  showSessionEnd,
+  showSessionError,
+  showSessionCreationError,
+  showConnectionFailure,
+} from '../utils/toastHelpers';
 
 interface UseGeminiLiveSessionProps {
   connectionState: ConnectionState;
@@ -73,7 +84,7 @@ export const useGeminiLiveSession = ({
     onMaxAttemptsReached: () => {
       console.error('[UseGemini] Nombre maximum de tentatives de reconnexion atteint');
       setConnectionState(ConnectionState.ERROR);
-      addToast('error', 'Échec de connexion', 'Impossible de se reconnecter après 5 tentatives. Veuillez réessayer manuellement.');
+      showReconnectionFailure(addToast);
     },
   });
 
@@ -233,7 +244,7 @@ export const useGeminiLiveSession = ({
     
     if (shouldReload) {
         console.log('[UseGemini] 🔄 Redémarrage complet de l\'application...');
-        addToast('info', 'Déconnexion', 'Redémarrage en cours...');
+        showDisconnection(addToast);
         
         setTimeout(() => {
             console.log('[UseGemini] 🔄 Rechargement complet de l\'application...');
@@ -309,7 +320,7 @@ export const useGeminiLiveSession = ({
           onopen: () => {
             console.log('Gemini Live Session Opened');
             setConnectionState(ConnectionState.CONNECTED);
-            addToast('success', 'Connecté', 'Session NeuroChat active');
+            showConnectionSuccess(addToast);
             resetReconnection();
             
             if (isVideoActiveRef.current) {
@@ -398,7 +409,7 @@ export const useGeminiLiveSession = ({
                   };
                   functionResponses.push(response);
                   
-                  addToast('info', 'Fonction exécutée', `Fonction ${functionName} exécutée avec succès`);
+                  showFunctionExecuted(addToast, functionName);
                 } catch (error) {
                   console.error(`[UseGemini] ❌ Erreur lors de l'exécution de ${functionCall.name}:`, error);
                   const errorResponse = {
@@ -410,7 +421,7 @@ export const useGeminiLiveSession = ({
                     }
                   };
                   functionResponses.push(errorResponse);
-                  addToast('error', 'Erreur', `Erreur lors de l'exécution de ${functionCall.name}`);
+                  showFunctionError(addToast, functionCall.name || '');
                 }
               }
               
@@ -459,7 +470,7 @@ export const useGeminiLiveSession = ({
                   if (shouldEndSession) {
                     console.log('[UseGemini] ✅ Demande de terminer la session détectée dans le texte:', text);
                     console.log('[UseGemini] 🔄 Redémarrage complet de l\'application...');
-                    addToast('info', 'Fin de session', 'Redémarrage complet de l\'application...');
+                    showSessionEnd(addToast);
                     setIsIntentionalDisconnectWithRef(true);
                     
                     if (chatbotSpeechRecognitionRef.current) {
@@ -588,7 +599,7 @@ export const useGeminiLiveSession = ({
                         if (shouldEndSession) {
                           console.log('[UseGemini] ✅✅✅ DEMANDE DE TERMINER LA SESSION DÉTECTÉE:', transcript);
                           console.log('[UseGemini] 🔄 Redémarrage complet de l\'application...');
-                          addToast('info', 'Fin de session', 'Redémarrage complet de l\'application...');
+                          showSessionEnd(addToast);
                           setIsIntentionalDisconnectWithRef(true);
                           
                           try {
@@ -671,7 +682,7 @@ export const useGeminiLiveSession = ({
               }
             }
             
-            addToast('error', 'Erreur Session', errorMessage);
+            showSessionError(addToast, errorMessage);
             
             if (!isIntentionalDisconnect && !isReconnecting) {
               const shouldReconnect = !(err && typeof err === 'object' && (err as any).code === 'AUTH_ERROR');
@@ -705,7 +716,7 @@ export const useGeminiLiveSession = ({
         console.error('[UseGemini] Erreur lors de la création de session:', error);
         cleanupAudioResources();
         setConnectionState(ConnectionState.ERROR);
-        addToast('error', 'Erreur Session', 'Impossible de créer la session. Vérifiez votre clé API.');
+        showSessionCreationError(addToast);
         
         if (!isIntentionalDisconnect) {
           setTimeout(() => {
@@ -744,7 +755,7 @@ export const useGeminiLiveSession = ({
         }
       }
       
-      addToast('error', 'Échec Connexion', errorMessage);
+      showConnectionFailure(addToast, errorMessage);
       
       if (shouldRetry && !isIntentionalDisconnect) {
         if (!isReconnecting) {

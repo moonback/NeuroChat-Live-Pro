@@ -17,6 +17,13 @@ import { useVisionManager } from './hooks/useVisionManager';
 import { useGeminiLiveSession } from './hooks/useGeminiLiveSession';
 import VideoOverlay from './components/VideoOverlay';
 import { useAppStore } from './stores/appStore';
+import {
+  showFunctionCallingToggle,
+  showGoogleSearchToggle,
+  showDocumentsUpdated,
+  showDocumentsLoaded,
+  showWakeWordDetected,
+} from './utils/toastHelpers';
 
 const App: React.FC = () => {
   const {
@@ -160,7 +167,7 @@ const App: React.FC = () => {
   // Tools Management
   const handleFunctionCallingToggle = (enabled: boolean) => {
     setIsFunctionCallingEnabled(enabled);
-    addToast('success', 'Appel de fonction', enabled ? 'Appel de fonction activé' : 'Appel de fonction désactivé');
+    showFunctionCallingToggle(addToast, enabled);
     
     // Reconnecter si connecté pour appliquer les changements
     if (storeConnectionState === ConnectionState.CONNECTED) {
@@ -173,7 +180,7 @@ const App: React.FC = () => {
 
   const handleGoogleSearchToggle = (enabled: boolean) => {
     setIsGoogleSearchEnabled(enabled);
-    addToast('success', 'Google Search', enabled ? 'Google Search activé' : 'Google Search désactivé');
+    showGoogleSearchToggle(addToast, enabled);
     
     // Reconnecter si connecté pour appliquer les changements
     if (storeConnectionState === ConnectionState.CONNECTED) {
@@ -190,13 +197,13 @@ const App: React.FC = () => {
     
     // Si connecté, reconnecter pour inclure les nouveaux documents
     if (storeConnectionState === ConnectionState.CONNECTED) {
-      addToast('info', 'Documents Mis à Jour', 'Reconnexion pour appliquer les changements...');
+      showDocumentsUpdated(addToast);
       disconnect();
       setTimeout(() => {
         connect();
       }, 500);
     } else {
-      addToast('success', 'Documents Chargés', `${documents.length} document(s) prêt(s) à être utilisés`);
+      showDocumentsLoaded(addToast, documents.length);
     }
   };
 
@@ -270,7 +277,7 @@ const App: React.FC = () => {
           const currentState = storeConnectionState;
           console.log('[App] État actuel de la connexion:', currentState);
           if (currentState === ConnectionState.DISCONNECTED || currentState === ConnectionState.ERROR) {
-            addToast('info', 'Wake Word Détecté', 'Connexion au chat en cours...');
+            showWakeWordDetected(addToast);
             setIsIntentionalDisconnect(false);
             if (connectRef.current) {
               console.log('[App] Appel de la fonction connect()...');

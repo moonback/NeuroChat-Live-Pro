@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConnectionState } from '../types';
 import { VideoContextAnalyzer } from '../utils/videoContextAnalyzer';
+import {
+  showCameraChanged,
+  showCameraChangeError,
+  showScreenShareSuccess,
+  showScreenShareError,
+  showCameraError,
+} from '../utils/toastHelpers';
 
 interface UseVisionManagerParams {
   connectionState: ConnectionState;
@@ -211,10 +218,10 @@ export const useVisionManager = ({
             startFrameTransmission();
           }
 
-          addToast('success', 'Caméra changée', 'La nouvelle caméra est maintenant active');
+          showCameraChanged(addToast);
         } catch (error) {
           console.error('[VisionManager] Impossible de changer de caméra', error);
-          addToast('error', 'Erreur', 'Impossible de changer de caméra');
+          showCameraChangeError(addToast);
         }
       }
     },
@@ -266,11 +273,11 @@ export const useVisionManager = ({
         startFrameTransmission();
       }
 
-      addToast('success', 'Partage d’écran', 'Partage d’écran activé');
+      showScreenShareSuccess(addToast);
     } catch (error) {
-      console.error('[VisionManager] Erreur lors du partage d’écran', error);
+      console.error("[VisionManager] Erreur lors du partage d'écran", error);
       if ((error as any).name !== 'NotAllowedError') {
-        addToast('error', 'Erreur', "Impossible de partager l'écran");
+        showScreenShareError(addToast);
       }
       setIsScreenShareActive(false);
       isScreenShareActiveRef.current = false;
@@ -310,7 +317,7 @@ export const useVisionManager = ({
           }
         } catch (error) {
           console.error('[VisionManager] Échec accès caméra', error);
-          addToast('error', 'Erreur Caméra', "Impossible d'accéder à la caméra. Vérifiez les permissions.");
+          showCameraError(addToast);
           setIsVideoActive(false);
         }
       } else if (!isVideoActive && videoStreamRef.current) {
