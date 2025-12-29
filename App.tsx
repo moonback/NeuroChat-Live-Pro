@@ -1460,92 +1460,153 @@ const App: React.FC = () => {
           <div className="fixed inset-0 z-50 lg:hidden">
             {/* Backdrop */}
             <div 
-              className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+              className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300"
               onClick={() => setIsMobileActionsDrawerOpen(false)}
             />
             
             {/* Drawer */}
-            <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto glass-intense rounded-t-3xl border-t border-white/20 animate-in safe-area-bottom"
+            <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto bg-gradient-to-b from-slate-900/98 via-slate-900/95 to-slate-900 rounded-t-3xl border-t border-white/20 animate-in slide-in-from-bottom-5 duration-300 safe-area-bottom"
               style={{
-                boxShadow: '0 -20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2)'
+                boxShadow: '0 -20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(14, 165, 233, 0.25)'
               }}>
+              {/* Drag Handle */}
+              <div className="sticky top-0 z-20 pt-3 pb-2 flex justify-center">
+                <div className="w-12 h-1.5 rounded-full bg-white/20" />
+              </div>
+
               {/* Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between p-3 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-                <h3 className="text-sm font-display font-bold text-white uppercase tracking-wider">
-                  Actions Rapides
-                </h3>
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 pb-3 pt-1 border-b border-white/10 bg-gradient-to-b from-slate-900/98 to-transparent backdrop-blur-xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-sky-500/20 to-blue-500/20 border border-sky-500/30">
+                    <svg className="w-5 h-5 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-display font-bold text-white tracking-tight">
+                    Actions Rapides
+                  </h3>
+                </div>
                 <button
                   onClick={() => setIsMobileActionsDrawerOpen(false)}
-                  className="p-1.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white transition-all duration-300 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:border-white/30 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center active:scale-95"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Content */}
-              <div className="p-3 space-y-1.5">
+              <div className="p-4 space-y-3">
+                {/* Personnalité */}
                 <button
                   onClick={() => {
                     setIsPersonalityEditorOpen(true);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className="w-full px-3 py-2.5 rounded-lg glass border border-white/10 text-slate-300 hover:border-white/30 hover:text-white font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px]"
+                  className="group w-full px-4 py-3.5 rounded-xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-pink-500/40 hover:from-pink-500/10 hover:to-pink-500/5 text-slate-200 hover:text-white font-medium text-sm transition-all duration-300 active:scale-[0.97] text-left flex items-center gap-3.5 touch-manipulation min-h-[56px] shadow-sm hover:shadow-lg hover:shadow-pink-500/10"
                 >
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <div className="p-2.5 rounded-lg bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-pink-500/30 group-hover:border-pink-400/50 transition-colors">
+                    <svg className="w-5 h-5 text-pink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-semibold">Modifier la personnalité</span>
+                  <svg className="w-5 h-5 text-slate-400 group-hover:text-pink-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Modifier la personnalité
                 </button>
-                
+
+                {/* Séparateur */}
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
+
+                {/* Function Calling */}
                 <button
                   onClick={() => {
                     handleFunctionCallingToggle(!isFunctionCallingEnabled);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 rounded-lg glass border font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px] ${
+                  className={`group w-full px-4 py-3.5 rounded-xl border font-medium text-sm transition-all duration-300 active:scale-[0.97] text-left flex items-center gap-3.5 touch-manipulation min-h-[56px] shadow-sm ${
                     isFunctionCallingEnabled 
-                      ? 'border-blue-500/50 text-blue-300 hover:border-blue-500/70' 
-                      : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                      ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/50 text-blue-200 hover:border-blue-400/70 hover:from-blue-500/25 hover:shadow-lg hover:shadow-blue-500/20' 
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 text-slate-200 hover:border-blue-500/40 hover:from-blue-500/10 hover:to-blue-500/5 hover:text-white hover:shadow-lg hover:shadow-blue-500/10'
                   }`}
                 >
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
-                  {isFunctionCallingEnabled ? 'Désactiver' : 'Activer'} Appel de fonction
+                  <div className={`p-2.5 rounded-lg border transition-colors ${
+                    isFunctionCallingEnabled
+                      ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/20 border-blue-400/50'
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 group-hover:border-blue-500/40 group-hover:from-blue-500/20'
+                  }`}>
+                    <svg className={`w-5 h-5 transition-colors ${isFunctionCallingEnabled ? 'text-blue-200' : 'text-slate-300 group-hover:text-blue-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-semibold">
+                    {isFunctionCallingEnabled ? 'Désactiver' : 'Activer'} Appel de fonction
+                  </span>
+                  {isFunctionCallingEnabled && (
+                    <div className="px-2.5 py-1 rounded-lg bg-blue-500/30 border border-blue-400/50">
+                      <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">ON</span>
+                    </div>
+                  )}
                 </button>
                 
+                {/* Google Search */}
                 <button
                   onClick={() => {
                     handleGoogleSearchToggle(!isGoogleSearchEnabled);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 rounded-lg glass border font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px] ${
+                  className={`group w-full px-4 py-3.5 rounded-xl border font-medium text-sm transition-all duration-300 active:scale-[0.97] text-left flex items-center gap-3.5 touch-manipulation min-h-[56px] shadow-sm ${
                     isGoogleSearchEnabled 
-                      ? 'border-green-500/50 text-green-300 hover:border-green-500/70' 
-                      : 'border-white/10 text-slate-300 hover:border-white/30 hover:text-white'
+                      ? 'bg-gradient-to-br from-emerald-500/20 to-green-600/10 border-emerald-500/50 text-emerald-200 hover:border-emerald-400/70 hover:from-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/20' 
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 text-slate-200 hover:border-emerald-500/40 hover:from-emerald-500/10 hover:to-emerald-500/5 hover:text-white hover:shadow-lg hover:shadow-emerald-500/10'
                   }`}
                 >
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  {isGoogleSearchEnabled ? 'Désactiver' : 'Activer'} Google Search
+                  <div className={`p-2.5 rounded-lg border transition-colors ${
+                    isGoogleSearchEnabled
+                      ? 'bg-gradient-to-br from-emerald-500/30 to-green-600/20 border-emerald-400/50'
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 group-hover:border-emerald-500/40 group-hover:from-emerald-500/20'
+                  }`}>
+                    <svg className={`w-5 h-5 transition-colors ${isGoogleSearchEnabled ? 'text-emerald-200' : 'text-slate-300 group-hover:text-emerald-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-semibold">
+                    {isGoogleSearchEnabled ? 'Désactiver' : 'Activer'} Google Search
+                  </span>
+                  {isGoogleSearchEnabled && (
+                    <div className="px-2.5 py-1 rounded-lg bg-emerald-500/30 border border-emerald-400/50">
+                      <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">ON</span>
+                    </div>
+                  )}
                 </button>
+
+                {/* Séparateur */}
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
                 
+                {/* Tools List */}
                 <button
                   onClick={() => {
                     setIsToolsListOpen(true);
                     setIsMobileActionsDrawerOpen(false);
                   }}
-                  className="w-full px-3 py-2.5 rounded-lg glass border border-blue-500/30 text-blue-300 hover:border-blue-500/50 hover:text-blue-200 font-body text-xs font-semibold transition-all duration-300 active:scale-[0.98] text-left flex items-center gap-2.5 touch-manipulation min-h-[44px]"
+                  className="group w-full px-4 py-3.5 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/30 hover:border-blue-400/50 hover:from-blue-500/15 hover:to-indigo-500/10 text-blue-200 hover:text-blue-100 font-medium text-sm transition-all duration-300 active:scale-[0.97] text-left flex items-center gap-3.5 touch-manipulation min-h-[56px] shadow-sm hover:shadow-lg hover:shadow-blue-500/15"
                 >
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-400/40 group-hover:border-blue-300/60 transition-colors">
+                    <svg className="w-5 h-5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-semibold">Voir les fonctions disponibles</span>
+                  <svg className="w-5 h-5 text-blue-400 group-hover:text-blue-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Voir les fonctions disponibles
                 </button>
               </div>
+
+              {/* Bottom padding for safe area */}
+              <div className="h-4 safe-area-bottom" />
             </div>
           </div>
         )}
@@ -1555,3 +1616,7 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+function handleReconnect() {
+  throw new Error('Function not implemented.');
+}
