@@ -63,6 +63,12 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
     let particles: Particle[] = [];
     let shockWaves: ShockWave[] = [];
     let lastAudioLevel = 0.05;
+
+    // Variables pour le clignement des yeux (Blink)
+    let nextBlinkTime = Date.now() + Math.random() * 2000 + 2000;
+    let isBlinking = false;
+    let eyeOpenAmount = 1; // 1 = ouvert, 0 = fermé
+    let blinkSpeed = 0.15;
     
     // Initialiser les particules orbitales
     for (let i = 0; i < 30; i++) {
@@ -129,6 +135,25 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       const baseRadius = Math.min(w, h) / 8;
       const pulsation = 1 + (audioLevel > 0.3 ? (audioLevel - 0.3) * 0.3 : 0);
 
+      // Logique de clignement (Blink logic)
+      const now = Date.now();
+      if (!isBlinking && now > nextBlinkTime) {
+        isBlinking = true;
+        blinkSpeed = 0.2; // Vitesse de fermeture
+      }
+
+      if (isBlinking) {
+        eyeOpenAmount -= blinkSpeed;
+        if (eyeOpenAmount <= 0) {
+          eyeOpenAmount = 0;
+          blinkSpeed = -0.2; // Vitesse d'ouverture
+        } else if (eyeOpenAmount >= 1) {
+          eyeOpenAmount = 1;
+          isBlinking = false;
+          nextBlinkTime = now + Math.random() * 3000 + 1000;
+        }
+      }
+
       // 3. Ondes de choc multiples
       shockWaves = shockWaves.filter(wave => {
         wave.radius += wave.speed;
@@ -152,6 +177,12 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         }
         return false;
       });
+
+      // Appliquer l'effet de clignement au groupe central (Noyau + Oeil)
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(1, eyeOpenAmount);
+      ctx.translate(-centerX, -centerY);
 
       // 4. Noyau 3D avec gradients radiaux
       const coreGradient = ctx.createRadialGradient(
@@ -253,6 +284,9 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.arc(centerX + pupilRadius * 0.3, centerY + pupilRadius * 0.3, pupilRadius * 0.1, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fill();
+
+      // Fin de l'effet de clignement
+      ctx.restore();
 
       // 6. Anneaux orbitaux doubles avec effets néon
       ctx.setLineDash([]);
