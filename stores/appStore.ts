@@ -16,6 +16,8 @@ interface AppState {
   
   // Wake word
   isWakeWordEnabled: boolean;
+  wakeWordPhrase: string;
+  isWakeWordListening: boolean;
   
   // Tools
   isFunctionCallingEnabled: boolean;
@@ -27,6 +29,8 @@ interface AppState {
   setPersonality: (p: Personality) => void;
   setUploadedDocuments: (documents: ProcessedDocument[]) => void;
   setIsWakeWordEnabled: (enabled: boolean) => void;
+  setWakeWordPhrase: (phrase: string) => void;
+  setIsWakeWordListening: (listening: boolean) => void;
   setIsFunctionCallingEnabled: (enabled: boolean) => void;
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
@@ -66,6 +70,8 @@ export const useAppStore = create<AppState>()(
       currentPersonality: DEFAULT_PERSONALITY,
       uploadedDocuments: [],
       isWakeWordEnabled: false,
+      wakeWordPhrase: 'bonjour',
+      isWakeWordListening: false,
       isFunctionCallingEnabled: true,
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: true,
@@ -75,6 +81,8 @@ export const useAppStore = create<AppState>()(
       setPersonality: (p) => set({ currentPersonality: p }),
       setUploadedDocuments: (documents) => set({ uploadedDocuments: documents }),
       setIsWakeWordEnabled: (enabled) => set({ isWakeWordEnabled: enabled }),
+      setWakeWordPhrase: (phrase) => set({ wakeWordPhrase: phrase }),
+      setIsWakeWordListening: (listening) => set({ isWakeWordListening: listening }),
       setIsFunctionCallingEnabled: (enabled) => set({ isFunctionCallingEnabled: enabled }),
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
@@ -86,6 +94,7 @@ export const useAppStore = create<AppState>()(
         currentPersonality: state.currentPersonality,
         uploadedDocuments: state.uploadedDocuments,
         isWakeWordEnabled: state.isWakeWordEnabled,
+        wakeWordPhrase: state.wakeWordPhrase,
         isFunctionCallingEnabled: state.isFunctionCallingEnabled,
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
@@ -111,6 +120,10 @@ export const useAppStore = create<AppState>()(
         
         if (typeof persistedState?.isWakeWordEnabled === 'boolean') {
           merged.isWakeWordEnabled = persistedState.isWakeWordEnabled;
+        }
+
+        if (typeof persistedState?.wakeWordPhrase === 'string' && persistedState.wakeWordPhrase.trim().length > 0) {
+          merged.wakeWordPhrase = persistedState.wakeWordPhrase;
         }
         
         if (typeof persistedState?.isFunctionCallingEnabled === 'boolean') {

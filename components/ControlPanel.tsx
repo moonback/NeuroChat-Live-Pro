@@ -17,6 +17,7 @@ interface ControlPanelProps {
   availableCameras?: MediaDeviceInfo[];
   selectedCameraId?: string;
   isWakeWordEnabled?: boolean;
+  isWakeWordListening?: boolean;
   isFunctionCallingEnabled?: boolean; // Géré par le Header maintenant, mais gardé pour compatibilité prop
   isGoogleSearchEnabled?: boolean;    // Idem
   onConnect: () => void;
@@ -83,6 +84,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   availableCameras = [],
   selectedCameraId = '',
   isWakeWordEnabled = true,
+  isWakeWordListening = false,
   onConnect,
   onDisconnect,
   onToggleVideo,
@@ -103,13 +105,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     active, 
     activeColor = 'bg-white', 
     icon, 
-    tooltip 
+    tooltip,
+    indicator,
   }: { 
     onClick: () => void; 
     active: boolean; 
     activeColor?: string; 
     icon: React.ReactNode; 
-    tooltip: string 
+    tooltip: string;
+    indicator?: React.ReactNode;
   }) => (
     <Tooltip content={tooltip}>
       <button
@@ -125,7 +129,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           }
         `}
       >
-        {icon}
+        <span className="relative">
+          {icon}
+          {indicator}
+        </span>
       </button>
     </Tooltip>
   );
@@ -258,7 +265,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   active={isWakeWordEnabled || false}
                   activeColor="bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                   icon={<Icons.Mic />}
-                  tooltip={isWakeWordEnabled ? "Détection 'Bonjour' Active" : "Activer 'Bonjour'"}
+                  indicator={
+                    (isWakeWordEnabled && isWakeWordListening) ? (
+                      <>
+                        <span className="absolute -top-1 -right-1 inline-flex h-3 w-3">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50 animate-ping" />
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                        </span>
+                      </>
+                    ) : null
+                  }
+                  tooltip={isWakeWordEnabled ? (isWakeWordListening ? "Wake word: écoute active" : "Wake word: activé") : "Activer le wake word"}
                 />
              )}
 

@@ -6,6 +6,11 @@
 export interface WakeWordDetectorOptions {
   onWakeWordDetected: () => void;
   wakeWord?: string;
+  aliases?: string[];
+  matchPosition?: 'start' | 'any';
+  minConfidence?: number; // 0..1, ignoré si confiance indisponible (0)
+  cooldownMs?: number;
+  onListeningChange?: (isListening: boolean) => void;
   continuous?: boolean;
   lang?: string;
 }
@@ -18,16 +23,70 @@ export class WakeWordDetector {
   private errorCount: number = 0;
   private maxErrors: number = 5;
   private options: Required<WakeWordDetectorOptions>;
+  private lastDetectionAt: number = 0;
 
   constructor(options: WakeWordDetectorOptions) {
     this.options = {
       wakeWord: 'Bonjour',
+      aliases: [],
+      matchPosition: 'start',
+      minConfidence: 0.55,
+      cooldownMs: 1500,
+      onListeningChange: () => {},
       continuous: true,
       lang: 'fr-FR',
       ...options,
     };
 
     this.initializeRecognition();
+  }
+
+  private setListeningState(next: boolean): void {
+    if (this.isListening === next) return;
+    this.isListening = next;
+    try {
+      this.options.onListeningChange(next);
+    } catch {
+      // ignore
+    }
+  }
+
+  private normalizeText(input: string): string {
+    // Lowercase + remove diacritics + trim + collapse spaces
+    return input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  private tokenize(input: string): string[] {
+    const norm = this.normalizeText(input);
+    if (!norm) return [];
+    return norm.split(' ');
+  }
+
+  private matchWakePhrase(transcript: string, phrase: string): boolean {
+    const t = this.tokenize(transcript);
+    const p = this.tokenize(phrase);
+    if (t.length === 0 || p.length === 0) return false;
+
+    const maxStart = t.length - p.length;
+    for (let start = 0; start <= maxStart; start++) {
+      let ok = true;
+      for (let j = 0; j < p.length; j++) {
+        if (t[start + j] !== p[j]) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+      if (this.options.matchPosition === 'start') return start === 0;
+      return true;
+    }
+    return false;
   }
 
   private initializeRecognition(): void {
@@ -55,34 +114,29 @@ export class WakeWordDetector {
           const result = event.results[i];
           const transcript = result[0].transcript.toLowerCase().trim();
           const isFinal = result.isFinal;
+          const confidence = typeof result[0].confidence === 'number' ? result[0].confidence : 0;
           
           // Log de débogage pour voir ce qui est détecté
           if (isFinal || transcript.length > 0) {
-            console.log(`[Wake Word] Transcription détectée: "${transcript}" (final: ${isFinal})`);
+            console.log(`[Wake Word] Transcription détectée: "${transcript}" (final: ${isFinal}, conf: ${confidence})`);
           }
           
-          // Normaliser le wake word pour la comparaison
-          const wakeWordLower = this.options.wakeWord.toLowerCase();
-          
-          // Vérifier si le wake word est présent dans la transcription
-          // Supporte aussi les variantes comme "bonjour neurochat" ou juste "neurochat"
-          const wakeWords = [
-            wakeWordLower,
-            'salut', // Toujours supporter "neurochat" même si le wake word est différent
-            'bonjour',
-          ];
-          
-          const detected = wakeWords.some(word => {
-            // Vérifier si le mot est présent dans la transcription
-            const found = transcript.includes(word);
-            if (found) {
-              console.log(`[Wake Word] Match trouvé: "${word}" dans "${transcript}"`);
-            }
-            return found;
-          });
+          // Réduire les faux positifs: on déclenche uniquement sur résultat final
+          if (!isFinal) continue;
+
+          // Cooldown: éviter les triggers en rafale
+          const now = Date.now();
+          if (now - this.lastDetectionAt < this.options.cooldownMs) continue;
+
+          // Seuil de confiance (si disponible)
+          if (confidence > 0 && confidence < this.options.minConfidence) continue;
+
+          const phrases = [this.options.wakeWord, ...(this.options.aliases || [])].filter(Boolean);
+          const detected = phrases.some((phrase) => this.matchWakePhrase(transcript, phrase));
           
           if (detected) {
             console.log(`✅ Wake word détecté! Transcription: "${transcript}"`);
+            this.lastDetectionAt = now;
             this.options.onWakeWordDetected();
             // Arrêter pour éviter les détections multiples
             // Le redémarrage sera géré par le composant parent selon l'état de connexion
@@ -178,12 +232,12 @@ export class WakeWordDetector {
     try {
       console.log(`[Wake Word] Démarrage de l'écoute pour "${this.options.wakeWord}" (lang: ${this.options.lang})`);
       this.recognition.start();
-      this.isListening = true;
+      this.setListeningState(true);
       console.log(`✅ [Wake Word] Écoute du wake word "${this.options.wakeWord}" activée`);
     } catch (error: any) {
       // Ignorer les erreurs "already started"
       if (error.name === 'InvalidStateError' || error.message?.includes('already')) {
-        this.isListening = true;
+        this.setListeningState(true);
         console.log('[Wake Word] Reconnaissance déjà en cours');
         return;
       }
@@ -206,14 +260,14 @@ export class WakeWordDetector {
     if (this.recognition && this.isListening) {
       try {
         this.recognition.stop();
-        this.isListening = false;
+        this.setListeningState(false);
         console.log('[Wake Word] Écoute du wake word désactivée');
       } catch (error: any) {
         // Ignorer les erreurs si la reconnaissance n'est pas en cours
         if (error.name !== 'InvalidStateError') {
           console.warn('[Wake Word] Erreur lors de l\'arrêt de la reconnaissance:', error);
         }
-        this.isListening = false;
+        this.setListeningState(false);
       }
     }
   }
