@@ -132,6 +132,8 @@ const App: React.FC = () => {
     connectRef,
     isIntentionalDisconnectRef,
     setIsIntentionalDisconnect,
+    toggleMic,
+    getMicMutedState,
   } = useGeminiLiveSession({
     connectionState: storeConnectionState,
     setConnectionState: setStoreConnectionState,
@@ -149,6 +151,25 @@ const App: React.FC = () => {
     resetVisionState,
     sessionRef,
   });
+
+  // Microphone mute state
+  const [isMicMuted, setIsMicMuted] = useState(false);
+
+  // Sync mic muted state with actual stream state
+  useEffect(() => {
+    if (storeConnectionState === ConnectionState.CONNECTED) {
+      const muted = getMicMutedState();
+      setIsMicMuted(muted);
+    } else {
+      setIsMicMuted(false);
+    }
+  }, [storeConnectionState, getMicMutedState]);
+
+  // Toggle microphone
+  const handleToggleMic = useCallback(() => {
+    const newMutedState = toggleMic();
+    setIsMicMuted(newMutedState);
+  }, [toggleMic]);
 
   // Wake Word Detector Ref
   const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
@@ -597,6 +618,7 @@ const App: React.FC = () => {
               currentPersonality={currentPersonality}
               isVideoActive={isVideoActive}
               isScreenShareActive={isScreenShareActive}
+              isMicMuted={isMicMuted}
               latencyMs={latency}
               inputAnalyser={inputAnalyserRef.current}
               availableCameras={availableCameras}
@@ -613,6 +635,7 @@ const App: React.FC = () => {
               }}
               onToggleVideo={() => setIsVideoActive(!isVideoActive)}
               onToggleScreenShare={toggleScreenShare}
+              onToggleMic={handleToggleMic}
               onCameraChange={changeCamera}
               onEditPersonality={() => setIsPersonalityEditorOpen(true)}
               isWakeWordEnabled={isWakeWordEnabled}

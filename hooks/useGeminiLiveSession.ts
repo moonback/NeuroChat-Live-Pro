@@ -788,12 +788,36 @@ export const useGeminiLiveSession = ({
     };
   }, []);
 
+  // Toggle microphone mute/unmute
+  const toggleMic = useCallback(() => {
+    if (mediaStreamRef.current) {
+      const audioTracks = mediaStreamRef.current.getAudioTracks();
+      audioTracks.forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      return !audioTracks[0]?.enabled; // Return new muted state
+    }
+    return false;
+  }, []);
+
+  // Get current mic muted state
+  const getMicMutedState = useCallback(() => {
+    if (mediaStreamRef.current) {
+      const audioTracks = mediaStreamRef.current.getAudioTracks();
+      return audioTracks.length > 0 ? !audioTracks[0].enabled : false;
+    }
+    return false;
+  }, []);
+
   return {
     sessionRef,
     connect,
     disconnect,
     analyserRef,
     inputAnalyserRef,
+    mediaStreamRef,
+    toggleMic,
+    getMicMutedState,
     cleanupAudioResources,
     isIntentionalDisconnectRef,
     setIsIntentionalDisconnect: setIsIntentionalDisconnectWithRef,

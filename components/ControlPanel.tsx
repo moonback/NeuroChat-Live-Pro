@@ -11,6 +11,7 @@ interface ControlPanelProps {
   currentPersonality: Personality;
   isVideoActive: boolean;
   isScreenShareActive?: boolean;
+  isMicMuted?: boolean;
   latencyMs?: number;
   inputAnalyser?: AnalyserNode | null;
   availableCameras?: MediaDeviceInfo[];
@@ -22,6 +23,7 @@ interface ControlPanelProps {
   onDisconnect: () => void;
   onToggleVideo: () => void;
   onToggleScreenShare?: () => void;
+  onToggleMic?: () => void;
   onCameraChange?: (cameraId: string) => void;
   onToggleWakeWord?: () => void;
   onEditPersonality?: () => void;
@@ -53,6 +55,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
     </svg>
   ),
+  MicOff: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.343 6.343l-1.414 1.414m15.142 15.142l-1.414-1.414M12 18.75v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
+  ),
   ChevronUp: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
@@ -70,6 +77,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   currentPersonality,
   isVideoActive,
   isScreenShareActive = false,
+  isMicMuted = false,
   latencyMs = 0,
   inputAnalyser = null,
   availableCameras = [],
@@ -79,6 +87,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onDisconnect,
   onToggleVideo,
   onToggleScreenShare,
+  onToggleMic,
   onCameraChange,
   onToggleWakeWord,
   onSelectPersonality,
@@ -250,6 +259,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   icon={<Icons.Mic />}
                   tooltip={isWakeWordEnabled ? "Détection 'Bonjour' Active" : "Activer 'Bonjour'"}
                 />
+             )}
+
+             {/* Microphone Toggle (Only when Connected) */}
+             {isConnected && onToggleMic && (
+               <RoundButton
+                 onClick={onToggleMic}
+                 active={!isMicMuted}
+                 activeColor="bg-white/10"
+                 icon={isMicMuted ? <Icons.MicOff /> : <Icons.Mic />}
+                 tooltip={isMicMuted ? "Activer Microphone" : "Couper Microphone"}
+               />
              )}
 
              {/* Camera Toggle */}
