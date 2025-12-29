@@ -437,11 +437,37 @@ export default function AgentDashboard({
                               />
                             </div>
 
+                            {/* Résultats prévisualisés */}
+                            {task.result && task.status === 'completed' && (
+                              <div className="mt-3 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                <div className="text-xs text-blue-300 font-semibold mb-1">Résultats:</div>
+                                {task.result.summary && (
+                                  <div className="text-xs text-slate-300 line-clamp-2">
+                                    {task.result.summary}
+                                  </div>
+                                )}
+                                {task.result.finalContent && (
+                                  <div className="text-xs text-slate-300 line-clamp-2">
+                                    {task.result.finalContent.substring(0, 100)}...
+                                  </div>
+                                )}
+                                {!task.result.summary && !task.result.finalContent && (
+                                  <div className="text-xs text-slate-400">
+                                    {task.result.searchResults?.length ? `${task.result.searchResults.length} source(s) trouvée(s)` :
+                                     task.result.extractedData?.length ? `${task.result.extractedData.length} donnée(s) extraite(s)` :
+                                     task.result.content?.length ? `${task.result.content.length} section(s) créée(s)` :
+                                     'Résultats disponibles'}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
                             {/* Conclusion prévisualisée */}
                             {report?.conclusion && task.status === 'completed' && (
-                              <div className="mt-3 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                                <div className="text-xs text-emerald-300 line-clamp-2">
-                                  {report.conclusion.split('\n').find(line => line.trim() && !line.startsWith('#') && !line.startsWith('**'))?.substring(0, 120) || 'Conclusion disponible...'}
+                              <div className="mt-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                <div className="text-xs text-emerald-300 font-semibold mb-1">Conclusion:</div>
+                                <div className="text-xs text-slate-300 line-clamp-2">
+                                  {report.conclusion.split('\n').find(line => line.trim() && !line.startsWith('#') && !line.startsWith('**'))?.substring(0, 100) || 'Conclusion disponible...'}
                                 </div>
                               </div>
                             )}

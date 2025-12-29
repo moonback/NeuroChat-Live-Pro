@@ -269,6 +269,140 @@ export default function AgentTaskViewer({ isOpen, onClose, taskId }: AgentTaskVi
                 </div>
               </div>
 
+              {/* Résultats détaillés */}
+              {task.result && task.status === 'completed' && (
+                <div className="glass-intense rounded-xl p-6 border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-indigo-500/5">
+                  <h3 className="text-lg font-semibold text-blue-300 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Résultats de la Tâche
+                  </h3>
+                  <div className="space-y-4">
+                    {task.result.summary && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-2">Résumé</div>
+                        <div className="text-white">{task.result.summary}</div>
+                      </div>
+                    )}
+                    
+                    {/* Résultats de recherche */}
+                    {task.result.searchResults && Array.isArray(task.result.searchResults) && task.result.searchResults.length > 0 && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Sources de Recherche ({task.result.searchResults.length})</div>
+                        <div className="space-y-3">
+                          {task.result.searchResults.map((result: any, idx: number) => (
+                            <div key={idx} className="p-3 rounded-lg bg-white/5 border border-white/5">
+                              {result.query && <div className="text-xs text-blue-400 mb-1">Recherche: {result.query}</div>}
+                              {result.sources && Array.isArray(result.sources) && result.sources.map((source: any, sidx: number) => (
+                                <div key={sidx} className="mb-2 last:mb-0">
+                                  <div className="text-sm font-medium text-white">{source.title}</div>
+                                  <div className="text-xs text-slate-400 mt-1">{source.content}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Données extraites */}
+                    {task.result.extractedData && Array.isArray(task.result.extractedData) && task.result.extractedData.length > 0 && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Données Extraites ({task.result.extractedData.length})</div>
+                        <div className="space-y-2">
+                          {task.result.extractedData.map((data: any, idx: number) => (
+                            <div key={idx} className="p-3 rounded-lg bg-white/5 border border-white/5">
+                              {data.description && <div className="text-xs text-purple-400 mb-2">{data.description}</div>}
+                              {data.entities && Array.isArray(data.entities) && (
+                                <div className="text-xs text-slate-300">
+                                  <span className="font-semibold">Entités:</span> {data.entities.map((e: any) => `${e.type}: ${e.value}`).join(', ')}
+                                </div>
+                              )}
+                              {data.keywords && Array.isArray(data.keywords) && (
+                                <div className="text-xs text-slate-300 mt-1">
+                                  <span className="font-semibold">Mots-clés:</span> {data.keywords.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Contenu généré */}
+                    {task.result.finalContent && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Contenu Généré</div>
+                        <div className="text-white whitespace-pre-wrap leading-relaxed">{task.result.finalContent}</div>
+                      </div>
+                    )}
+
+                    {task.result.content && Array.isArray(task.result.content) && task.result.content.length > 0 && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Contenu ({task.result.content.length} section(s))</div>
+                        <div className="space-y-3">
+                          {task.result.content.map((content: any, idx: number) => (
+                            <div key={idx} className="p-3 rounded-lg bg-white/5 border border-white/5">
+                              {content.content && (
+                                <div className="text-white whitespace-pre-wrap leading-relaxed">{content.content}</div>
+                              )}
+                              {content.wordCount && (
+                                <div className="text-xs text-slate-400 mt-2">Mots: {content.wordCount}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Insights */}
+                    {task.result.insights && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Insights</div>
+                        {task.result.insights.insights && Array.isArray(task.result.insights.insights) && (
+                          <div className="space-y-2">
+                            {task.result.insights.insights.map((insight: any, idx: number) => (
+                              <div key={idx} className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                <div className="text-xs text-purple-400 mb-1">{insight.type}</div>
+                                <div className="text-sm text-white">{insight.text}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Patterns */}
+                    {task.result.patterns && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-3">Patterns Détectés</div>
+                        {task.result.patterns.patternsFound && Array.isArray(task.result.patterns.patternsFound) && (
+                          <div className="space-y-2">
+                            {task.result.patterns.patternsFound.map((pattern: any, idx: number) => (
+                              <div key={idx} className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                                <div className="text-xs text-indigo-400 mb-1">{pattern.type}</div>
+                                <div className="text-sm text-white">{pattern.description}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Résultats bruts (si aucun format spécifique) */}
+                    {!task.result.summary && !task.result.searchResults && !task.result.extractedData && !task.result.finalContent && !task.result.content && !task.result.insights && (
+                      <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="text-sm font-semibold text-slate-300 mb-2">Résultats</div>
+                        <pre className="text-xs text-slate-300 overflow-auto max-h-64">
+                          {JSON.stringify(task.result, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Conclusion */}
               {report && report.conclusion && task.status === 'completed' && (
                 <div className="glass-intense rounded-xl p-6 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5">
