@@ -277,7 +277,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       </>
                     ) : null
                   }
-                  tooltip={isWakeWordEnabled ? (isWakeWordListening ? "Wake word: écoute active" : "Wake word: activé") : "Activer le wake word"}
+                  tooltip={isWakeWordEnabled ? (isWakeWordListening ? "Wake word: écoute active" : "Wake word: activé") : "dite 'Assistant' pour commencer"}
                 />
              )}
 

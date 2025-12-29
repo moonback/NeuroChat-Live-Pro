@@ -136,105 +136,117 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
             {/* Backdrop */}
             <div 
-                className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+                className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity" 
                 onClick={onClose}
             />
             
             {/* Modal Container */}
             <div 
-                className="relative w-full max-w-6xl bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[85vh] sm:h-[80vh] animate-in slide-in-from-bottom-8 duration-500"
+                className="relative w-full max-w-6xl bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden flex flex-col h-[85vh] sm:h-[80vh] animate-in slide-in-from-bottom-8 duration-500"
                 style={{
-                    boxShadow: `0 0 100px -20px ${currentPersonality.themeColor}15, 0 0 40px -10px rgba(0,0,0,0.5)`
+                    boxShadow: `0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px ${currentPersonality.themeColor}30`
                 }}
             >
                 {/* Header Strip */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
+                    <div className="flex items-center gap-4">
                         <div 
-                            className="p-2 rounded-lg bg-white/5 text-white/80"
-                            style={{ color: currentPersonality.themeColor }}
+                            className="p-3 rounded-lg border"
+                            style={{ 
+                                backgroundColor: `${currentPersonality.themeColor}20`,
+                                borderColor: `${currentPersonality.themeColor}30`,
+                                color: currentPersonality.themeColor
+                            }}
                         >
                             <Icons.Terminal />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white tracking-tight">Configuration Système</h2>
-                            <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider">Mode Édition Avancé</p>
+                            <h2 className="text-xl sm:text-2xl font-display font-bold text-white">Configuration Système</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">Mode Édition Avancé</p>
                         </div>
                     </div>
                     
                     <button 
                         onClick={onClose}
-                        className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-all"
+                        className="p-2 sm:p-3 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95"
+                        aria-label="Fermer la modal"
                     >
                         <Icons.Close />
                     </button>
                 </div>
 
                 {/* Main Content Grid */}
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
                     
                     {/* LEFT: Templates & Tools (Scrollable) */}
-                    <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/5 bg-[#050507]">
-                        <div className="p-4 border-b border-white/5">
-                            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Modèles</h3>
-                            <p className="text-[10px] text-zinc-600">Sélectionnez une base</p>
+                    <div className="hidden lg:flex lg:col-span-3 flex-col border-r border-white/10 bg-slate-900/50 min-h-0">
+                        <div className="flex-shrink-0 p-4 sm:p-6 border-b border-white/10">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Modèles</h3>
+                            <p className="text-xs text-slate-500">Sélectionnez une base</p>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 min-h-0">
                             {AVAILABLE_PERSONALITIES.map((template) => (
                                 <button
                                     key={template.id}
                                     onClick={() => handleTemplateSelect(template)}
-                                    className="w-full text-left p-3 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/5 transition-all group"
+                                    className="w-full text-left p-4 rounded-xl glass border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group"
                                 >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="font-semibold text-sm text-zinc-300 group-hover:text-white transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors">
                                             {template.name}
                                         </span>
                                         {template.id === 'sara' && (
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                            <span 
+                                                className="text-[9px] px-2 py-1 rounded-full border font-semibold"
+                                                style={{
+                                                    backgroundColor: `${currentPersonality.themeColor}20`,
+                                                    borderColor: `${currentPersonality.themeColor}30`,
+                                                    color: currentPersonality.themeColor
+                                                }}
+                                            >
                                                 PRO
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-zinc-500 line-clamp-2 leading-relaxed">
+                                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed group-hover:text-slate-300 transition-colors">
                                         {template.description}
                                     </p>
                                 </button>
                             ))}
                         </div>
 
-                        <div className="p-4 border-t border-white/5 bg-white/[0.02]">
-                            <div className="grid grid-cols-2 gap-2">
+                        <div className="flex-shrink-0 p-4 border-t border-white/10 bg-white/[0.02]">
+                            <div className="grid grid-cols-2 gap-3">
                                 <button 
                                     onClick={handleImport}
-                                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-zinc-700 hover:border-zinc-500 hover:bg-white/5 text-zinc-500 hover:text-zinc-300 transition-all"
+                                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl glass border border-dashed border-white/20 hover:border-white/40 hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-all duration-300 group"
                                 >
                                     <Icons.Upload />
-                                    <span className="text-[10px] font-medium uppercase tracking-wide">Import</span>
+                                    <span className="text-xs font-medium uppercase tracking-wide">Import</span>
                                 </button>
                                 <button 
                                     onClick={handleExport}
-                                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-zinc-700 hover:border-zinc-500 hover:bg-white/5 text-zinc-500 hover:text-zinc-300 transition-all"
+                                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl glass border border-dashed border-white/20 hover:border-white/40 hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-all duration-300 group"
                                 >
                                     <Icons.Download />
-                                    <span className="text-[10px] font-medium uppercase tracking-wide">Export</span>
+                                    <span className="text-xs font-medium uppercase tracking-wide">Export</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     {/* RIGHT: Code Editor */}
-                    <div className="col-span-1 lg:col-span-9 flex flex-col bg-[#08080a] relative">
+                    <div className="col-span-1 lg:col-span-9 flex flex-col bg-slate-900/30 relative min-h-0 overflow-hidden">
                         {/* Editor Toolbar */}
-                        <div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/5">
+                        <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 glass-intense border-b border-white/10">
                              <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500/50"></span>
+                                <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
                                     SYSTEM_INSTRUCTION.TXT
                                 </div>
-                                <div className="h-3 w-[1px] bg-white/10"></div>
-                                <div className="text-[10px] text-zinc-600 font-mono">
+                                <div className="h-4 w-[1px] bg-white/10"></div>
+                                <div className="text-xs text-slate-500 font-mono">
                                     {characterCount} CARS
                                 </div>
                              </div>
@@ -245,7 +257,7 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                                         setInstructions(DEFAULT_PERSONALITY.systemInstruction);
                                     }
                                 }}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/5 text-[10px] text-zinc-500 hover:text-red-400 transition-colors"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass border border-white/10 hover:border-red-500/30 hover:bg-red-500/10 text-xs text-slate-400 hover:text-red-400 transition-all duration-300"
                             >
                                 <Icons.Reset />
                                 <span>RESET</span>
@@ -253,11 +265,11 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                         </div>
 
                         {/* Editor Area */}
-                        <div className="flex-1 relative group">
+                        <div className="flex-1 relative group min-h-0 overflow-hidden">
                             <textarea 
                                 value={instructions}
                                 onChange={(e) => setInstructions(e.target.value)}
-                                className="w-full h-full bg-transparent text-sm sm:text-base font-mono text-zinc-300 p-4 sm:p-6 focus:outline-none resize-none leading-relaxed custom-scrollbar selection:bg-indigo-500/30 selection:text-indigo-200"
+                                className="w-full h-full bg-transparent text-sm sm:text-base font-mono text-slate-200 p-4 sm:p-6 focus:outline-none resize-none leading-relaxed custom-scrollbar selection:bg-indigo-500/30 selection:text-indigo-200 overflow-y-auto"
                                 placeholder="// Entrez les instructions système ici..."
                                 spellCheck={false}
                             />
@@ -266,7 +278,7 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                             <div className="lg:hidden absolute bottom-4 right-4 z-10">
                                 <button 
                                     onClick={() => { /* TODO: Open mobile template sheet if needed */ }}
-                                    className="p-3 rounded-full bg-zinc-800 text-zinc-400 shadow-lg border border-white/10"
+                                    className="p-3 rounded-full glass border border-white/20 text-slate-400 hover:text-white shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
                                 >
                                     <Icons.Robot />
                                 </button>
@@ -274,10 +286,10 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                         </div>
 
                         {/* Action Footer */}
-                        <div className="p-4 sm:p-6 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+                        <div className="flex-shrink-0 p-4 sm:p-6 border-t border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30 flex justify-end gap-3">
                             <button 
                                 onClick={onClose}
-                                className="px-5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+                                className="px-5 py-2.5 rounded-xl text-sm font-medium glass border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 hover:scale-105 active:scale-95"
                             >
                                 Annuler
                             </button>
@@ -287,7 +299,7 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
                                 className="relative overflow-hidden px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed group"
                                 style={{
                                     backgroundColor: currentPersonality.themeColor,
-                                    boxShadow: `0 0 20px ${currentPersonality.themeColor}40`
+                                    boxShadow: `0 0 20px ${currentPersonality.themeColor}40, 0 0 40px ${currentPersonality.themeColor}20`
                                 }}
                             >
                                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -315,17 +327,18 @@ const PersonalityEditor: React.FC<PersonalityEditorProps> = ({
             
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
+                    width: 8px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.02);
+                    background: rgba(15, 23, 42, 0.5);
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 10px;
+                    background: rgba(56, 189, 248, 0.3);
+                    border-radius: 4px;
+                    transition: all 0.3s ease;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.2);
+                    background: rgba(56, 189, 248, 0.6);
                 }
             `}</style>
         </div>
