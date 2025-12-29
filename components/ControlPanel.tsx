@@ -140,30 +140,32 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <div className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 md:pb-10 w-full pointer-events-none safe-area-bottom">
       
-      {/* 1. STATUS ISLAND (Connected State Only) - Mode Kiosque: Ajusté */}
+      {/* 1. STATUS ISLAND (Connected State Only) - Déplacé en haut à gauche pour ne pas gêner le visage */}
       <div 
         className={`
-          pointer-events-auto mb-4 transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) origin-bottom
-          ${isConnected ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-90 pointer-events-none h-0'}
+          fixed top-24 left-6 z-50 pointer-events-auto transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) origin-top-left
+          ${isConnected ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-90 -translate-x-4 pointer-events-none'}
         `}
       >
-        <div className="flex items-center gap-4 px-5 py-2.5 rounded-full bg-[#050508]/80 backdrop-blur-xl border border-white/10 shadow-2xl">
-          {/* Audio Visualizer - Mode Kiosque: Ajusté */}
-          <div className="flex items-center gap-3">
-             <div className="flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[10px] font-bold tracking-widest text-emerald-500/80">LIVE</span>
+        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#050508]/60 backdrop-blur-md border border-white/5 shadow-lg">
+          {/* Audio Visualizer - Compact */}
+          <div className="flex items-center gap-2">
+             <div className="flex items-center gap-1.5">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+               <span className="text-[9px] font-bold tracking-widest text-emerald-400">LIVE</span>
              </div>
-             <div className="w-[1px] h-4 bg-white/10" />
-             <div className="w-16 h-4 flex items-center">
+             <div className="w-[1px] h-3 bg-white/10" />
+             <div className="w-12 h-3 flex items-center opacity-80">
                 <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
              </div>
           </div>
 
-          <div className="w-[1px] h-4 bg-white/10" />
+          <div className="w-[1px] h-3 bg-white/10" />
           
-          {/* Latency - Mode Kiosque: Ajusté */}
-          <LatencyIndicator latencyMs={latencyMs} />
+          {/* Latency - Compact */}
+          <div className="scale-90 origin-left">
+            <LatencyIndicator latencyMs={latencyMs} />
+          </div>
         </div>
       </div>
 

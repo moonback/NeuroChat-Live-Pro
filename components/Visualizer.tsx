@@ -484,6 +484,104 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       drawOrbitsForEye(leftEyeCenterX, eyeCenterY, 0);
       drawOrbitsForEye(rightEyeCenterX, eyeCenterY, 0);
 
+      // 10. Bouche Audio (Digital Mouth) - Version Améliorée
+      ctx.save();
+      const mouthY = centerY + baseRadius * 1.8;
+      ctx.translate(centerX, mouthY);
+
+      // Calcul de l'ouverture avec un seuil et une sensibilité ajustée
+      const mouthSignal = Math.max(0, audioLevel - 0.02);
+      // Lissage exponentiel pour une réactivité plus organique
+      const mouthOpenness = Math.pow(Math.min(mouthSignal * 4, 1.2), 1.2); 
+      const mouthWidth = baseRadius * 1.6;
+      const mouthHeightMax = baseRadius * 0.8;
+
+      // Couleur dynamique : devient plus blanche/brillante quand c'est fort
+      const mouthGlowIntensity = 0.5 + mouthOpenness * 0.5;
+      
+      ctx.shadowBlur = 15 + mouthOpenness * 25;
+      ctx.shadowColor = `${baseColor}, ${mouthGlowIntensity})`;
+      ctx.lineWidth = 2 + mouthOpenness * 1;
+      ctx.strokeStyle = `${baseColor}, ${0.7 + mouthOpenness * 0.3})`;
+      
+      // Fond de la bouche (sombre mais avec une teinte)
+      ctx.fillStyle = `rgba(0, 0, 0, 0.6)`;
+
+      ctx.beginPath();
+      // Point gauche (coin)
+      ctx.moveTo(-mouthWidth / 2, 0);
+      
+      // Lèvre supérieure : courbe complexe (style "arc de cupidon" technologique)
+      ctx.bezierCurveTo(
+        -mouthWidth / 4, -mouthOpenness * mouthHeightMax * 0.6, 
+         mouthWidth / 4, -mouthOpenness * mouthHeightMax * 0.6, 
+         mouthWidth / 2, 0
+      );
+
+      // Lèvre inférieure : courbe plus arrondie
+      ctx.bezierCurveTo(
+         mouthWidth / 3, mouthOpenness * mouthHeightMax, 
+        -mouthWidth / 3, mouthOpenness * mouthHeightMax, 
+        -mouthWidth / 2, 0
+      );
+      
+      ctx.fill(); // Fond noir/teinté pour masquer ce qu'il y a derrière
+      ctx.stroke(); // Contour néon
+
+      // --- Détails Tech ---
+      
+      // 1. Coins de bouche (petits marqueurs verticaux)
+      ctx.beginPath();
+      const cornerSize = mouthWidth * 0.05;
+      // Coin gauche
+      ctx.moveTo(-mouthWidth / 2, -cornerSize);
+      ctx.lineTo(-mouthWidth / 2, cornerSize);
+      // Coin droit
+      ctx.moveTo(mouthWidth / 2, -cornerSize);
+      ctx.lineTo(mouthWidth / 2, cornerSize);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 2. Onde vocale interne (visualiseur dans la bouche)
+      if (mouthOpenness > 0.1) {
+        ctx.beginPath();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; // Onde blanche/claire
+        
+        const waveWidth = mouthWidth * 0.6;
+        const wavePoints = 20;
+        
+        for (let i = 0; i <= wavePoints; i++) {
+          const x = (i / wavePoints) * waveWidth - (waveWidth / 2);
+          // Onde sinusoïdale modulée par le volume et le temps
+          // L'amplitude est contrainte par la hauteur de la bouche ouverte
+          const wavePhase = (Date.now() / 100) + (i * 0.5);
+          const normalizedX = Math.abs(x) / (waveWidth / 2); // 0 au centre, 1 aux bords
+          const envelope = 1 - normalizedX; // Plus grand au centre
+          
+          const waveY = Math.sin(wavePhase) * mouthOpenness * mouthHeightMax * 0.4 * envelope;
+          
+          // Décalage vertical pour centrer dans l'ouverture (légèrement plus bas que 0)
+          const centerYOffset = mouthOpenness * mouthHeightMax * 0.2; 
+          
+          if (i === 0) ctx.moveTo(x, waveY + centerYOffset);
+          else ctx.lineTo(x, waveY + centerYOffset);
+        }
+        ctx.stroke();
+      }
+
+      // 3. Petite barre "led" en bas au centre (menton tech)
+      if (mouthOpenness < 0.2) {
+          ctx.beginPath();
+          ctx.moveTo(-mouthWidth * 0.1, mouthWidth * 0.15);
+          ctx.lineTo(mouthWidth * 0.1, mouthWidth * 0.15);
+          ctx.strokeStyle = `${baseColor}, 0.3)`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+      }
+
+      ctx.restore();
+
       // 9. Effet de pulsation ambiante lors des pics audio
       if (audioLevel > 0.35) {
         const pulseIntensity = (audioLevel - 0.35) * 2;
