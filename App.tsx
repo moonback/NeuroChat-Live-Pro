@@ -52,12 +52,14 @@ const App: React.FC = () => {
     isWakeWordEnabled,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
+    isEyeTrackingEnabled,
     setConnectionState: setStoreConnectionState,
     setPersonality,
     setUploadedDocuments,
     setIsWakeWordEnabled,
     setIsFunctionCallingEnabled,
     setIsGoogleSearchEnabled,
+    setIsEyeTrackingEnabled,
   } = useAppStore();
 
   // Utiliser le store comme source unique de vérité pour connectionState
@@ -404,6 +406,7 @@ const App: React.FC = () => {
         analyserRef={analyserRef} 
         color={currentPersonality.themeColor} 
         isActive={isTalking || storeConnectionState === ConnectionState.CONNECTED}
+        isEyeTrackingEnabled={isEyeTrackingEnabled}
       />
       
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -571,6 +574,15 @@ const App: React.FC = () => {
                       <span className="text-[9px] text-slate-300">Recherche</span>
                       <span className={`text-[9px] font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
                    </div>
+                   
+                   {/* Eye Tracking Toggle */}
+                   <button 
+                     onClick={() => setIsEyeTrackingEnabled(!isEyeTrackingEnabled)}
+                     className={`flex items-center justify-between px-1.5 py-1 rounded border transition-colors cursor-pointer w-full hover:bg-white/5 ${isEyeTrackingEnabled ? 'border-purple-500/20 bg-purple-500/5' : 'border-white/5 bg-transparent'}`}
+                   >
+                      <span className="text-[9px] text-slate-300">Suivi Yeux</span>
+                      <span className={`text-[9px] font-bold ${isEyeTrackingEnabled ? 'text-purple-400' : 'text-slate-500'}`}>{isEyeTrackingEnabled ? 'ON' : 'OFF'}</span>
+                   </button>
                 </div>
               </div>
             </div>
@@ -738,6 +750,38 @@ const App: React.FC = () => {
                   {isGoogleSearchEnabled && (
                     <div className="px-2.5 py-1 rounded-lg bg-emerald-500/30 border border-emerald-400/50">
                       <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">ON</span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Eye Tracking */}
+                <button
+                  onClick={() => {
+                    setIsEyeTrackingEnabled(!isEyeTrackingEnabled);
+                    setIsMobileActionsDrawerOpen(false);
+                  }}
+                  className={`group w-full px-4 py-3.5 rounded-xl border font-medium text-sm transition-all duration-300 active:scale-[0.97] text-left flex items-center gap-3.5 touch-manipulation min-h-[56px] shadow-sm ${
+                    isEyeTrackingEnabled 
+                      ? 'bg-gradient-to-br from-purple-500/20 to-fuchsia-600/10 border-purple-500/50 text-purple-200 hover:border-purple-400/70 hover:from-purple-500/25 hover:shadow-lg hover:shadow-purple-500/20' 
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 text-slate-200 hover:border-purple-500/40 hover:from-purple-500/10 hover:to-purple-500/5 hover:text-white hover:shadow-lg hover:shadow-purple-500/10'
+                  }`}
+                >
+                  <div className={`p-2.5 rounded-lg border transition-colors ${
+                    isEyeTrackingEnabled
+                      ? 'bg-gradient-to-br from-purple-500/30 to-fuchsia-600/20 border-purple-400/50'
+                      : 'bg-gradient-to-br from-white/5 to-white/0 border-white/10 group-hover:border-purple-500/40 group-hover:from-purple-500/20'
+                  }`}>
+                    <svg className={`w-5 h-5 transition-colors ${isEyeTrackingEnabled ? 'text-purple-200' : 'text-slate-300 group-hover:text-purple-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 font-semibold">
+                    {isEyeTrackingEnabled ? 'Désactiver' : 'Activer'} Suivi des Yeux
+                  </span>
+                  {isEyeTrackingEnabled && (
+                    <div className="px-2.5 py-1 rounded-lg bg-purple-500/30 border border-purple-400/50">
+                      <span className="text-[10px] font-bold text-purple-200 uppercase tracking-wider">ON</span>
                     </div>
                   )}
                 </button>
