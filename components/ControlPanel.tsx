@@ -16,8 +16,8 @@ interface ControlPanelProps {
   availableCameras?: MediaDeviceInfo[];
   selectedCameraId?: string;
   isWakeWordEnabled?: boolean;
-  isFunctionCallingEnabled?: boolean;
-  isGoogleSearchEnabled?: boolean;
+  isFunctionCallingEnabled?: boolean; // Géré par le Header maintenant, mais gardé pour compatibilité prop
+  isGoogleSearchEnabled?: boolean;    // Idem
   onConnect: () => void;
   onDisconnect: () => void;
   onToggleVideo: () => void;
@@ -31,28 +31,38 @@ interface ControlPanelProps {
   onOpenMobileActions?: () => void;
 }
 
-const STATUS_COLOR = {
-  connected: {
-    color: '#34d399',
-    class: 'bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.8)]',
-    pulse: 'bg-emerald-400',
-    textShadow: '0 0 10px rgba(52, 211, 153, 0.5)',
-    text: 'Système Actif'
-  },
-  connecting: {
-    color: '#fbbf24',
-    class: 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse',
-    pulse: 'bg-amber-400',
-    textShadow: '0 0 10px rgba(251, 191, 36, 0.5)',
-    text: 'Initialisation'
-  },
-  idle: {
-    color: '#94a3b8',
-    class: 'bg-slate-500',
-    pulse: '',
-    textShadow: 'none',
-    text: 'Mode Veille'
-  }
+// --- Icons ---
+const Icons = {
+  Camera: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  ),
+  CameraOff: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+    </svg>
+  ),
+  ScreenShare: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+    </svg>
+  ),
+  Mic: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
+  ),
+  ChevronUp: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+    </svg>
+  ),
+  Power: () => (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
+    </svg>
+  )
 };
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -65,389 +75,242 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   availableCameras = [],
   selectedCameraId = '',
   isWakeWordEnabled = true,
-  isFunctionCallingEnabled = true,
-  isGoogleSearchEnabled = false,
   onConnect,
   onDisconnect,
   onToggleVideo,
   onToggleScreenShare,
   onCameraChange,
   onToggleWakeWord,
-  onEditPersonality,
   onSelectPersonality,
-  onToggleFunctionCalling,
-  onToggleGoogleSearch,
   onOpenMobileActions,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
-  // For memoizing classes/labels that depend on state
-  const status = useMemo(() => {
-    if (isConnected) return STATUS_COLOR.connected;
-    if (isConnecting) return STATUS_COLOR.connecting;
-    return STATUS_COLOR.idle;
-  }, [isConnected, isConnecting]);
+  // --- Components ---
 
-  // Accessibility: aria-live for status
-  const ariaLiveStatus = useMemo(() => {
-    return status.text;
-  }, [status]);
+  const RoundButton = ({ 
+    onClick, 
+    active, 
+    activeColor = 'bg-white', 
+    icon, 
+    tooltip 
+  }: { 
+    onClick: () => void; 
+    active: boolean; 
+    activeColor?: string; 
+    icon: React.ReactNode; 
+    tooltip: string 
+  }) => (
+    <Tooltip content={tooltip}>
+      <button
+        onClick={onClick}
+        className={`
+          relative flex items-center justify-center w-11 h-11 rounded-full
+          transition-all duration-300 ease-out
+          border
+          ${active 
+            ? `${activeColor} text-white border-transparent shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-105` 
+            : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:text-white hover:border-white/20'
+          }
+        `}
+      >
+        {icon}
+      </button>
+    </Tooltip>
+  );
 
-  // Button base classes for DRY (improvements)
-  const baseBtn =
-    "group relative flex items-center gap-0.5 sm:gap-1 md:gap-1.5 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-1.5 rounded-md glass border border-white/8 font-body text-[9px] sm:text-[10px] md:text-xs font-medium transition-all duration-200 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98] overflow-hidden focus:outline-none focus:ring-1 focus:ring-white/20 touch-manipulation select-none hover-lift ripple";
-
-  // Render camera selector only when at least 2 cameras and video is on
-  const renderCameraSelector = isConnected && isVideoActive && availableCameras.length > 1;
-
-  // Utils for label
-  const getCameraButtonLabel = () => (isVideoActive ? "Désactiver la caméra" : "Activer la caméra");
-  const getCameraTooltip = () => (isVideoActive
-      ? "Désactiver la caméra - L'IA ne verra plus votre environnement"
-      : "Activer la caméra - Permet à l'IA de voir votre environnement"
-    );
-  const getScreenShareTooltip = () => (isScreenShareActive
-      ? "Arrêter le partage d'écran"
-      : "Partager votre écran - L'IA pourra voir ce que vous affichez"
-    );
-
-  // Main render - Redesigned as a modern floating dock
   return (
-    <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3 sm:pb-5 w-full pointer-events-none safe-area-bottom">
+    <div className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 w-full pointer-events-none safe-area-bottom">
       
-      {/* Dynamic Status Island (Above Controls) */}
-      <div className={`pointer-events-auto mb-2 sm:mb-4 transition-all duration-500 ease-out transform ${isConnected ? 'scale-100 opacity-100' : 'scale-95 opacity-0 h-0 overflow-hidden'}`}>
-        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full glass-intense border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl">
-             <div className="flex items-center gap-1.5 pr-2 sm:pr-3 border-r border-white/10">
-                <div className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
-                </div>
-                <span className="text-[9px] sm:text-[10px] font-medium text-emerald-100 tracking-wide">LIVE</span>
+      {/* 1. STATUS ISLAND (Connected State Only) */}
+      <div 
+        className={`
+          pointer-events-auto mb-4 transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) origin-bottom
+          ${isConnected ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-90 pointer-events-none h-0'}
+        `}
+      >
+        <div className="flex items-center gap-4 px-5 py-2.5 rounded-full bg-[#050508]/80 backdrop-blur-xl border border-white/10 shadow-2xl">
+          {/* Audio Visualizer */}
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[10px] font-bold tracking-widest text-emerald-500/80">LIVE</span>
              </div>
+             <div className="w-[1px] h-4 bg-white/10" />
+             <div className="w-16 h-4 flex items-center">
+                <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
+             </div>
+          </div>
 
-             <div className="hidden sm:flex items-center gap-1.5 pr-3 border-r border-white/10">
-               <span
-                 className="w-2 h-2 rounded-full"
-                 style={{
-                   backgroundColor: currentPersonality.themeColor,
-                   boxShadow: `0 0 12px ${currentPersonality.themeColor}66`,
-                 }}
-               />
-               <span className="text-[10px] font-medium text-white/80 max-w-[180px] truncate">
-                 {currentPersonality.name}
-               </span>
-             </div>
-             
-             <div className="flex items-center gap-1.5 sm:gap-2">
-               <Tooltip content="Latence">
-                  <LatencyIndicator latencyMs={latencyMs} />
-               </Tooltip>
-               <div className="h-2.5 w-[1px] bg-white/10"></div>
-               <Tooltip content="Volume">
-                 <div className="w-10 sm:w-14 h-4 sm:h-5 flex items-center">
-                    <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
-                 </div>
-               </Tooltip>
-             </div>
+          <div className="w-[1px] h-4 bg-white/10" />
+          
+          {/* Latency */}
+          <LatencyIndicator latencyMs={latencyMs} />
         </div>
       </div>
 
-      {/* Personality Selector (Visible when disconnected) */}
+      {/* 2. PERSONALITY CARD (Disconnected State Only) */}
       {!isConnected && (
-         <div className="pointer-events-auto mb-4 sm:mb-6 w-full max-w-[90%] sm:max-w-md mx-auto animate-fade-in z-20">
-            {/* Label discret */}
-            <div className="flex justify-center mb-1.5 sm:mb-2">
-                <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-slate-400 backdrop-blur-md">
-                    Assistant Actif
-                </span>
-            </div>
-
-            {/* Compact Glass Card - Plus transparent sur desktop pour laisser voir la sphère */}
+         <div className="pointer-events-auto mb-6 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 z-20 px-4">
             <div 
-                className="group relative overflow-hidden rounded-2xl border border-white/10 md:border-white/5 shadow-2xl transition-all duration-500 hover:border-white/20 backdrop-blur-xl md:backdrop-blur-md"
-                style={{
-                    background: 'radial-gradient(circle at center, rgba(10, 10, 10, 0.2) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(10, 10, 10, 0.6) 100%)'
-                }}
+                className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#050508]/60 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-white/10 hover:bg-[#050508]/80"
             >
-                
-                {/* Ambient Glow - Réduit sur desktop */}
-                <div 
-                    className="absolute -top-20 -left-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-20 md:opacity-10 blur-[50px] transition-all duration-700 group-hover:opacity-30 md:group-hover:opacity-15"
-                    style={{ background: currentPersonality.themeColor }}
-                />
-                <div 
-                    className="absolute -bottom-20 -right-20 w-32 sm:w-40 h-32 sm:h-40 rounded-full opacity-10 md:opacity-5 blur-[50px] transition-all duration-700 group-hover:opacity-20 md:group-hover:opacity-10"
-                    style={{ background: currentPersonality.themeColor }}
-                />
+                {/* Select Overlay */}
+                {onSelectPersonality && (
+                   <select
+                      value={currentPersonality.id}
+                      onChange={(e) => {
+                          const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
+                          if (selected) onSelectPersonality(selected);
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                  >
+                      {AVAILABLE_PERSONALITIES.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                  </select>
+                )}
 
-                {/* Content */}
-                <div className="relative z-10">
-                    {onSelectPersonality ? (
-                        <div className="relative w-full">
-                            {/* Invisible Select Overlay */}
-                            <select
-                                value={currentPersonality.id}
-                                onChange={(e) => {
-                                    const selected = AVAILABLE_PERSONALITIES.find(p => p.id === e.target.value);
-                                    if (selected) onSelectPersonality(selected);
-                                }}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
-                                title="Changer de personnalité"
-                            >
-                                {AVAILABLE_PERSONALITIES.map(p => (
-                                    <option key={p.id} value={p.id} className="bg-slate-900 text-white text-base py-2">
-                                        {p.name}
-                                    </option>
-                                ))}
-                                {!AVAILABLE_PERSONALITIES.some(p => p.id === currentPersonality.id) && (
-                                    <option value={currentPersonality.id} className="bg-slate-900 text-white text-base">
-                                        {currentPersonality.name} (Personnalisé)
-                                    </option>
-                                )}
-                            </select>
+                <div className="relative z-10 flex items-center justify-between p-4">
+                   {/* Left Icon/Color */}
+                   <div 
+                     className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/5 shadow-inner"
+                     style={{ color: currentPersonality.themeColor }}
+                   >
+                     <div 
+                       className="w-3 h-3 rounded-full shadow-[0_0_15px_currentColor]"
+                       style={{ backgroundColor: currentPersonality.themeColor }} 
+                     />
+                   </div>
 
-                            {/* Visual Representation */}
-                            <div className="flex flex-col items-center py-3 sm:py-4 px-3 sm:px-5 pointer-events-none">
-                                {/* Header with Arrows */}
-                                <div className="flex items-center justify-between w-full mb-1.5 sm:mb-2">
-                                    <div className="p-1 sm:p-1.5 rounded-full bg-white/5 text-white/30 group-hover:text-white/60 group-hover:bg-white/10 transition-all duration-300">
-                                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                                        </svg>
-                                    </div>
-
-                                    <div className="flex flex-col items-center flex-1 px-1.5">
-                                        <h2 
-                                            className="text-base sm:text-xl font-display font-bold tracking-tight text-center transition-all duration-300 transform group-hover:scale-105 truncate w-full"
-                                            style={{ 
-                                                color: currentPersonality.themeColor,
-                                                textShadow: `0 0 25px ${currentPersonality.themeColor}40`
-                                            }}
-                                        >
-                                            {currentPersonality.name}
-                                        </h2>
-                                    </div>
-
-                                    <div className="p-1 sm:p-1.5 rounded-full bg-white/5 text-white/30 group-hover:text-white/60 group-hover:bg-white/10 transition-all duration-300">
-                                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Divider */}
-                                <div className="w-10 sm:w-14 h-0.5 rounded-full bg-white/10 mb-1.5 sm:mb-2 group-hover:w-16 sm:group-hover:w-20 transition-all duration-500" />
-
-                                {/* Description */}
-                                <p className="text-slate-300 text-[10px] sm:text-xs font-light text-center leading-relaxed max-w-sm line-clamp-2 sm:line-clamp-none">
-                                    {currentPersonality.description}
-                                </p>
-
-                                {/* Hint */}
-                                <div className="mt-2 sm:mt-3 opacity-70 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-2 group-hover:translate-y-0">
-                                    <span className="text-[7px] sm:text-[8px] uppercase tracking-widest text-white/50 font-medium">
-                                        Cliquez pour changer
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center py-3 sm:py-4 px-4 sm:px-5">
-                            <h2 
-                                className="text-lg sm:text-xl font-display font-bold tracking-tight mb-1.5"
-                                style={{ color: currentPersonality.themeColor }}
-                            >
-                                {currentPersonality.name}
-                            </h2>
-                            <p className="text-slate-300 text-[10px] sm:text-xs font-light text-center leading-relaxed">
-                                {currentPersonality.description}
-                            </p>
-                        </div>
-                    )}
+                   {/* Text Info */}
+                   <div className="flex-1 px-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-zinc-500 mb-1">
+                         <Icons.ChevronUp />
+                      </div>
+                      <h2 className="text-lg font-bold text-white tracking-tight leading-none">
+                        {currentPersonality.name}
+                      </h2>
+                      <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider font-medium">
+                        {currentPersonality.id === 'sara' ? 'Standard Model' : 'Custom Model'}
+                      </p>
+                   </div>
+                   
+                   {/* Right: Hint */}
+                   <div className="flex flex-col items-center justify-center w-12 h-12">
+                      <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
+                      <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
+                      <div className="w-1 h-1 rounded-full bg-white/20" />
+                   </div>
                 </div>
+
+                {/* Bottom Progress/Deco Line */}
+                <div 
+                  className="absolute bottom-0 left-0 h-[2px] w-full opacity-50 transition-all duration-500 group-hover:opacity-100"
+                  style={{ 
+                    background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)` 
+                  }}
+                />
             </div>
          </div>
       )}
 
-      {/* Main Control Dock */}
-      <div
-        className="pointer-events-auto rounded-full p-[1px] animate-slide-up"
-        style={{
-          background: isConnected
-            ? `linear-gradient(90deg, ${currentPersonality.themeColor}55, rgba(255,255,255,0.12), ${currentPersonality.themeColor}55)`
-            : 'linear-gradient(90deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05), rgba(255,255,255,0.14))',
-          boxShadow: isConnected
-            ? `0 24px 60px rgba(0,0,0,0.35), 0 0 60px ${currentPersonality.themeColor}22`
-            : '0 24px 60px rgba(0,0,0,0.35)',
-        }}
-      >
-        <div
-          className="relative flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-full glass-intense border border-white/10 backdrop-blur-2xl transition-all duration-500 hover:scale-[1.01] hover:border-white/20"
+      {/* 3. MAIN DOCK */}
+      <div className="pointer-events-auto">
+        <div 
+          className="flex items-center gap-3 md:gap-4 p-2 pl-3 pr-2 rounded-full border border-white/10 bg-[#08080a]/90 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500"
           style={{
-            boxShadow: `0 20px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04), 0 0 40px ${
-              isConnected ? currentPersonality.themeColor + '12' : 'transparent'
-            }`,
+             boxShadow: isConnected ? `0 0 60px -20px ${currentPersonality.themeColor}30` : ''
           }}
         >
-          {/* Soft inner highlight */}
-          <div
-            className="absolute inset-[1px] rounded-full pointer-events-none opacity-70"
-            aria-hidden="true"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 35%, rgba(0,0,0,0.10))',
-            }}
-          />
-          {/* Top specular line */}
-          <div
-            className="absolute top-[1px] left-6 right-6 h-px rounded-full pointer-events-none opacity-60"
-            aria-hidden="true"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)' }}
-          />
-        
-        {/* Left Controls Group */}
-        <div className="relative flex items-center gap-1.5 sm:gap-2 px-1.5">
-            {/* Camera Toggle */}
-            {isConnected && (
-                <Tooltip content={getCameraTooltip()}>
-                    <button
-                        onClick={onToggleVideo}
-                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                            isVideoActive 
-                                ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' 
-                                : 'bg-white/5 text-white hover:bg-white/10 hover:scale-110'
-                        }`}
-                    >
-                        {isVideoActive ? (
-                            <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                            </svg>
-                        ) : (
-                             <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                        )}
-                    </button>
-                </Tooltip>
-            )}
-
-            {/* Screen Share */}
-            {isConnected && onToggleScreenShare && (
-                <Tooltip content={getScreenShareTooltip()}>
-                    <button
-                        onClick={onToggleScreenShare}
-                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                            isScreenShareActive 
-                                ? 'bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]' 
-                                : 'bg-white/5 text-white hover:bg-white/10 hover:scale-110'
-                        }`}
-                    >
-                         {isScreenShareActive ? (
-                            <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                            </svg>
-                        ) : (
-                            <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                        )}
-                    </button>
-                </Tooltip>
-            )}
-
-            {/* Wake Word (Disconnected) */}
-            {!isConnected && onToggleWakeWord && (
-                <Tooltip content={isWakeWordEnabled ? "Désactiver 'Bonjour'" : "Activer 'Bonjour'"}>
-                    <button
-                        onClick={onToggleWakeWord}
-                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                            isWakeWordEnabled 
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-                                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white hover:scale-110'
-                        }`}
-                    >
-                         <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                        </svg>
-                    </button>
-                </Tooltip>
-            )}
-        </div>
-
-        {/* Main Action Button (Center) */}
-        <div className="relative mx-1.5 sm:mx-3">
-             {!isConnected ? (
-                <button
-                    onClick={onConnect}
-                    disabled={isConnecting}
-                    className="relative group flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-3 rounded-full bg-white text-black font-display font-bold text-sm sm:text-base tracking-wide shadow-[0_0_40px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_70px_rgba(255,255,255,0.45)] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    {isConnecting ? (
-                        <>
-                            <Loader size="sm" color="#000000" />
-                            <span>Connexion...</span>
-                        </>
-                    ) : (
-                        <>
-                            <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></div>
-                            <span>Démarrer</span>
-                        </>
-                    )}
-                </button>
-             ) : (
-                 <button
-                    onClick={onDisconnect}
-                    className="relative group flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.4)] transition-all duration-300 hover:scale-110 hover:bg-red-600 hover:shadow-[0_0_60px_rgba(239,68,68,0.6)] active:scale-90"
-                 >
-                     <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                 </button>
+          
+          {/* Secondary Controls (Camera, Screen, Wake Word) */}
+          <div className="flex items-center gap-2">
+             {/* Wake Word (Only when Disconnected) */}
+             {!isConnected && onToggleWakeWord && (
+                <RoundButton
+                  onClick={onToggleWakeWord}
+                  active={isWakeWordEnabled || false}
+                  activeColor="bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                  icon={<Icons.Mic />}
+                  tooltip={isWakeWordEnabled ? "Détection 'Bonjour' Active" : "Activer 'Bonjour'"}
+                />
              )}
-        </div>
 
-        {/* Right Controls Group */}
-        <div className="relative flex items-center gap-1.5 sm:gap-2 px-1.5">
-            {/* Camera Switcher (Only if multiple cameras) */}
-            {renderCameraSelector && onCameraChange && (
-                 <div className="relative group">
-                    <Tooltip content="Changer de caméra">
-                        <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-110 transition-all duration-300">
-                             <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        </button>
-                    </Tooltip>
-                    <select
-                        value={selectedCameraId}
-                        onChange={(e) => onCameraChange(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    >
-                        {availableCameras.map((camera) => (
-                            <option key={camera.deviceId} value={camera.deviceId}>
-                                {camera.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
+             {/* Camera Toggle */}
+             {isConnected && (
+               <RoundButton
+                 onClick={onToggleVideo}
+                 active={isVideoActive}
+                 activeColor="bg-white/10"
+                 icon={isVideoActive ? <Icons.Camera /> : <Icons.CameraOff />}
+                 tooltip={isVideoActive ? "Désactiver Caméra" : "Activer Caméra"}
+               />
+             )}
 
-            {/* Mobile Menu Trigger */}
-            {!isConnected && onOpenMobileActions && (
+             {/* Screen Share */}
+             {isConnected && onToggleScreenShare && (
+               <RoundButton
+                 onClick={onToggleScreenShare}
+                 active={isScreenShareActive || false}
+                 activeColor="bg-indigo-500"
+                 icon={<Icons.ScreenShare />}
+                 tooltip="Partage d'écran"
+               />
+             )}
+          </div>
+
+          <div className="w-[1px] h-8 bg-white/10 mx-1" />
+
+          {/* MAIN CONNECT BUTTON */}
+          {!isConnected ? (
+             <button
+               onClick={onConnect}
+               disabled={isConnecting}
+               className="group relative flex items-center gap-3 px-6 py-3 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+             >
+                {/* Button Glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                
+                {isConnecting ? (
+                   <>
+                     <Loader size="sm" color="#000000" />
+                     <span className="relative z-10">Connexion...</span>
+                   </>
+                ) : (
+                   <>
+                     <span className="relative z-10 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-black opacity-20"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-black"></span>
+                     </span>
+                     <span className="relative z-10">COMMENCER</span>
+                   </>
+                )}
+             </button>
+          ) : (
+             <button
+               onClick={onDisconnect}
+               className="group flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-white hover:border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] active:scale-90"
+             >
+                <Icons.Power />
+             </button>
+          )}
+
+           {/* Mobile Menu Trigger (Only when Disconnected to access settings) */}
+           {!isConnected && onOpenMobileActions && (
+              <div className="md:hidden flex items-center pl-2 border-l border-white/10">
                  <button
                     onClick={onOpenMobileActions}
-                    className="lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-110 transition-all duration-300"
-                >
-                     <svg className="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10"
+                 >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                </button>
-            )}
-        </div>
+                 </button>
+              </div>
+           )}
+
         </div>
       </div>
     </div>
