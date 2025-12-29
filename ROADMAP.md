@@ -66,7 +66,7 @@
 
 #### 🔊 Activation & Contrôles
 - [x] Wake Word Detection ("Bonjour", activable/désactivable)
-- [x] Commandes vocales de fin de session
+- [ ] Commandes vocales de fin de session
 - [x] Mode mains libres
 - [x] Reconnexion automatique (jusqu'à 5 tentatives via useReconnection)
 - [x] Activation/désactivation du wake word via interface
