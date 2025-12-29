@@ -154,7 +154,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
         }
       }
 
-      // Calcul du regard (Gaze Calculation) - 2 yeux
+      // Calcul du regard (Gaze Calculation) - 2 yeux (Synchronisé / Parallèle)
       const maxGazeDistance = baseRadius * 0.6; // Rayon max de mouvement de l'iris
       const mouseIdleMs = 2500;
       const shouldAutoScan =
@@ -165,45 +165,49 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       const rightEyeCenterX = centerX + interOcular / 2;
       const eyeCenterY = centerY;
 
-      const computeTargetLook = (eyeCx: number, eyeCy: number) => {
-        let targetX = 0;
-        let targetY = 0;
+      // Calculer un vecteur unique depuis le CENTRE de l'écran (et non depuis chaque œil)
+      // pour que les yeux regardent en parallèle (sans loucher)
+      let targetCommonX = 0;
+      let targetCommonY = 0;
 
-        if (!shouldAutoScan) {
-          const dx = mouseRef.current.x - eyeCx;
-          const dy = mouseRef.current.y - eyeCy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+      if (!shouldAutoScan) {
+        // Vecteur depuis le centre global
+        const dx = mouseRef.current.x - centerX;
+        const dy = mouseRef.current.y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-          targetX = dx;
-          targetY = dy;
+        targetCommonX = dx;
+        targetCommonY = dy;
 
-          if (dist > maxGazeDistance) {
-            const angle = Math.atan2(dy, dx);
-            targetX = Math.cos(angle) * maxGazeDistance;
-            targetY = Math.sin(angle) * maxGazeDistance;
-          }
-        } else {
-          // Auto-scan (droite ↔ gauche) : mouvement doux et "naturel"
-          const t = Date.now() / 1000;
-          const scanAmpX = maxGazeDistance * 0.85;
-          targetX =
-            Math.sin(t * 0.75) * scanAmpX + // balayage principal
-            Math.sin(t * 2.1) * scanAmpX * 0.06; // micro-variation subtile
-          targetY =
-            Math.sin(t * 0.35) * maxGazeDistance * 0.12; // léger mouvement vertical pour éviter l'effet robot
+        // Limiter la distance max
+        if (dist > maxGazeDistance) {
+          const angle = Math.atan2(dy, dx);
+          targetCommonX = Math.cos(angle) * maxGazeDistance;
+          targetCommonY = Math.sin(angle) * maxGazeDistance;
         }
+      } else {
+        // Auto-scan (droite ↔ gauche)
+        const t = Date.now() / 1000;
+        const scanAmpX = maxGazeDistance * 0.85;
+        targetCommonX =
+          Math.sin(t * 0.75) * scanAmpX + // balayage principal
+          Math.sin(t * 2.1) * scanAmpX * 0.06; // micro-variation subtile
+        targetCommonY =
+          Math.sin(t * 0.35) * maxGazeDistance * 0.12; // léger vertical
+      }
 
-        return { x: targetX, y: targetY };
-      };
-
-      const leftTarget = computeTargetLook(leftEyeCenterX, eyeCenterY);
-      const rightTarget = computeTargetLook(rightEyeCenterX, eyeCenterY);
-
-      // Lissage du mouvement (Lerp)
-      currentLookLeftX += (leftTarget.x - currentLookLeftX) * 0.1;
-      currentLookLeftY += (leftTarget.y - currentLookLeftY) * 0.1;
-      currentLookRightX += (rightTarget.x - currentLookRightX) * 0.1;
-      currentLookRightY += (rightTarget.y - currentLookRightY) * 0.1;
+      // Lissage du mouvement (Lerp) unique
+      // On utilise currentLookLeftX/Y comme "currentLookCommon" pour simplifier ou on synchronise tout
+      // Ici on applique la même cible aux deux
+      const lerpFactor = 0.1;
+      
+      // Mise à jour identique pour les deux yeux (sauf s'ils avaient divergé avant, ils vont converger vers la même valeur)
+      currentLookLeftX += (targetCommonX - currentLookLeftX) * lerpFactor;
+      currentLookLeftY += (targetCommonY - currentLookLeftY) * lerpFactor;
+      
+      // On force la synchro parfaite droite = gauche
+      currentLookRightX = currentLookLeftX;
+      currentLookRightY = currentLookLeftY;
 
       // 3. Ondes de choc multiples
       shockWaves = shockWaves.filter(wave => {
@@ -476,9 +480,9 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
         ctx.restore();
       };
 
-      // Orbits sur chaque œil (phase opposée pour éviter l'effet "copie parfaite")
+      // Orbits sur chaque œil (phase identique pour synchro parfaite)
       drawOrbitsForEye(leftEyeCenterX, eyeCenterY, 0);
-      drawOrbitsForEye(rightEyeCenterX, eyeCenterY, Math.PI * 0.35);
+      drawOrbitsForEye(rightEyeCenterX, eyeCenterY, 0);
 
       // 9. Effet de pulsation ambiante lors des pics audio
       if (audioLevel > 0.35) {
