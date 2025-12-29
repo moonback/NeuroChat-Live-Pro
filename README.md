@@ -7,15 +7,16 @@
 
 ## 📖 À propos
 
-**NeuroChat Live Pro** est un assistant IA conversationnel avancé conçu pour offrir une expérience utilisateur fluide et immersive grâce à des conversations vocales en temps réel. Propulsé par **Google Gemini Live**, il combine plusieurs personnalités spécialisées, la reconnaissance vocale, la vision par ordinateur et des outils interactifs pour répondre à des besoins variés : analyse criminelle, accompagnement TDAH/HPI, pédagogie, renseignement géopolitique et bien plus.
+**NeuroChat Live Pro** est un assistant IA conversationnel avancé conçu pour offrir une expérience utilisateur fluide et immersive grâce à des conversations vocales en temps réel. Propulsé par **Google Gemini Live**, il combine 6 personnalités spécialisées, la reconnaissance vocale, la vision par ordinateur et des outils interactifs pour répondre à des besoins variés : assistance générale, accompagnement TDAH/HPI, pédagogie, renseignement géopolitique, analyse visuelle et traduction vocale.
 
 ### 🎯 Cas d'usage
 
-- **Analyse de Cold Cases** : Assistant expert en enquêtes criminelles non résolues
-- **Coaching TDAH/HPI** : Accompagnement pour personnes neuroatypiques
-- **Aide aux devoirs** : Copain d'apprentissage pour enfants (10-12 ans)
-- **Renseignement stratégique** : Analyse géopolitique et évaluation de menaces
-- **Analyse visuelle** : Description et explication d'images via caméra/écran
+- **Assistant généraliste** : NeuroChat pour tous vos besoins quotidiens
+- **Coaching TDAH/HPI** : Coach Neuro spécialisé pour personnes neuroatypiques
+- **Aide aux devoirs** : Coach Scolaire pour enfants (10-12 ans) avec difficultés d'apprentissage
+- **Renseignement stratégique** : Analyste expert en géopolitique et évaluation de menaces
+- **Analyse visuelle** : Vision pour description et explication d'images via caméra/écran
+- **Traduction vocale** : Traducteur polyglotte pour répéter et traduire en temps réel
 
 ---
 
@@ -23,11 +24,13 @@
 
 ### 🎙️ Conversations Vocales en Temps Réel
 - Audio bidirectionnel ultra-réactif (latence < 200ms)
-- Synthèse vocale naturelle avec 6 voix disponibles
+- Synthèse vocale naturelle avec 6 voix disponibles (Puck, Charon, Kore, Fenrir, Zephyr, Aoede)
 - Reconnaissance vocale continue avec VAD (Voice Activity Detection)
+- Reconnexion automatique en cas de déconnexion
+- Indicateur de latence en temps réel
 
 ### 🎭 Personnalités Multiples
-- **5 personnalités préconçues** : Cold Case Analyst, Coach TDAH/HPI, Learning Buddy, Intelligence Analyst, OmniVision
+- **6 personnalités préconçues** : NeuroChat (généraliste), Coach Neuro (TDAH/HPI), Coach Scolaire, Analyste (géopolitique), Vision (analyse visuelle), Traducteur (polyglotte)
 - **Éditeur de personnalités** : Créez vos propres assistants personnalisés
 - **Changement à chaud** : Basculez entre personnalités sans redémarrer
 
@@ -36,22 +39,37 @@
 - Partage d'écran pour assistance technique
 - Détection automatique de contexte visuel
 - Support multi-caméras
+- Analyse contextuelle intelligente (détection de changements, mouvement)
+- Suivi des yeux (eye tracking) optionnel
 
 ### 🛠️ Outils et Capacités
-- **Appels de fonctions** : Calculatrice, timer, rappels, gestion d'agenda, suivi d'heures de travail
-- **Google Search** : Recherche en temps réel pour informations actualisées
-- **Upload de documents** : Analysez PDF, TXT, MD avec contexte persistant
+- **Appels de fonctions** : 
+  - Calculatrice et conversions (unités, devises, pourcentages)
+  - Gestion du temps (timer, rappels, date/heure)
+  - Gestion d'agenda (création, consultation, suppression d'événements)
+  - Suivi d'heures de travail (logs, résumés par période)
+  - Gestion de notes (sauvegarde, consultation, suppression)
+  - Utilitaires (génération de mots de passe, UUID, nombres aléatoires)
+  - Formatage de texte et comptage
+  - Changement de personnalité vocal (via fonction `change_personality`)
+- **Google Search** : Recherche en temps réel pour informations actualisées (optionnel, activable/désactivable)
+- **Upload de documents** : Analysez PDF, TXT, MD avec contexte persistant dans la conversation
 
 ### 🔊 Activation Vocale
-- **Wake Word Detection** : "Bonjour" ou "Neurochat" pour activer l'assistant
+- **Wake Word Detection** : "Bonjour" pour activer l'assistant (optionnel, activable/désactivable)
 - Mode mains libres automatique
 - Détection de fin de session vocale
+- Activation/désactivation du wake word via interface
+- Bip audio de confirmation lors de la détection
 
 ### 📱 Progressive Web App (PWA)
 - Installation sur mobile et desktop
-- Fonctionne hors ligne (cache intelligent)
-- Responsive design adaptatif
+- Fonctionne hors ligne (cache intelligent avec Workbox)
+- Responsive design adaptatif (mobile-first)
 - Safe Area Insets pour notch/barre navigation
+- Guide de démarrage rapide intégré
+- Modal d'état du système avec informations détaillées (connexion, latence, vision, toggles)
+- Drawer d'actions mobiles pour accès rapide aux fonctionnalités
 
 ---
 
@@ -59,28 +77,31 @@
 
 ### Frontend
 - **React 19.2** avec TypeScript 5.8
-- **Vite 6.2** (bundler ultra-rapide)
+- **Vite 6.2** (bundler ultra-rapide, port 3000)
 - **Tailwind CSS 3.4** (design system personnalisé)
+- **Zustand 5.0** (gestion d'état globale)
 
 ### IA & Audio
 - **Google Gemini 2.5 Flash** (modèle multimodal)
 - **@google/genai SDK 1.30** (API Live)
-- **Web Audio API** (traitement audio natif)
-- **Web Speech API** (reconnaissance vocale)
+- **Web Audio API** (traitement audio natif, encodage/décodage)
+- **Web Speech API** (reconnaissance vocale pour wake word)
 
 ### Gestion d'État & Stockage
-- **React Hooks** (useLocalStorageState personnalisé)
-- **LocalStorage** (persistance documents, personnalités, préférences)
+- **Zustand 5.0** (gestion d'état globale avec persistance)
+- **LocalStorage** (persistance documents, personnalités, préférences via Zustand persist)
 - **Context Audio** (gestion audio optimisée)
+- **Reconnection Hook** (reconnexion automatique en cas d'erreur)
 
 ### Tests & Qualité
-- **Vitest 4.0** (tests unitaires)
+- **Vitest 4.0** (tests unitaires avec UI)
 - **Playwright 1.57** (tests E2E)
 - **Coverage V8** (couverture de code)
+- **Testing Library** (React, Jest DOM, User Event)
 
 ### Build & Déploiement
-- **vite-plugin-pwa** (génération service worker)
-- **Workbox** (stratégies de cache)
+- **vite-plugin-pwa 1.1.0** (génération service worker)
+- **Workbox** (stratégies de cache, runtime caching)
 
 ---
 
@@ -129,7 +150,7 @@ GEMINI_API_KEY=votre_cle_api_gemini_ici
 npm run dev
 ```
 
-L'application sera accessible sur `http://localhost:3000`
+L'application sera accessible sur `http://localhost:3000` (configuré dans `vite.config.ts`)
 
 ---
 
@@ -169,23 +190,36 @@ NeuroChat-Live-Pro/
 │   ├── ControlPanel.tsx           # Panneau de contrôle principal
 │   ├── DocumentUploader.tsx       # Upload de fichiers
 │   ├── Header.tsx                 # Barre de navigation
+│   ├── InstallPWA.tsx             # Composant d'installation PWA
+│   ├── LatencyIndicator.tsx       # Indicateur de latence
+│   ├── Loader.tsx                 # Composant de chargement
 │   ├── PersonalityEditor.tsx      # Éditeur de personnalités
+│   ├── QuickStartGuide.tsx        # Guide de démarrage rapide
+│   ├── Toast.tsx                  # Système de notifications
+│   ├── ToolsList.tsx              # Liste des outils disponibles
+│   ├── Tooltip.tsx                # Infobulles
 │   ├── VideoOverlay.tsx           # Overlay caméra/écran
-│   ├── VoiceSelector.tsx          # Sélecteur de voix
-│   └── ...
+│   ├── Visualizer.tsx             # Visualiseur audio principal
+│   └── VoiceSelector.tsx          # Sélecteur de voix
 │
 ├── hooks/                    # Custom React Hooks
 │   ├── useAudioManager.ts         # Gestion audio (beep, contexte)
+│   ├── useGeminiLiveSession.ts    # Hook principal session Gemini Live
 │   ├── useLocalStorageState.ts    # Hook persistance localStorage
+│   ├── useReconnection.ts          # Gestion reconnexion automatique
 │   ├── useStatusManager.ts        # Gestion état connexion/toasts
 │   └── useVisionManager.ts        # Gestion caméra/écran
+│
+├── stores/                  # Gestion d'état globale (Zustand)
+│   └── appStore.ts                # Store principal avec persistance
 │
 ├── utils/                    # Utilitaires
 │   ├── audioUtils.ts              # Encodage/décodage audio
 │   ├── documentProcessor.ts       # Traitement documents (PDF, TXT)
+│   ├── toastHelpers.ts            # Helpers pour notifications
 │   ├── tools.ts                   # Fonction calling (timers, calculs)
 │   ├── videoContextAnalyzer.ts    # Analyse de contexte vidéo
-│   └── wakeWordDetector.ts        # Détection "Bonjour"/"Neurochat"
+│   └── wakeWordDetector.ts        # Détection "Bonjour"
 │
 ├── public/                   # Assets statiques
 │   ├── icon-192.png               # Icônes PWA
@@ -198,9 +232,9 @@ NeuroChat-Live-Pro/
 │
 ├── App.tsx                   # Composant racine
 ├── index.tsx                 # Point d'entrée React
-├── constants.ts              # Personnalités et voix disponibles
+├── constants.ts              # Personnalités et voix disponibles (6 personnalités, 6 voix)
 ├── types.ts                  # Types TypeScript globaux
-├── systemConfig.ts           # Instructions système de base
+├── systemConfig.ts           # Instructions système de base (règles fondamentales)
 │
 ├── vite.config.ts            # Configuration Vite
 ├── tailwind.config.js        # Configuration Tailwind CSS
@@ -229,7 +263,7 @@ Modifiez `constants.ts` :
 
 ```typescript
 export const AVAILABLE_PERSONALITIES: Personality[] = [
-  // ... personnalités existantes
+  // ... personnalités existantes (NeuroChat, Coach Neuro, Coach Scolaire, Analyste, Vision, Traducteur)
   {
     id: 'ma-personnalite',
     name: 'Mon Assistant',
@@ -241,12 +275,18 @@ export const AVAILABLE_PERSONALITIES: Personality[] = [
 ];
 ```
 
+**Note** : Les personnalités peuvent être changées à chaud pendant une conversation via la fonction `change_personality`.
+
 #### Modifier les Outils Disponibles
 
 Éditez `utils/tools.ts` pour ajouter des fonctions :
 
 ```typescript
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
+  // Fonction existante
+  change_personality: { /* ... */ },
+  
+  // Ajouter votre fonction
   ma_fonction: {
     name: 'ma_fonction',
     description: 'Description de la fonction',
@@ -261,7 +301,19 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
 };
 
 // Implémenter l'exécution dans executeFunction()
+export async function executeFunction(functionCall: FunctionCall, options?: {...}): Promise<any> {
+  const { name, args } = functionCall;
+  
+  if (name === 'ma_fonction') {
+    // Votre logique ici
+    return { result: 'success', data: /* ... */ };
+  }
+  
+  // ... autres fonctions
+}
 ```
+
+**Note** : Les fonctions doivent être déclarées dans `AVAILABLE_FUNCTIONS` et leur exécution doit être implémentée dans `executeFunction()`. La configuration des outils est construite via `buildToolsConfig()`.
 
 ---
 
@@ -479,6 +531,8 @@ Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plu
 
 Développé avec ❤️ par **Maysson**
 
+**Version** : 0.0.0 (développement actif)
+
 ---
 
 ## 📞 Support
@@ -500,6 +554,8 @@ Voir [ROADMAP.md](ROADMAP.md) pour la feuille de route détaillée.
 - [ ] Mode multi-utilisateurs (rooms)
 - [ ] Intégration Telegram/WhatsApp
 - [ ] Support des langues (EN, ES, DE)
+- [ ] Amélioration du suivi des yeux (eye tracking)
+- [ ] Plus de fonctions disponibles via function calling
 
 ---
 
