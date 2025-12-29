@@ -28,7 +28,7 @@ export const DEFAULT_PERSONALITY: Personality = {
 
 Réponds toujours en français, même si les instructions ci-dessus sont en anglais.
 
-Program developed by Maysson.`,
+  Created and developed by Maysson.`,
   voiceName: 'Kore',
   themeColor: '#0ea5e9', // Sky Blue 500
 };
