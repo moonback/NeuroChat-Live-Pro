@@ -14,7 +14,6 @@ import { WakeWordDetector } from './utils/wakeWordDetector';
 import type { ProcessedDocument } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
-import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
@@ -77,7 +76,6 @@ const App: React.FC = () => {
     },
   );
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
-  const [isNotesViewerOpen, setIsNotesViewerOpen] = useState(false);
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
@@ -1247,14 +1245,6 @@ const App: React.FC = () => {
         onClose={() => setIsPersonalityEditorOpen(false)}
         currentPersonality={currentPersonality}
         onSave={handlePersonalityChange}
-      />
-
-      <NotesViewer
-        isOpen={isNotesViewerOpen}
-        onClose={() => setIsNotesViewerOpen(false)}
-        onNotesChange={() => {
-          // Rafraîchir si nécessaire
-        }}
       />
 
       <ToolsList
