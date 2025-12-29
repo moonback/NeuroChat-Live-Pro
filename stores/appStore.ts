@@ -20,6 +20,7 @@ interface AppState {
   // Tools
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
+  isEyeTrackingEnabled: boolean;
   
   // Actions
   setConnectionState: (state: ConnectionState) => void;
@@ -28,6 +29,7 @@ interface AppState {
   setIsWakeWordEnabled: (enabled: boolean) => void;
   setIsFunctionCallingEnabled: (enabled: boolean) => void;
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
+  setIsEyeTrackingEnabled: (enabled: boolean) => void;
 }
 
 // Helper pour désérialiser les documents
@@ -66,6 +68,7 @@ export const useAppStore = create<AppState>()(
       isWakeWordEnabled: false,
       isFunctionCallingEnabled: true,
       isGoogleSearchEnabled: false,
+      isEyeTrackingEnabled: true,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -74,6 +77,7 @@ export const useAppStore = create<AppState>()(
       setIsWakeWordEnabled: (enabled) => set({ isWakeWordEnabled: enabled }),
       setIsFunctionCallingEnabled: (enabled) => set({ isFunctionCallingEnabled: enabled }),
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
+      setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
     }),
     {
       name: 'neurochat-storage',
@@ -84,6 +88,7 @@ export const useAppStore = create<AppState>()(
         isWakeWordEnabled: state.isWakeWordEnabled,
         isFunctionCallingEnabled: state.isFunctionCallingEnabled,
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
+        isEyeTrackingEnabled: state.isEyeTrackingEnabled,
       }),
       merge: (persistedState: any, currentState) => {
         // Validation et désérialisation personnalisée
@@ -114,6 +119,10 @@ export const useAppStore = create<AppState>()(
         
         if (typeof persistedState?.isGoogleSearchEnabled === 'boolean') {
           merged.isGoogleSearchEnabled = persistedState.isGoogleSearchEnabled;
+        }
+
+        if (typeof persistedState?.isEyeTrackingEnabled === 'boolean') {
+          merged.isEyeTrackingEnabled = persistedState.isEyeTrackingEnabled;
         }
         
         return merged;

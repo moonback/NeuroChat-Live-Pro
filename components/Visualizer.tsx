@@ -4,6 +4,7 @@ interface VisualizerProps {
   analyserRef: React.MutableRefObject<AnalyserNode | null>;
   color: string;
   isActive: boolean;
+  isEyeTrackingEnabled?: boolean;
 }
 
 interface Particle {
@@ -32,19 +33,30 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
   };
 };
 
-const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive }) => {
+const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, isEyeTrackingEnabled = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
 
   const colorRef = useRef(color);
   const isActiveRef = useRef(isActive);
+  const isEyeTrackingEnabledRef = useRef(isEyeTrackingEnabled);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => { colorRef.current = color; }, [color]);
   useEffect(() => { isActiveRef.current = isActive; }, [isActive]);
+  useEffect(() => { isEyeTrackingEnabledRef.current = isEyeTrackingEnabled; }, [isEyeTrackingEnabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Initial mouse position
+    mouseRef.current = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousemove', handleMouseMove);
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
@@ -63,6 +75,10 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
     let particles: Particle[] = [];
     let shockWaves: ShockWave[] = [];
     let lastAudioLevel = 0.05;
+
+    // Gaze tracking (Suivi du regard)
+    let currentLookX = 0;
+    let currentLookY = 0;
 
     // Variables pour le clignement des yeux (Blink)
     let nextBlinkTime = Date.now() + Math.random() * 2000 + 2000;
@@ -154,6 +170,35 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
         }
       }
 
+      // Calcul du regard (Gaze Calculation)
+      let targetLookX = 0;
+      let targetLookY = 0;
+
+      if (isEyeTrackingEnabledRef.current) {
+        const dx = mouseRef.current.x - centerX;
+        const dy = mouseRef.current.y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxGazeDistance = baseRadius * 0.6; // Rayon max de mouvement de l'iris
+        
+        targetLookX = dx;
+        targetLookY = dy;
+        
+        if (dist > maxGazeDistance) {
+          const angle = Math.atan2(dy, dx);
+          targetLookX = Math.cos(angle) * maxGazeDistance;
+          targetLookY = Math.sin(angle) * maxGazeDistance;
+        }
+      } else {
+        // Mode Idle : Mouvement très subtil aléatoire (respiration)
+        const time = Date.now() / 2000;
+        targetLookX = Math.sin(time) * baseRadius * 0.05;
+        targetLookY = Math.cos(time * 0.7) * baseRadius * 0.05;
+      }
+      
+      // Lissage du mouvement (Lerp)
+      currentLookX += (targetLookX - currentLookX) * 0.1;
+      currentLookY += (targetLookY - currentLookY) * 0.1;
+
       // 3. Ondes de choc multiples
       shockWaves = shockWaves.filter(wave => {
         wave.radius += wave.speed;
@@ -184,10 +229,13 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.scale(1, eyeOpenAmount);
       ctx.translate(-centerX, -centerY);
 
-      // 4. Noyau 3D avec gradients radiaux
+      // 4. Noyau 3D (Fond de l'œil) - Bouge légèrement (Parallaxe inverse ou faible)
+      const coreX = centerX + currentLookX * 0.15;
+      const coreY = centerY + currentLookY * 0.15;
+
       const coreGradient = ctx.createRadialGradient(
-        centerX, centerY, 0,
-        centerX, centerY, baseRadius * pulsation
+        coreX, coreY, 0,
+        coreX, coreY, baseRadius * pulsation
       );
       coreGradient.addColorStop(0, `${baseColor}, 0.4)`);
       coreGradient.addColorStop(0.5, `${baseColor}, 0.2)`);
@@ -197,25 +245,29 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.shadowBlur = 40 * pulsation;
       ctx.shadowColor = `${baseColor}, 0.8)`;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, baseRadius * pulsation, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, baseRadius * pulsation, 0, Math.PI * 2);
       ctx.fillStyle = coreGradient;
       ctx.fill();
       ctx.restore();
 
       // Bordure lumineuse du noyau
       ctx.beginPath();
-      ctx.arc(centerX, centerY, baseRadius * pulsation, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, baseRadius * pulsation, 0, Math.PI * 2);
       ctx.strokeStyle = `${baseColor}, 0.6)`;
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 5. Œil central (Iris + Pupille)
+      // 5. Œil central (Iris + Pupille) - Suit le regard
       const eyeRadius = baseRadius * (0.25 + audioLevel * 0.3) * pulsation;
       
-      // Lueur externe (Sclère éthérée)
+      // Position de l'iris (Suit le regard)
+      const irisX = centerX + currentLookX;
+      const irisY = centerY + currentLookY;
+
+      // Lueur externe (Sclère éthérée) - Suit le noyau
       const eyeGlowOuter = ctx.createRadialGradient(
-        centerX, centerY, eyeRadius * 0.5,
-        centerX, centerY, eyeRadius * 2
+        coreX, coreY, eyeRadius * 0.5,
+        coreX, coreY, eyeRadius * 2
       );
       eyeGlowOuter.addColorStop(0, `${baseColor}, 0.4)`);
       eyeGlowOuter.addColorStop(0.5, `${baseColor}, 0.2)`);
@@ -225,7 +277,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       ctx.shadowBlur = 50 * pulsation;
       ctx.shadowColor = `${baseColor}, 0.8)`;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, eyeRadius * 1.8, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, eyeRadius * 1.8, 0, Math.PI * 2);
       ctx.fillStyle = eyeGlowOuter;
       ctx.fill();
       ctx.restore();
@@ -233,8 +285,8 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       // Iris (Détaillé)
       const irisRadius = eyeRadius;
       const irisGradient = ctx.createRadialGradient(
-        centerX, centerY, irisRadius * 0.2,
-        centerX, centerY, irisRadius
+        irisX, irisY, irisRadius * 0.2,
+        irisX, irisY, irisRadius
       );
       // Centre plus clair, bords plus sombres pour l'iris
       irisGradient.addColorStop(0, `${baseColor}, 0.9)`); 
@@ -244,7 +296,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       
       ctx.save();
       ctx.beginPath();
-      ctx.arc(centerX, centerY, irisRadius, 0, Math.PI * 2);
+      ctx.arc(irisX, irisY, irisRadius, 0, Math.PI * 2);
       ctx.fillStyle = irisGradient;
       ctx.fill();
       
@@ -254,8 +306,8 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       for(let i=0; i<12; i++) {
          const angle = (Math.PI * 2 * i) / 12 + rotationOffset;
          ctx.beginPath();
-         ctx.moveTo(centerX + Math.cos(angle) * irisRadius * 0.3, centerY + Math.sin(angle) * irisRadius * 0.3);
-         ctx.lineTo(centerX + Math.cos(angle) * irisRadius * 0.8, centerY + Math.sin(angle) * irisRadius * 0.8);
+         ctx.moveTo(irisX + Math.cos(angle) * irisRadius * 0.3, irisY + Math.sin(angle) * irisRadius * 0.3);
+         ctx.lineTo(irisX + Math.cos(angle) * irisRadius * 0.8, irisY + Math.sin(angle) * irisRadius * 0.8);
          ctx.stroke();
       }
       ctx.restore();
@@ -264,16 +316,21 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       const pupilRadius = irisRadius * 0.4; 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(centerX, centerY, pupilRadius, 0, Math.PI * 2);
+      ctx.arc(irisX, irisY, pupilRadius, 0, Math.PI * 2);
       ctx.fillStyle = '#000000';
       ctx.shadowBlur = 10;
       ctx.shadowColor = 'rgba(0,0,0,0.8)';
       ctx.fill();
       ctx.restore();
 
-      // Reflet (Specular highlight)
+      // Reflet (Specular highlight) - Décalage inverse pour effet 3D (bombé)
+      // Le reflet "glisse" un peu sur la surface courbe
+      const glintOffsetFactor = 0.2;
+      const glintX = irisX - currentLookX * glintOffsetFactor;
+      const glintY = irisY - currentLookY * glintOffsetFactor;
+
       ctx.beginPath();
-      ctx.arc(centerX - pupilRadius * 0.4, centerY - pupilRadius * 0.4, pupilRadius * 0.25, 0, Math.PI * 2);
+      ctx.arc(glintX - pupilRadius * 0.4, glintY - pupilRadius * 0.4, pupilRadius * 0.25, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.shadowBlur = 5;
       ctx.shadowColor = 'white';
@@ -281,7 +338,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive })
       
       // Second petit reflet
       ctx.beginPath();
-      ctx.arc(centerX + pupilRadius * 0.3, centerY + pupilRadius * 0.3, pupilRadius * 0.1, 0, Math.PI * 2);
+      ctx.arc(glintX + pupilRadius * 0.3, glintY + pupilRadius * 0.3, pupilRadius * 0.1, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fill();
 
