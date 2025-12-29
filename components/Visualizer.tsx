@@ -7,14 +7,6 @@ interface VisualizerProps {
   isEyeTrackingEnabled?: boolean;
 }
 
-interface Particle {
-  angle: number;
-  distance: number;
-  speed: number;
-  size: number;
-  offset: number;
-}
-
 interface ShockWave {
   radius: number;
   opacity: number;
@@ -72,7 +64,6 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
     handleResize();
 
     let rotationOffset = 0;
-    let particles: Particle[] = [];
     let shockWaves: ShockWave[] = [];
     let lastAudioLevel = 0.05;
 
@@ -83,19 +74,8 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
     // Variables pour le clignement des yeux (Blink)
     let nextBlinkTime = Date.now() + Math.random() * 2000 + 2000;
     let isBlinking = false;
-    let eyeOpenAmount = 1; // 1 = ouvert, 0 = fermé
+    let eyeOpenAmount = 0; // 1 = ouvert, 0 = fermé
     let blinkSpeed = 0.15;
-    
-    // Initialiser les particules orbitales
-    for (let i = 0; i < 30; i++) {
-      particles.push({
-        angle: (Math.PI * 2 * i) / 30,
-        distance: 1.5 + Math.random() * 0.5,
-        speed: 0.01 + Math.random() * 0.02,
-        size: 2 + Math.random() * 3,
-        offset: Math.random() * Math.PI * 2
-      });
-    }
 
     const draw = () => {
       if (!ctx || !canvas) return;
@@ -258,7 +238,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       ctx.stroke();
 
       // 5. Œil central (Iris + Pupille) - Suit le regard
-      const eyeRadius = baseRadius * (0.25 + audioLevel * 0.3) * pulsation;
+      const eyeRadius = baseRadius * (0.55 + audioLevel * 0.3) * pulsation;
       
       // Position de l'iris (Suit le regard)
       const irisX = centerX + currentLookX;
@@ -269,29 +249,29 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
         coreX, coreY, eyeRadius * 0.5,
         coreX, coreY, eyeRadius * 2
       );
-      eyeGlowOuter.addColorStop(0, `${baseColor}, 0.4)`);
-      eyeGlowOuter.addColorStop(0.5, `${baseColor}, 0.2)`);
+      eyeGlowOuter.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+      eyeGlowOuter.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
       eyeGlowOuter.addColorStop(1, 'rgba(0, 0, 0, 0)');
       
       ctx.save();
       ctx.shadowBlur = 50 * pulsation;
-      ctx.shadowColor = `${baseColor}, 0.8)`;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
       ctx.beginPath();
       ctx.arc(coreX, coreY, eyeRadius * 1.8, 0, Math.PI * 2);
       ctx.fillStyle = eyeGlowOuter;
       ctx.fill();
       ctx.restore();
 
-      // Iris (Détaillé)
+      // Iris (Détaillé) - Blanc
       const irisRadius = eyeRadius;
       const irisGradient = ctx.createRadialGradient(
         irisX, irisY, irisRadius * 0.2,
         irisX, irisY, irisRadius
       );
       // Centre plus clair, bords plus sombres pour l'iris
-      irisGradient.addColorStop(0, `${baseColor}, 0.9)`); 
-      irisGradient.addColorStop(0.6, `${baseColor}, 0.7)`);
-      irisGradient.addColorStop(0.9, `${baseColor}, 0.9)`); // Anneau limbal
+      irisGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
+      irisGradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
+      irisGradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.9)'); // Anneau limbal
       irisGradient.addColorStop(1, 'rgba(0,0,0,0.5)'); // Bord net
       
       ctx.save();
@@ -394,43 +374,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       ctx.stroke();
       ctx.restore();
 
-      // 7. Particules orbitales animées
-      particles.forEach(particle => {
-        particle.angle += particle.speed * (1 + audioLevel * 2);
-        
-        const particleRadius = baseRadius * particle.distance * pulsation;
-        const px = centerX + Math.cos(particle.angle + particle.offset) * particleRadius;
-        const py = centerY + Math.sin(particle.angle + particle.offset) * particleRadius;
-        
-        // Taille variable selon le niveau audio
-        const particleSize = particle.size * (1 + audioLevel * 0.5);
-        
-        // Particule avec glow
-        ctx.save();
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = `${baseColor}, 0.8)`;
-        ctx.beginPath();
-        ctx.arc(px, py, particleSize, 0, Math.PI * 2);
-        
-        const particleGradient = ctx.createRadialGradient(px, py, 0, px, py, particleSize);
-        particleGradient.addColorStop(0, `${baseColor}, 0.9)`);
-        particleGradient.addColorStop(1, `${baseColor}, 0.3)`);
-        ctx.fillStyle = particleGradient;
-        ctx.fill();
-        ctx.restore();
-        
-        // Traînée subtile
-        ctx.beginPath();
-        const trailX = centerX + Math.cos(particle.angle + particle.offset - 0.1) * particleRadius;
-        const trailY = centerY + Math.sin(particle.angle + particle.offset - 0.1) * particleRadius;
-        ctx.moveTo(px, py);
-        ctx.lineTo(trailX, trailY);
-        ctx.strokeStyle = `${baseColor}, 0.2)`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
-
-      // 8. Barre de niveau circulaire avec gradient coloré
+      // 7. Barre de niveau circulaire avec gradient coloré
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(-Math.PI / 2); // Commencer en haut
@@ -462,7 +406,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       ctx.stroke();
       ctx.restore();
 
-      // 9. Anneau pointillé externe qui réagit
+      // 8. Anneau pointillé externe qui réagit
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(-rotationOffset * 0.5);
@@ -476,7 +420,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
       ctx.stroke();
       ctx.restore();
 
-      // 10. Effet de pulsation ambiante lors des pics audio
+      // 9. Effet de pulsation ambiante lors des pics audio
       if (audioLevel > 0.35) {
         const pulseIntensity = (audioLevel - 0.35) * 2;
         const pulseGradient = ctx.createRadialGradient(

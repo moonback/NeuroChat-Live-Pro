@@ -11,12 +11,18 @@ export const useAudioManager = (): UseAudioManagerResult => {
   const audioContextActivatedRef = useRef(false);
   const beepAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const activateAudioContext = useCallback(() => {
+  const activateAudioContext = useCallback(async () => {
     if (audioContextActivatedRef.current) return;
 
     try {
       const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
       const ctx = new Ctx();
+      
+      // Résoudre l'AudioContext s'il est suspendu (nécessaire après un geste utilisateur)
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+      
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
 
@@ -37,7 +43,7 @@ export const useAudioManager = (): UseAudioManagerResult => {
         beepAudioRef.current = audio;
       }
     } catch (error) {
-      console.warn('[AudioManager] Impossible d’activer le contexte audio:', error);
+      console.warn('[AudioManager] Impossible d\'activer le contexte audio:', error);
     }
   }, []);
 

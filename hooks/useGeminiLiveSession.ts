@@ -264,6 +264,14 @@ export const useGeminiLiveSession = ({
       const inputCtx = new InputContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.inputSampleRate });
       const outputCtx = new InputContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.outputSampleRate });
       
+      // Résoudre les contextes audio s'ils sont suspendus (nécessaire après un geste utilisateur)
+      if (inputCtx.state === 'suspended') {
+        await inputCtx.resume();
+      }
+      if (outputCtx.state === 'suspended') {
+        await outputCtx.resume();
+      }
+      
       inputAudioContextRef.current = inputCtx;
       outputAudioContextRef.current = outputCtx;
 
@@ -317,7 +325,7 @@ export const useGeminiLiveSession = ({
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
-          onopen: () => {
+          onopen: async () => {
             console.log('Gemini Live Session Opened');
             setConnectionState(ConnectionState.CONNECTED);
             showConnectionSuccess(addToast);
@@ -327,59 +335,106 @@ export const useGeminiLiveSession = ({
                 startFrameTransmission();
             }
 
-            if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
-            
-            const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-            activeSourceInputRef.current = source;
-
-            if (inputAnalyserRef.current) {
-                source.connect(inputAnalyserRef.current);
+            if (!inputAudioContextRef.current || !mediaStreamRef.current) {
+              console.warn('[UseGemini] AudioContext ou MediaStream manquant dans onopen');
+              return;
             }
 
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const bufferSize = isMobile ? 1024 : 2048; 
-            
-            const processor = inputAudioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
-            processorRef.current = processor;
-
-            processor.onaudioprocess = (e) => {
-              if (!sessionRef.current) {
+            // S'assurer que l'AudioContext est actif
+            const inputCtx = inputAudioContextRef.current;
+            if (inputCtx.state === 'suspended') {
+              try {
+                await inputCtx.resume();
+              } catch (error) {
+                console.error('[UseGemini] Erreur lors de la reprise de l\'AudioContext:', error);
                 return;
               }
+            }
 
-              try {
-                const inputData = e.inputBuffer.getChannelData(0);
-                
-                let sum = 0;
-                const dataLength = inputData.length;
-                const step = isMobile ? 4 : 1;
-                for(let i = 0; i < dataLength; i += step) {
-                  sum += inputData[i] * inputData[i];
-                }
-                const rms = Math.sqrt(sum / (dataLength / step));
-                if (rms > 0.02) {
-                    lastUserAudioTimeRef.current = Date.now();
-                }
+            // Vérifier que l'analyser appartient au même contexte
+            if (!inputAnalyserRef.current) {
+              console.warn('[UseGemini] InputAnalyser manquant, création d\'un nouveau');
+              const inputAnalyser = inputCtx.createAnalyser();
+              inputAnalyser.fftSize = 256;
+              inputAnalyser.smoothingTimeConstant = 0.5;
+              inputAnalyserRef.current = inputAnalyser;
+            }
+            
+            try {
+              const source = inputCtx.createMediaStreamSource(mediaStreamRef.current);
+              activeSourceInputRef.current = source;
 
-                const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
-                
-                if (sessionRef.current && sessionRef.current.sendRealtimeInput) {
-                  const sendPromise = sessionRef.current.sendRealtimeInput({ media: pcmBlob });
-                  if (sendPromise && typeof sendPromise.catch === 'function') {
-                    sendPromise.catch((err: any) => {
-                      if (err && err.message && !err.message.includes('closed')) {
-                        console.warn('[UseGemini] Erreur lors de l\'envoi audio:', err);
-                      }
-                    });
-                  }
-                }
-              } catch (error) {
-                console.warn('[UseGemini] Erreur dans onaudioprocess:', error);
+              if (inputAnalyserRef.current) {
+                source.connect(inputAnalyserRef.current);
               }
-            };
 
-            source.connect(processor);
-            processor.connect(inputAudioContextRef.current.destination);
+              const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+              const bufferSize = isMobile ? 1024 : 2048; 
+              
+              // Note: ScriptProcessorNode est déprécié mais toujours fonctionnel
+              // Pour une solution moderne, utiliser AudioWorkletNode (nécessite un fichier worklet séparé)
+              const processor = inputCtx.createScriptProcessor(bufferSize, 1, 1);
+              processorRef.current = processor;
+
+              processor.onaudioprocess = (e) => {
+                if (!sessionRef.current) {
+                  return;
+                }
+
+                try {
+                  const inputData = e.inputBuffer.getChannelData(0);
+                  
+                  let sum = 0;
+                  const dataLength = inputData.length;
+                  const step = isMobile ? 4 : 1;
+                  for(let i = 0; i < dataLength; i += step) {
+                    sum += inputData[i] * inputData[i];
+                  }
+                  const rms = Math.sqrt(sum / (dataLength / step));
+                  if (rms > 0.02) {
+                      lastUserAudioTimeRef.current = Date.now();
+                  }
+
+                  const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
+                  
+                  if (sessionRef.current && sessionRef.current.sendRealtimeInput) {
+                    const sendPromise = sessionRef.current.sendRealtimeInput({ media: pcmBlob });
+                    if (sendPromise && typeof sendPromise.catch === 'function') {
+                      sendPromise.catch((err: any) => {
+                        if (err && err.message && !err.message.includes('closed')) {
+                          console.warn('[UseGemini] Erreur lors de l\'envoi audio:', err);
+                        }
+                      });
+                    }
+                  }
+                } catch (error) {
+                  console.warn('[UseGemini] Erreur dans onaudioprocess:', error);
+                }
+              };
+
+              source.connect(processor);
+              processor.connect(inputCtx.destination);
+            } catch (error) {
+              console.error('[UseGemini] Erreur lors de la configuration audio dans onopen:', error);
+              // Nettoyer les ressources en cas d'erreur
+              if (activeSourceInputRef.current) {
+                try {
+                  activeSourceInputRef.current.disconnect();
+                } catch (e) {
+                  console.warn('[UseGemini] Erreur lors du nettoyage de la source:', e);
+                }
+                activeSourceInputRef.current = null;
+              }
+              if (processorRef.current) {
+                try {
+                  processorRef.current.disconnect();
+                  processorRef.current.onaudioprocess = null;
+                } catch (e) {
+                  console.warn('[UseGemini] Erreur lors du nettoyage du processor:', e);
+                }
+                processorRef.current = null;
+              }
+            }
           },
           onmessage: async (message: LiveServerMessage) => {
             // Function Calls
