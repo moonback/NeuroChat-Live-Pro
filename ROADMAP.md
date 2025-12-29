@@ -28,19 +28,22 @@
 - [x] Conversations vocales bidirectionnelles en temps réel
 - [x] 6 voix TTS disponibles (Puck, Charon, Kore, Fenrir, Zephyr, Aoede)
 - [x] VAD (Voice Activity Detection) pour mesure de latence
-- [x] Visualiseur audio spectral (ondes en temps réel)
+- [x] Visualiseur audio spectral (ondes en temps réel avec eye tracking)
 - [x] Gestion optimisée des buffers audio (mobile/desktop adaptatif)
+- [x] Indicateur de latence en temps réel
+- [x] Bip audio de confirmation (wake word détecté)
 
 #### 🎭 Personnalités IA
-- [x] 5 personnalités préconçues :
-  - Analyste Cold Case
-  - Coach TDAH/HPI
-  - Copain d'Apprentissage (enfants)
-  - Analyste Renseignement
-  - OmniVision (analyse visuelle)
+- [x] 6 personnalités préconçues :
+  - NeuroChat (généraliste)
+  - Coach Neuro (TDAH/HPI)
+  - Coach Scolaire (enfants 10-12 ans)
+  - Analyste (géopolitique et renseignement)
+  - Vision (analyse visuelle)
+  - Traducteur (polyglotte)
 - [x] Éditeur de personnalités (création/modification)
-- [x] Changement de personnalité à chaud
-- [x] Persistance localStorage
+- [x] Changement de personnalité à chaud (via interface et vocal)
+- [x] Persistance localStorage (via Zustand persist)
 
 #### 👁️ Vision & Vidéo
 - [x] Capture caméra en direct
@@ -49,39 +52,52 @@
 - [x] Détection de changements de scène
 - [x] Support multi-caméras
 - [x] Overlay vidéo avec preview
+- [x] Suivi des yeux (eye tracking) optionnel
 
 #### 🛠️ Outils & Capacités
-- [x] Function Calling (infrastructure prête, fonctions à implémenter)
-- [x] Google Search en temps réel
+- [x] Function Calling (infrastructure prête, `change_personality` implémentée)
+- [x] Google Search en temps réel (optionnel, activable/désactivable)
 - [x] Upload de documents (PDF, TXT, MD)
 - [x] Extraction de texte (PDF → texte)
-- [x] Contexte persistant (documents chargés)
+- [x] Contexte persistant (documents chargés dans la conversation)
+- [x] Liste des outils disponibles (composant ToolsList)
+- [x] Documentation des fonctions dans systemConfig.ts (à implémenter dans tools.ts)
+- **Note** : De nombreuses fonctions sont documentées dans `systemConfig.ts` (calculatrice, timer, rappels, agenda, notes, conversions, etc.) mais doivent encore être implémentées dans `utils/tools.ts` avec leurs déclarations et exécutions
 
 #### 🔊 Activation & Contrôles
-- [x] Wake Word Detection ("Bonjour" / "Neurochat")
+- [x] Wake Word Detection ("Bonjour", activable/désactivable)
 - [x] Commandes vocales de fin de session
 - [x] Mode mains libres
-- [x] Reconnexion automatique (jusqu'à 5 tentatives)
+- [x] Reconnexion automatique (jusqu'à 5 tentatives via useReconnection)
+- [x] Activation/désactivation du wake word via interface
 
 #### 📱 PWA & Responsive
 - [x] Progressive Web App (installable)
 - [x] Design responsive (mobile/tablet/desktop)
 - [x] Safe Area Insets (notch/barre navigation)
-- [x] Service Worker avec cache intelligent
+- [x] Service Worker avec cache intelligent (Workbox)
 - [x] Mode offline (interface uniquement)
+- [x] Guide de démarrage rapide (QuickStartGuide)
+- [x] Modal d'état du système (connexion, latence, vision, toggles)
+- [x] Drawer d'actions mobiles (accès rapide aux fonctionnalités)
 
 #### 💾 Persistance & État
 - [x] LocalStorage pour données utilisateur
-- [x] Hook personnalisé `useLocalStorageState`
+- [x] Zustand 5.0 (gestion d'état globale avec persistance)
+- [x] Hook personnalisé `useLocalStorageState` (pour compatibilité)
 - [x] Validation et gestion d'erreurs
-- [x] Préférences utilisateur persistées
+- [x] Préférences utilisateur persistées (personnalités, documents, toggles)
 
 ### 🔧 Infrastructure & Qualité
-- [x] TypeScript strict mode
-- [x] Tests unitaires (Vitest)
-- [x] Tests E2E (Playwright)
-- [x] Linting & Formatting (ESLint + Prettier)
-- [x] Architecture modulaire (composants + hooks + utils)
+- [x] TypeScript strict mode (5.8)
+- [x] Tests unitaires (Vitest 4.0 avec UI)
+- [x] Tests E2E (Playwright 1.57)
+- [x] Coverage V8 (couverture de code)
+- [x] Architecture modulaire (composants + hooks + utils + stores)
+- [x] React 19.2 avec Vite 6.2
+- [x] Tailwind CSS 3.4 (design system personnalisé)
+- [x] Zustand 5.0 (gestion d'état globale avec persistance)
+- [x] Testing Library (React, Jest DOM, User Event)
 
 ---
 
@@ -102,21 +118,26 @@
   - Compression automatique des documents volumineux
 
 - [ ] **Amélioration Wake Word**
-  - Réduction des faux positifs
-  - Support de wake words personnalisés
-  - Indicateur visuel d'écoute active
+  - [x] Activation/désactivation via interface - implémenté
+  - [x] Bip audio de confirmation - implémenté
+  - [ ] Réduction des faux positifs
+  - [ ] Support de wake words personnalisés
+  - [ ] Indicateur visuel d'écoute active
 
 ### ✨ Améliorations UX
 
 - [ ] **Onboarding interactif**
-  - Guide pas-à-pas au premier lancement
-  - Tutoriel vidéo intégré
-  - Exemples de commandes vocales
+  - [x] Guide de démarrage rapide (QuickStartGuide) - implémenté
+  - [ ] Tutoriel vidéo intégré
+  - [ ] Exemples de commandes vocales interactifs
 
 - [ ] **Feedback visuel amélioré**
-  - Animation de "réflexion" (IA en train de penser)
-  - Indicateur de transcription en temps réel
-  - Barre de progression pour upload de documents
+  - [x] Indicateur de latence en temps réel - implémenté
+  - [x] Visualiseur audio avec eye tracking - implémenté
+  - [x] Système de toasts (notifications) - implémenté
+  - [ ] Animation de "réflexion" (IA en train de penser)
+  - [ ] Indicateur de transcription en temps réel
+  - [ ] Barre de progression pour upload de documents
 
 - [ ] **Accessibilité (A11y)**
   - Navigation complète au clavier
@@ -176,29 +197,34 @@
 ### 🛠️ Outils Étendus (Function Calling)
 
 - [ ] **Calculs & Conversions**
-  - [x] Calculatrice mathématique
-  - [ ] Convertisseur d'unités avancé
+  - [ ] Calculatrice mathématique (documentée dans systemConfig.ts, à implémenter)
+  - [ ] Convertisseur d'unités (documenté dans systemConfig.ts, à implémenter)
   - [ ] Calculatrice financière (prêts, intérêts)
-  - [ ] Convertisseur de devises (taux en temps réel)
+  - [ ] Convertisseur de devises (documenté dans systemConfig.ts, à implémenter)
+  - [ ] Calculs avancés (pourcentages, pourboires) (documentés, à implémenter)
 
 - [ ] **Productivité**
-  - [ ] Timer & Pomodoro
-  - [ ] Rappels avec notifications push
-  - [ ] Agenda/Calendrier (création, consultation)
+  - [ ] Timer (documenté dans systemConfig.ts, à implémenter)
+  - [ ] Rappels (documentés dans systemConfig.ts, à implémenter)
+  - [ ] Agenda/Calendrier (documenté dans systemConfig.ts, à implémenter)
   - [ ] Liste de tâches (TODO list)
-  - [ ] Suivi du temps de travail
+  - [ ] Suivi du temps de travail (documenté dans systemConfig.ts, à implémenter)
 
 - [ ] **Utilitaires**
-  - [ ] Générateur de mots de passe
+  - [ ] Générateur de mots de passe (documenté dans systemConfig.ts, à implémenter)
+  - [ ] Génération UUID (documentée dans systemConfig.ts, à implémenter)
+  - [ ] Formatage de texte (documenté dans systemConfig.ts, à implémenter)
+  - [ ] Comptage de mots (documenté dans systemConfig.ts, à implémenter)
+  - [ ] Utilitaires (nombres aléatoires, pile/face, dés) (documentés, à implémenter)
   - [ ] QR Code generator
   - [ ] Raccourcisseur d'URL
-  - [ ] Traducteur multilingue (via API)
+  - [ ] Traducteur multilingue (via API) - Note: personnalité Traducteur existe déjà
 
 - [ ] **Intégrations Externes (via API)**
   - [ ] Google Calendar
   - [ ] Notion (notes synchronisées)
   - [ ] Spotify (contrôle lecture)
-  - [ ] Weather API (météo locale)
+  - [ ] Weather API (météo locale) - Note: `get_weather_info` documenté dans systemConfig.ts
 
 ### 🎥 Amélioration Vidéo & Vision
 
@@ -421,8 +447,12 @@
 
 ### Sprint 2 (Semaine 3-4)
 
-5. [ ] Implémentation fonctions de base (timer, calculatrice)
+5. [ ] Implémentation fonctions de base (timer, calculatrice, conversions, notes, agenda)
+   - Les fonctions sont documentées dans systemConfig.ts mais doivent être implémentées dans tools.ts
+   - Priorité : calculatrice, timer, rappels, notes, agenda
 6. [ ] Amélioration UI/UX (animations, feedback)
+   - [x] Système de toasts - implémenté
+   - [ ] Animations de transition améliorées
 7. [ ] Mode thème sombre/clair
 8. [ ] Accessibilité (A11y audit)
 
