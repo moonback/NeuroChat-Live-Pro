@@ -16,10 +16,16 @@
   --primary-accent: #0ea5e9;
 }
 
+html {
+  overflow: hidden;
+  height: 100%;
+}
+
 body {
   background-color: #020617;
   color: #f8fafc;
   overflow: hidden;
+  height: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

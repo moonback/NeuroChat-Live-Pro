@@ -189,22 +189,60 @@ const Header: React.FC<HeaderProps> = ({
   onEditPersonality,
   onOpenSystemStatus,
 }) => {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Cache automatiquement le header après 3 secondes d'inactivité
+    let hideTimeout: NodeJS.Timeout;
+    
+    const resetHideTimeout = () => {
+      clearTimeout(hideTimeout);
+      setIsVisible(true);
+      
+      hideTimeout = setTimeout(() => {
+        setIsVisible(false);
+      }, 3000); // Cache après 3 secondes
+    };
+
+    // Réinitialise le timer lors des interactions
+    const handleInteraction = () => {
+      resetHideTimeout();
+    };
+
+    // Détecte quand la souris est dans la zone du header (même s'il est caché)
+    const handleMouseMove = (e: MouseEvent) => {
+      if (e.clientY <= 80) { // Zone du header (environ 80px du haut)
+        setIsVisible(true);
+        resetHideTimeout();
+      } else {
+        handleInteraction();
+      }
+    };
+
+    // Événements qui réinitialisent le timer
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mousedown', handleInteraction, { passive: true });
+    window.addEventListener('touchstart', handleInteraction, { passive: true });
+    window.addEventListener('keydown', handleInteraction, { passive: true });
+
+    // Démarrer le timer initial
+    resetHideTimeout();
+
+    return () => {
+      clearTimeout(hideTimeout);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
   }, []);
 
   // Base styles for the header container
   const headerBaseClass = `
     fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b
-    ${isScrolled 
-      ? 'bg-[#050508]/80 backdrop-blur-xl border-white/5 py-4' 
-      : 'bg-transparent border-transparent py-5'
-    }
+    bg-[#050508]/80 backdrop-blur-xl border-white/5 py-4
+    ${isVisible ? 'translate-y-0' : '-translate-y-full'}
   `;
 
   return (
