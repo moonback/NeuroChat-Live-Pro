@@ -120,9 +120,9 @@
 - [ ] **Amélioration Wake Word**
   - [x] Activation/désactivation via interface - implémenté
   - [x] Bip audio de confirmation - implémenté
-  - [ ] Réduction des faux positifs
-  - [ ] Support de wake words personnalisés
-  - [ ] Indicateur visuel d'écoute active
+  - [x] Réduction des faux positifs
+  - [x] Support de wake words personnalisés
+  - [x] Indicateur visuel d'écoute active
 
 ### ✨ Améliorations UX
 
