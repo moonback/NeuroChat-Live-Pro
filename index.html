@@ -10,8 +10,13 @@
     <meta name="google" content="notranslate">
   
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>NeuroChat Pro • Assistant IA Professionnel</title>
+    
+    <!-- Kiosk Mode Meta Tags -->
+    <meta name="kiosk-mode" content="true" />
+    <meta name="fullscreen" content="yes" />
+    <meta name="browsermode" content="fullscreen" />
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6366f1" />
@@ -22,6 +27,9 @@
     <meta name="application-name" content="NeuroChat Pro" />
     <meta name="msapplication-TileColor" content="#6366f1" />
     <meta name="msapplication-TileImage" content="/icon-192.png" />
+    
+    <!-- Disable browser UI for kiosk mode -->
+    <meta name="display-mode" content="fullscreen" />
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
@@ -39,5 +47,70 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      // Mode Kiosque - Plein écran automatique
+      (function() {
+        function enterFullscreen() {
+          var docEl = document.documentElement;
+          if (docEl.requestFullscreen) {
+            docEl.requestFullscreen().catch(function() {});
+          } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+          } else if (docEl.mozRequestFullScreen) {
+            docEl.mozRequestFullScreen();
+          } else if (docEl.msRequestFullscreen) {
+            docEl.msRequestFullscreen();
+          }
+        }
+        
+        // Entrer en plein écran au chargement
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(enterFullscreen, 500);
+          });
+        } else {
+          setTimeout(enterFullscreen, 500);
+        }
+        
+        // Réessayer si on sort du plein écran (pour kiosque)
+        document.addEventListener('fullscreenchange', function() {
+          if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+              !document.mozFullScreenElement && !document.msFullscreenElement) {
+            setTimeout(enterFullscreen, 1000);
+          }
+        });
+        
+        document.addEventListener('webkitfullscreenchange', function() {
+          if (!document.webkitFullscreenElement) {
+            setTimeout(enterFullscreen, 1000);
+          }
+        });
+        
+        document.addEventListener('mozfullscreenchange', function() {
+          if (!document.mozFullScreenElement) {
+            setTimeout(enterFullscreen, 1000);
+          }
+        });
+        
+        document.addEventListener('MSFullscreenChange', function() {
+          if (!document.msFullscreenElement) {
+            setTimeout(enterFullscreen, 1000);
+          }
+        });
+        
+        // Désactiver le menu contextuel (clic droit)
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+        });
+        
+        // Désactiver les raccourcis clavier (F11, F12, etc.)
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'F11' || e.key === 'F12' || 
+              (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+            e.preventDefault();
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

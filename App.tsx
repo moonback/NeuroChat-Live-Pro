@@ -492,68 +492,38 @@ const App: React.FC = () => {
             onOpenToolsList={() => setIsToolsListOpen(true)}
         />
 
-        {/* Desktop Layout: Sidebar + Main Content */}
-        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-10 xl:pt-12">
-          {/* Hotzone (Desktop) - survol bord gauche pour ouvrir */}
-          <div
-            className={`hidden lg:block absolute left-0 top-0 h-full ${isDesktopSidebarOpen ? 'w-0' : 'w-3'} z-30`}
-            onMouseEnter={openDesktopSidebar}
-          />
-
-          {/* Desktop Sidebar - Contrôles et informations */}
+        {/* Desktop Layout: Sidebar + Main Content - Mode Kiosque */}
+        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-0 xl:pt-0">
+          {/* Desktop Sidebar - Mode Kiosque: Toujours visible et simplifié */}
           <aside
-            onMouseEnter={openDesktopSidebar}
-            onMouseLeave={scheduleCloseDesktopSidebar}
-            className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 transition-all duration-300 ease-out ${
-              isDesktopSidebarOpen
-                ? 'lg:w-64 xl:w-72 lg:border-r lg:border-white/5 lg:bg-black/40 lg:backdrop-blur-xl lg:p-3 xl:p-4 lg:gap-4 xl:gap-5 shadow-[5px_0_30px_rgba(0,0,0,0.5)]'
-                : 'lg:w-0 xl:w-0 lg:p-0 lg:border-r-0 lg:bg-transparent lg:backdrop-blur-0 shadow-none'
-            }`}
+            className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 lg:w-80 xl:w-96 lg:border-r lg:border-white/10 lg:bg-black/60 lg:backdrop-blur-xl lg:p-6 xl:p-8 lg:gap-6 shadow-[5px_0_30px_rgba(0,0,0,0.5)]`}
           >
-            {/* Toggle button (quand ouvert) */}
-            <div
-              className={`hidden lg:flex items-center justify-end ${
-                isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              } transition-opacity duration-200`}
-            >
-              <button
-                onClick={() => setIsDesktopSidebarOpen(false)}
-                className="mb-3 p-2 rounded-lg glass border border-white/10 text-slate-300 hover:text-white hover:border-white/25"
-                aria-label="Replier la sidebar"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-            </div>
-
-            <div
-              className={`${isDesktopSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-200`}
-            >
-            {/* Status Panel */}
-            <div className="glass-intense rounded-xl p-3 space-y-3 hover-lift glass-hover animate-fade-in border border-white/5 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <h3 className="text-[10px] font-display font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <span className="w-0.5 h-3 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
+            {/* Mode Kiosque: Sidebar toujours visible */}
+            <div className="opacity-100">
+            {/* Status Panel - Mode Kiosque: Agrandi */}
+            <div className="glass-intense rounded-2xl p-6 space-y-4 hover-lift glass-hover animate-fade-in border border-white/10 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <h3 className="text-base font-display font-bold text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
                 État du Système
               </h3>
               
-              <div className="space-y-2">
-                {/* Connection Status */}
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                  <span className="text-[10px] text-slate-300 font-medium">Connexion</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`relative flex h-2 w-2`}>
+              <div className="space-y-4">
+                {/* Connection Status - Mode Kiosque: Agrandi */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[60px]">
+                  <span className="text-base text-slate-200 font-semibold">Connexion</span>
+                  <div className="flex items-center gap-3">
+                    <span className={`relative flex h-4 w-4`}>
                       <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                         storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-400' : 
                         storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-400' : 'hidden'
                       }`}></span>
-                      <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                        storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 
+                      <span className={`relative inline-flex rounded-full h-4 w-4 ${
+                        storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 
                         storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-500' : 
                         'bg-slate-600'
                       }`}></span>
                     </span>
-                    <span className={`text-[10px] font-bold ${
+                    <span className={`text-base font-bold ${
                       storeConnectionState === ConnectionState.CONNECTED ? 'text-emerald-400' : 
                       storeConnectionState === ConnectionState.CONNECTING ? 'text-amber-400' : 'text-slate-500'
                     }`}>
@@ -563,46 +533,46 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5">
-                  {/* Latency */}
-                  <div className="flex flex-col items-center justify-center p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                     <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">Latence</span>
-                     <span className={`text-xs font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Latency - Mode Kiosque: Agrandi */}
+                  <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[80px]">
+                     <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Latence</span>
+                     <span className={`text-xl font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
                        {storeConnectionState === ConnectionState.CONNECTED && latency > 0 ? `${latency}ms` : '-'}
                      </span>
                   </div>
 
-                   {/* Vision Status */}
-                   <div className="flex flex-col items-center justify-center p-1.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                     <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">Vision</span>
-                     <span className={`text-[10px] font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                   {/* Vision Status - Mode Kiosque: Agrandi */}
+                   <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[80px]">
+                     <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Vision</span>
+                     <span className={`text-lg font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
                        {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'ON' : 'OFF'}
                      </span>
                   </div>
                 </div>
 
-                {/* Toggles Status Compact */}
-                <div className="grid grid-cols-1 gap-1 mt-1.5">
-                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isWakeWordEnabled ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[9px] text-slate-300">Wake Word</span>
-                      <span className={`text-[9px] font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
+                {/* Toggles Status - Mode Kiosque: Agrandi */}
+                <div className="grid grid-cols-1 gap-3 mt-2">
+                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isWakeWordEnabled ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}>
+                      <span className="text-base text-slate-200 font-medium">Wake Word</span>
+                      <span className={`text-base font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
                    </div>
-                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isFunctionCallingEnabled ? 'border-blue-500/20 bg-blue-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[9px] text-slate-300">Fonctions</span>
-                      <span className={`text-[9px] font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
+                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isFunctionCallingEnabled ? 'border-blue-500/30 bg-blue-500/10' : 'border-white/10 bg-white/5'}`}>
+                      <span className="text-base text-slate-200 font-medium">Fonctions</span>
+                      <span className={`text-base font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
                    </div>
-                   <div className={`flex items-center justify-between px-1.5 py-1 rounded border ${isGoogleSearchEnabled ? 'border-green-500/20 bg-green-500/5' : 'border-white/5 bg-transparent'}`}>
-                      <span className="text-[9px] text-slate-300">Recherche</span>
-                      <span className={`text-[9px] font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
+                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isGoogleSearchEnabled ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
+                      <span className="text-base text-slate-200 font-medium">Recherche</span>
+                      <span className={`text-base font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
                    </div>
                    
-                   {/* Eye Tracking Toggle */}
+                   {/* Eye Tracking Toggle - Mode Kiosque: Agrandi */}
                    <button 
                      onClick={() => setIsEyeTrackingEnabled(!isEyeTrackingEnabled)}
-                     className={`flex items-center justify-between px-1.5 py-1 rounded border transition-colors cursor-pointer w-full hover:bg-white/5 ${isEyeTrackingEnabled ? 'border-purple-500/20 bg-purple-500/5' : 'border-white/5 bg-transparent'}`}
+                     className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-colors cursor-pointer w-full hover:bg-white/10 min-h-[56px] touch-manipulation ${isEyeTrackingEnabled ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/10 bg-white/5'}`}
                    >
-                      <span className="text-[9px] text-slate-300">Suivi Yeux</span>
-                      <span className={`text-[9px] font-bold ${isEyeTrackingEnabled ? 'text-purple-400' : 'text-slate-500'}`}>{isEyeTrackingEnabled ? 'ON' : 'OFF'}</span>
+                      <span className="text-base text-slate-200 font-medium">Suivi Yeux</span>
+                      <span className={`text-base font-bold ${isEyeTrackingEnabled ? 'text-purple-400' : 'text-slate-500'}`}>{isEyeTrackingEnabled ? 'ON' : 'OFF'}</span>
                    </button>
                 </div>
               </div>
@@ -611,8 +581,8 @@ const App: React.FC = () => {
             </div>
           </aside>
 
-          {/* Main Content Area */}
-          <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-1.5 md:pb-3 lg:pb-4 xl:pb-6 safe-area-bottom lg:px-6 xl:px-8">
+          {/* Main Content Area - Mode Kiosque: Optimisé pour plein écran */}
+          <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-8 safe-area-bottom lg:px-8 xl:px-12">
             <ControlPanel 
               connectionState={storeConnectionState}
               currentPersonality={currentPersonality}

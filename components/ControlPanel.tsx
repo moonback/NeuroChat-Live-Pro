@@ -33,7 +33,7 @@ interface ControlPanelProps {
   onOpenMobileActions?: () => void;
 }
 
-// --- Icons ---
+// --- Icons --- Mode Kiosque: Ajustées
 const Icons = {
   Camera: () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -115,12 +115,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <button
         onClick={onClick}
         className={`
-          relative flex items-center justify-center w-11 h-11 rounded-full
+          relative flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full
           transition-all duration-300 ease-out
           border
+          touch-manipulation
           ${active 
             ? `${activeColor} text-white border-transparent shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-105` 
-            : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:text-white hover:border-white/20'
+            : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:text-white hover:border-white/20 active:scale-95'
           }
         `}
       >
@@ -130,9 +131,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   );
 
   return (
-    <div className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 w-full pointer-events-none safe-area-bottom">
+    <div className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 md:pb-10 w-full pointer-events-none safe-area-bottom">
       
-      {/* 1. STATUS ISLAND (Connected State Only) */}
+      {/* 1. STATUS ISLAND (Connected State Only) - Mode Kiosque: Ajusté */}
       <div 
         className={`
           pointer-events-auto mb-4 transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1) origin-bottom
@@ -140,7 +141,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         `}
       >
         <div className="flex items-center gap-4 px-5 py-2.5 rounded-full bg-[#050508]/80 backdrop-blur-xl border border-white/10 shadow-2xl">
-          {/* Audio Visualizer */}
+          {/* Audio Visualizer - Mode Kiosque: Ajusté */}
           <div className="flex items-center gap-3">
              <div className="flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -154,12 +155,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           <div className="w-[1px] h-4 bg-white/10" />
           
-          {/* Latency */}
+          {/* Latency - Mode Kiosque: Ajusté */}
           <LatencyIndicator latencyMs={latencyMs} />
         </div>
       </div>
 
-      {/* 2. PERSONALITY CARD (Disconnected State Only) */}
+      {/* 2. PERSONALITY CARD (Disconnected State Only) - Mode Kiosque: Ajusté */}
       {!isConnected && (
          <div className="pointer-events-auto mb-6 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 z-20 px-4">
             <div 
@@ -196,7 +197,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 )}
 
                 <div className="relative z-10 flex items-center justify-between p-4">
-                   {/* Left Icon/Color */}
+                   {/* Left Icon/Color - Mode Kiosque: Ajusté */}
                    <div 
                      className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/5 shadow-inner"
                      style={{ color: currentPersonality.themeColor }}
@@ -207,7 +208,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                      />
                    </div>
 
-                   {/* Text Info */}
+                   {/* Text Info - Mode Kiosque: Ajusté */}
                    <div className="flex-1 px-4 text-center">
                       <div className="flex items-center justify-center gap-2 text-zinc-500 mb-1">
                          <Icons.ChevronUp />
@@ -220,7 +221,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       </p>
                    </div>
                    
-                   {/* Right: Hint */}
+                   {/* Right: Hint - Mode Kiosque: Ajusté */}
                    <div className="flex flex-col items-center justify-center w-12 h-12">
                       <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
                       <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
@@ -239,7 +240,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
          </div>
       )}
 
-      {/* 3. MAIN DOCK */}
+      {/* 3. MAIN DOCK - Mode Kiosque: Ajusté */}
       <div className="pointer-events-auto">
         <div 
           className="flex items-center gap-3 md:gap-4 p-2 pl-3 pr-2 rounded-full border border-white/10 bg-[#08080a]/90 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500"
@@ -248,7 +249,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           }}
         >
           
-          {/* Secondary Controls (Camera, Screen, Wake Word) */}
+          {/* Secondary Controls (Camera, Screen, Wake Word) - Mode Kiosque: Ajusté */}
           <div className="flex items-center gap-2">
              {/* Wake Word (Only when Disconnected) */}
              {!isConnected && onToggleWakeWord && (
@@ -297,12 +298,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           <div className="w-[1px] h-8 bg-white/10 mx-1" />
 
-          {/* MAIN CONNECT BUTTON */}
+          {/* MAIN CONNECT BUTTON - Mode Kiosque: Ajusté */}
           {!isConnected ? (
              <button
                onClick={onConnect}
                disabled={isConnecting}
-               className="group relative flex items-center gap-3 px-6 py-3 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+               className="group relative flex items-center gap-3 px-6 py-3 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
              >
                 {/* Button Glow */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -325,18 +326,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           ) : (
              <button
                onClick={onDisconnect}
-               className="group flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-white hover:border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] active:scale-90"
+               className="group flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-white hover:border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] active:scale-90 touch-manipulation"
              >
                 <Icons.Power />
              </button>
           )}
 
-           {/* Mobile Menu Trigger (Only when Disconnected to access settings) */}
+           {/* Mobile Menu Trigger (Only when Disconnected to access settings) - Mode Kiosque: Ajusté */}
            {!isConnected && onOpenMobileActions && (
               <div className="md:hidden flex items-center pl-2 border-l border-white/10">
                  <button
                     onClick={onOpenMobileActions}
-                    className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10"
+                    className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 touch-manipulation"
                  >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

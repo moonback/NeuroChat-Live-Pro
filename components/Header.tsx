@@ -23,7 +23,7 @@ interface HeaderProps {
   onEditPersonality?: () => void;
 }
 
-// --- Icons ---
+// --- Icons --- Mode Kiosque: Ajustées
 const Icons = {
   Menu: () => (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -82,14 +82,14 @@ const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionStat
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
   return (
-    <div className="group flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/20 border border-white/5 backdrop-blur-sm transition-all duration-300 hover:bg-black/40">
-      <div className="relative flex h-2 w-2">
+    <div className="group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-black/20 border border-white/5 backdrop-blur-sm transition-all duration-300 hover:bg-black/40">
+      <div className="relative flex h-2.5 w-2.5 md:h-3 md:w-3">
         {(isConnected || isConnecting) && (
           <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${config.colorClass}`} />
         )}
-        <span className={`relative inline-flex rounded-full h-2 w-2 ${config.colorClass} ${config.glow}`} />
+        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 md:h-3 md:w-3 ${config.colorClass} ${config.glow}`} />
       </div>
-      <span className={`text-[10px] font-bold tracking-[0.15em] ${config.textClass} transition-colors duration-300`}>
+      <span className={`text-xs md:text-sm font-bold tracking-[0.15em] ${config.textClass} transition-colors duration-300`}>
         {config.label}
       </span>
     </div>
@@ -115,12 +115,13 @@ const ControlButton = ({
       <button
         onClick={onClick}
         className={`
-          relative group flex items-center justify-center w-9 h-9 rounded-xl
+          relative group flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl
           transition-all duration-300 ease-out
           border
+          touch-manipulation
           ${active 
             ? 'bg-white/10 text-white border-white/20 shadow-lg' 
-            : 'bg-transparent text-zinc-400 border-transparent hover:bg-white/5 hover:text-zinc-200'
+            : 'bg-transparent text-zinc-400 border-transparent hover:bg-white/5 hover:text-zinc-200 active:scale-95'
           }
         `}
         style={active ? { borderColor: `${themeColor}40`, boxShadow: `0 0 15px ${themeColor}20` } : {}}
@@ -163,12 +164,12 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Base styles for the header container
+  // Base styles for the header container - Mode Kiosque: Ajusté
   const headerBaseClass = `
     fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b
     ${isScrolled 
-      ? 'bg-[#050508]/80 backdrop-blur-xl border-white/5 py-2' 
-      : 'bg-transparent border-transparent py-3 md:py-4'
+      ? 'bg-[#050508]/80 backdrop-blur-xl border-white/5 py-3 md:py-4' 
+      : 'bg-transparent border-transparent py-4 md:py-5'
     }
   `;
 
@@ -185,44 +186,27 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="max-w-[90rem] mx-auto px-4 md:px-6 flex items-center justify-between relative">
           
-          {/* LEFT: Identity */}
+          {/* LEFT: Mobile Menu + Status - Mode Kiosque: Ajusté */}
           <div className="flex items-center gap-3 md:gap-4 z-10">
-             {/* Mobile Menu Trigger */}
+             {/* Mobile Menu Trigger - Mode Kiosque: Ajusté */}
              <button 
-              className="md:hidden -ml-2 p-2 text-zinc-400 hover:text-white transition-colors"
+              className="md:hidden -ml-2 p-2 text-zinc-300 hover:text-white transition-colors touch-manipulation min-w-[48px] min-h-[48px] flex items-center justify-center"
               onClick={() => setMobileMenuOpen(true)}
             >
               <Icons.Menu />
             </button>
 
-            <div className="flex flex-col items-start leading-none select-none">
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg md:text-xl font-black tracking-tight text-white/90 font-sans">
-                  NEUROCHAT
-                </h1>
-                <span 
-                  className="text-[9px] px-1.5 py-0.5 rounded-[4px] font-bold tracking-widest uppercase border border-white/10 text-white/60 bg-white/5 backdrop-blur-sm"
-                  style={{ borderColor: `${currentPersonality.themeColor}40`, color: isConnected ? currentPersonality.themeColor : undefined }}
-                >
-                  PRO
-                </span>
-              </div>
-            </div>
-
-            <div className="hidden md:block h-6 w-[1px] bg-white/10 mx-1" />
-            <div className="hidden md:block">
-              <StatusBadge connectionState={connectionState} />
-            </div>
+            
           </div>
 
-          {/* CENTER: Status (Mobile Only) */}
+          {/* CENTER: Status (Mobile Only) - Mode Kiosque: Agrandi */}
           <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
              <StatusBadge connectionState={connectionState} />
           </div>
 
-          {/* RIGHT: Controls (Desktop) */}
+          {/* RIGHT: Controls (Desktop) - Mode Kiosque: Ajusté */}
           <div className="hidden md:flex items-center gap-4 z-10">
-            {/* Context Aware Controls */}
+            {/* Context Aware Controls - Mode Kiosque: Ajusté */}
             {!isConnected && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md">
                 <ControlButton 
@@ -254,7 +238,7 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            {/* Resources (Docs & Voice) */}
+            {/* Resources (Docs & Voice) - Mode Kiosque: Ajusté */}
             <div className="flex items-center gap-3 pl-3 border-l border-white/10">
               <div className="relative group">
                 <DocumentUploader
@@ -279,8 +263,8 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Controls (Mobile) */}
-          <div className="md:hidden flex items-center z-10">
+          {/* RIGHT: Controls (Mobile) - Mode Kiosque: Ajusté */}
+          <div className="md:hidden flex items-center z-10 gap-2">
             <div className="relative">
               <DocumentUploader
                 documents={uploadedDocuments}
