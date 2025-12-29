@@ -16,11 +16,13 @@ import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
 import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
+import CanvasPanel, { CanvasElement } from './components/CanvasPanel';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
 import VideoOverlay from './components/VideoOverlay';
+import { initCanvas, loadCanvasFromStorage, saveCanvasToStorage } from './utils/canvasTools';
 
 const deserializeDocuments = (raw: string) => {
   const parsed = JSON.parse(raw);
@@ -81,7 +83,11 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
+  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
+  
+  // Canvas State
+  const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
@@ -183,6 +189,28 @@ const App: React.FC = () => {
   useEffect(() => {
     uploadedDocumentsRef.current = uploadedDocuments;
   }, [uploadedDocuments]);
+
+  // Canvas initialization and persistence
+  useEffect(() => {
+    // Initialize canvas system with callback
+    initCanvas((elements) => {
+      setCanvasElements(elements);
+      saveCanvasToStorage();
+    });
+
+    // Load canvas from localStorage on mount
+    const loadedElements = loadCanvasFromStorage();
+    if (loadedElements.length > 0) {
+      setCanvasElements(loadedElements);
+    }
+  }, []);
+
+  // Save canvas to localStorage when elements change
+  useEffect(() => {
+    if (canvasElements.length > 0) {
+      saveCanvasToStorage();
+    }
+  }, [canvasElements]);
 
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
@@ -1262,7 +1290,13 @@ const App: React.FC = () => {
         onClose={() => setIsToolsListOpen(false)}
       />
 
-
+      <CanvasPanel
+        isOpen={isCanvasOpen}
+        onClose={() => setIsCanvasOpen(false)}
+        elements={canvasElements}
+        onElementsChange={setCanvasElements}
+        themeColor={currentPersonality.themeColor}
+      />
 
       <VideoOverlay
         isVideoActive={isVideoActive}
@@ -1302,6 +1336,8 @@ const App: React.FC = () => {
             onToggleGoogleSearch={handleGoogleSearchToggle}
             onEditPersonality={() => setIsPersonalityEditorOpen(true)}
             onOpenToolsList={() => setIsToolsListOpen(true)}
+            onToggleCanvas={() => setIsCanvasOpen(!isCanvasOpen)}
+            isCanvasOpen={isCanvasOpen}
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
