@@ -160,9 +160,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </div>
 
-      {/* 2. PERSONALITY CARD (Disconnected State Only) - Mode Kiosque: Ajusté */}
+      {/* 2. PERSONALITY CARD (Disconnected State Only) - Flottant à droite au milieu */}
       {!isConnected && (
-         <div className="pointer-events-auto mb-6 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 z-20 px-4">
+         <div className="fixed top-1/2 right-6 -translate-y-1/2 pointer-events-auto w-80 max-w-sm animate-in fade-in slide-in-from-right-4 duration-700 z-20">
             <div 
                 className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#050508]/60 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-white/10 hover:bg-[#050508]/80"
             >
