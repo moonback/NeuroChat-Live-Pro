@@ -19,6 +19,7 @@ import ToolsList from './components/ToolsList';
 import AgentDashboard from './components/AgentDashboard';
 import AgentTaskViewer from './components/AgentTaskViewer';
 import ActiveAgentsWidget from './components/ActiveAgentsWidget';
+import AgentTaskCreator from './components/AgentTaskCreator';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
@@ -85,13 +86,14 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isAgentDashboardOpen, setIsAgentDashboardOpen] = useState(false);
   const [isAgentTaskViewerOpen, setIsAgentTaskViewerOpen] = useState(false);
+  const [isAgentTaskCreatorOpen, setIsAgentTaskCreatorOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(undefined);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
   
-  // Agent Manager
-  const agentManager = useAgentManager();
+  // Agent Manager avec notifications
+  const agentManager = useAgentManager(addToast);
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
@@ -1275,6 +1277,20 @@ const App: React.FC = () => {
       <AgentDashboard
         isOpen={isAgentDashboardOpen}
         onClose={() => setIsAgentDashboardOpen(false)}
+        onTaskClick={(taskId) => {
+          setSelectedTaskId(taskId);
+          setIsAgentTaskViewerOpen(true);
+        }}
+        onCreateTask={() => setIsAgentTaskCreatorOpen(true)}
+      />
+
+      <AgentTaskCreator
+        isOpen={isAgentTaskCreatorOpen}
+        onClose={() => setIsAgentTaskCreatorOpen(false)}
+        onTaskCreated={(taskId) => {
+          setSelectedTaskId(taskId);
+          setIsAgentTaskViewerOpen(true);
+        }}
       />
 
       <AgentTaskViewer

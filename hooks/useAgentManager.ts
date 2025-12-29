@@ -6,12 +6,16 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AgentOrchestrator } from '../utils/agents/AgentOrchestrator';
 import { Task, AgentReport, AgentType } from '../types/agent';
 
-export function useAgentManager() {
+// Type pour les notifications (optionnel, peut être passé en paramètre)
+type ToastNotifier = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
+
+export function useAgentManager(toastNotifier?: ToastNotifier) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [reports, setReports] = useState<AgentReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const orchestratorRef = useRef<AgentOrchestrator | null>(null);
   const lastStorageCheckRef = useRef<string>('');
+  const processedTaskIdsRef = useRef<Set<string>>(new Set());
 
   // Initialiser l'orchestrateur
   useEffect(() => {
@@ -56,24 +60,62 @@ export function useAgentManager() {
     window.addEventListener('storage', handleStorageChange);
 
     // Écouter les événements personnalisés pour les mises à jour de tâches
-    const handleTaskCreated = () => {
+    const handleTaskCreated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ taskId: string }>;
+      const taskId = customEvent.detail?.taskId;
+      
       setTimeout(() => {
         loadTasks();
         loadReports();
-      }, 100); // Petit délai pour s'assurer que localStorage est à jour
-    };
-    const handleTaskUpdated = () => {
-      setTimeout(() => {
-        loadTasks();
-        loadReports();
+        
+        // Notification pour nouvelle tâche créée
+        if (taskId && toastNotifier && !processedTaskIdsRef.current.has(`created-${taskId}`)) {
+          const task = tasks.find(t => t.id === taskId) || orchestratorRef.current?.getTaskStatus(taskId);
+          if (task) {
+            processedTaskIdsRef.current.add(`created-${taskId}`);
+            const agentNames = { research: 'Recherche', analysis: 'Analyse', creation: 'Création' };
+            toastNotifier('info', 'Nouvelle Tâche', `Tâche "${task.description.substring(0, 50)}..." créée (Agent ${agentNames[task.type]})`);
+          }
+        }
       }, 100);
     };
+    
+    const handleTaskUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ taskId: string; status?: string }>;
+      const taskId = customEvent.detail?.taskId;
+      const status = customEvent.detail?.status;
+      
+      setTimeout(() => {
+        loadTasks();
+        loadReports();
+        
+        // Notification pour tâche complétée
+        if (taskId && status === 'completed' && toastNotifier && !processedTaskIdsRef.current.has(`completed-${taskId}`)) {
+          const task = tasks.find(t => t.id === taskId) || orchestratorRef.current?.getTaskStatus(taskId);
+          if (task) {
+            processedTaskIdsRef.current.add(`completed-${taskId}`);
+            toastNotifier('success', 'Tâche Complétée', `"${task.description.substring(0, 50)}..." terminée avec succès`);
+          }
+        }
+        
+        // Notification pour tâche échouée
+        if (taskId && status === 'failed' && toastNotifier && !processedTaskIdsRef.current.has(`failed-${taskId}`)) {
+          const task = tasks.find(t => t.id === taskId) || orchestratorRef.current?.getTaskStatus(taskId);
+          if (task) {
+            processedTaskIdsRef.current.add(`failed-${taskId}`);
+            toastNotifier('error', 'Tâche Échouée', `"${task.description.substring(0, 50)}..." a échoué`);
+          }
+        }
+      }, 100);
+    };
+    
     const handleTaskStatusChanged = () => {
       setTimeout(() => {
         loadTasks();
         loadReports();
       }, 100);
     };
+    
     const handleStorageUpdated = () => {
       loadTasks();
       loadReports();
@@ -159,14 +201,27 @@ export function useAgentManager() {
     try {
       const task = await orchestratorRef.current.createTask(description, agentType);
       loadTasks();
+      
+      // Notification de succès
+      if (toastNotifier) {
+        const agentNames = { research: 'Recherche', analysis: 'Analyse', creation: 'Création' };
+        toastNotifier('success', 'Tâche Créée', `Agent ${agentNames[agentType]} démarré pour "${description.substring(0, 40)}..."`);
+      }
+      
       return task;
     } catch (error) {
       console.error('[useAgentManager] Erreur lors de la création de la tâche:', error);
+      
+      // Notification d'erreur
+      if (toastNotifier) {
+        toastNotifier('error', 'Erreur', `Impossible de créer la tâche: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+      }
+      
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [loadTasks]);
+  }, [loadTasks, toastNotifier]);
 
   /**
    * Obtient le statut d'une tâche
