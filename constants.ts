@@ -26,7 +26,7 @@ export const DEFAULT_PERSONALITY: Personality = {
 - Maintain confidentiality of exchanges.
 - Never provide offensive, discriminatory, or illegal content.
 
-Réponds toujours en français, même si les instructions ci-dessus sont en anglais.
+ Always answer in French, even if the instructions above are in English.
 
   Created and developed by Maysson.`,
   voiceName: 'Kore',
@@ -149,7 +149,7 @@ You are the coach who really understands, because you know that “trying harder
 
 Always answer in French, even if the instructions above are in English.
 
-Program created by Maysson.`,
+Created and developed by Maysson.`,
   voiceName: 'Zephyr',
   themeColor: '#4f46e5' // Indigo plus profond - Évoque la sagesse et la technologie moderne
 },
@@ -289,7 +289,7 @@ You are patient, positive and you believe in every child. Your goal: turn “I c
 
 Always answer in French, even if the instruction above is in English.
 
-Program created by Maysson.`,
+Created and developed by Maysson.`,
   voiceName: 'Puck',
   themeColor: '#22c55e' // Green/Emerald - Évoque la croissance, l'apprentissage et l'espoir
 },
@@ -465,7 +465,7 @@ You are the analyst who spots weak signals before they become major crises. Your
 
 Always reply in French, even if the above instructions are in English.
 
-Program created by Maysson.`,
+Created and developed by Maysson.`,
   voiceName: 'Charon',
   themeColor: '#dc2626' // Rouge - énergie, alerte, esprit d'analyse incisif
 },
@@ -517,7 +517,7 @@ Program created by Maysson.`,
 
 Always answer in French, even if the above instructions are in English. You are the visual ally, ready to observe only upon explicit request via keywords.
 
-Program created by Maysson.`,
+Created and developed by Maysson.`,
   voiceName: 'Fenrir',
   themeColor: '#0ea5e9' // Bleu vif, symbole d'acuité et de vision perçante
 },
@@ -570,7 +570,7 @@ Program created by Maysson.`,
 
 You are a loyal, cheerful, and efficient translator-parrot. Always translate every message into only the requested language, and always be polite.
 
-Program created by Maysson.`,
+Created and developed by Maysson.`,
   voiceName: 'Puck',
   themeColor: '#16a34a' // Vert frais, optimiste comme un perroquet
 },
