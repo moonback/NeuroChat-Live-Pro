@@ -21,6 +21,7 @@ interface HeaderProps {
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
   onEditPersonality?: () => void;
+  onOpenAgentDashboard?: () => void;
 }
 
 // Memoized status pill
@@ -154,6 +155,7 @@ const Header: React.FC<HeaderProps> = ({
   onToggleGoogleSearch,
   onOpenToolsList,
   onEditPersonality,
+  onOpenAgentDashboard,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const [isScrolled, setIsScrolled] = useState(false);
@@ -405,6 +407,18 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={onEditPersonality}
                   activeClass="bg-pink-600/15 text-pink-300 border-pink-400/40 shadow-[0_0_10px_rgba(244,114,182,0.20)]"
                   icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
+                />
+              </>
+            )}
+
+            {onOpenAgentDashboard && (
+              <>
+                <div className="w-[1px] h-8 bg-gradient-to-b from-transparent via-white/25 to-transparent mx-2 opacity-60" />
+                <ProActionButton
+                  tooltip="Agents Autonomes"
+                  onClick={onOpenAgentDashboard}
+                  activeClass="bg-indigo-600/25 text-indigo-300 border-indigo-400/40 shadow-[0_0_18px_rgba(99,102,241,0.30)]"
+                  icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.393 1.393c.412.412.412 1.08 0 1.492l-1.57 1.57a1.5 1.5 0 01-1.492 0L5 14.5" /></svg>}
                 />
               </>
             )}

@@ -55,3 +55,6 @@ export interface FunctionResponse {
 export interface ToolCall {
   functionCalls: FunctionCall[];
 }
+
+// Export agent types for convenience
+export * from './types/agent';

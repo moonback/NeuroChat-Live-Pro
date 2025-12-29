@@ -16,10 +16,14 @@ import InstallPWA from './components/InstallPWA';
 import { buildToolsConfig, executeFunction } from './utils/tools';
 import NotesViewer from './components/NotesViewer';
 import ToolsList from './components/ToolsList';
+import AgentDashboard from './components/AgentDashboard';
+import AgentTaskViewer from './components/AgentTaskViewer';
+import ActiveAgentsWidget from './components/ActiveAgentsWidget';
 import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { useAgentManager } from './hooks/useAgentManager';
 import VideoOverlay from './components/VideoOverlay';
 
 const deserializeDocuments = (raw: string) => {
@@ -79,9 +83,15 @@ const App: React.FC = () => {
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
   const [isNotesViewerOpen, setIsNotesViewerOpen] = useState(false);
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
+  const [isAgentDashboardOpen, setIsAgentDashboardOpen] = useState(false);
+  const [isAgentTaskViewerOpen, setIsAgentTaskViewerOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(undefined);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const sidebarCloseTimeoutRef = useRef<number | null>(null);
+  
+  // Agent Manager
+  const agentManager = useAgentManager();
   
   // Document Upload State
   const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<ProcessedDocument[]>(
@@ -1262,7 +1272,27 @@ const App: React.FC = () => {
         onClose={() => setIsToolsListOpen(false)}
       />
 
+      <AgentDashboard
+        isOpen={isAgentDashboardOpen}
+        onClose={() => setIsAgentDashboardOpen(false)}
+      />
 
+      <AgentTaskViewer
+        isOpen={isAgentTaskViewerOpen}
+        onClose={() => {
+          setIsAgentTaskViewerOpen(false);
+          setSelectedTaskId(undefined);
+        }}
+        taskId={selectedTaskId}
+      />
+
+      <ActiveAgentsWidget
+        onTaskClick={(taskId) => {
+          setSelectedTaskId(taskId);
+          setIsAgentTaskViewerOpen(true);
+        }}
+        onOpenDashboard={() => setIsAgentDashboardOpen(true)}
+      />
 
       <VideoOverlay
         isVideoActive={isVideoActive}
@@ -1302,6 +1332,7 @@ const App: React.FC = () => {
             onToggleGoogleSearch={handleGoogleSearchToggle}
             onEditPersonality={() => setIsPersonalityEditorOpen(true)}
             onOpenToolsList={() => setIsToolsListOpen(true)}
+            onOpenAgentDashboard={() => setIsAgentDashboardOpen(true)}
         />
 
         {/* Desktop Layout: Sidebar + Main Content */}
