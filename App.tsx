@@ -74,8 +74,7 @@ const App: React.FC = () => {
   const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
-  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
-  const sidebarCloseTimeoutRef = useRef<number | null>(null);
+  const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
 
   // Documents Context
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
@@ -248,39 +247,6 @@ const App: React.FC = () => {
     };
   }, [activateAudioContext]);
 
-  // Sidebar Desktop: auto repli (fermer à la connexion, et après sortie de la zone)
-  useEffect(() => {
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      setIsDesktopSidebarOpen(false);
-    }
-  }, [storeConnectionState]);
-
-  const openDesktopSidebar = useCallback(() => {
-    if (sidebarCloseTimeoutRef.current) {
-      window.clearTimeout(sidebarCloseTimeoutRef.current);
-      sidebarCloseTimeoutRef.current = null;
-    }
-    setIsDesktopSidebarOpen(true);
-  }, []);
-
-  const scheduleCloseDesktopSidebar = useCallback(() => {
-    if (sidebarCloseTimeoutRef.current) {
-      window.clearTimeout(sidebarCloseTimeoutRef.current);
-    }
-    sidebarCloseTimeoutRef.current = window.setTimeout(() => {
-      setIsDesktopSidebarOpen(false);
-      sidebarCloseTimeoutRef.current = null;
-    }, 700);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (sidebarCloseTimeoutRef.current) {
-        window.clearTimeout(sidebarCloseTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Wake Word Detection - Écoute pour "Neurochat"
   useEffect(() => {
     // Initialiser le détecteur de wake word
@@ -452,6 +418,119 @@ const App: React.FC = () => {
         onClose={() => setIsToolsListOpen(false)}
       />
 
+      {/* System Status Modal */}
+      {isSystemStatusModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+            onClick={() => setIsSystemStatusModalOpen(false)}
+          />
+          
+          {/* Modal Container */}
+          <div 
+            className="relative w-full max-w-md bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500"
+            style={{
+              boxShadow: `0 0 100px -20px ${currentPersonality.themeColor}15, 0 0 40px -10px rgba(0,0,0,0.5)`
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-500/20 border border-indigo-500/30">
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-display font-bold text-white">
+                  État du Système
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsSystemStatusModalOpen(false)}
+                className="p-2 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95"
+                aria-label="Fermer la modal"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              {/* Connection Status */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                <span className="text-base text-slate-200 font-semibold">Connexion</span>
+                <div className="flex items-center gap-3">
+                  <span className={`relative flex h-4 w-4`}>
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-400' : 
+                      storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-400' : 'hidden'
+                    }`}></span>
+                    <span className={`relative inline-flex rounded-full h-4 w-4 ${
+                      storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 
+                      storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-500' : 
+                      'bg-slate-600'
+                    }`}></span>
+                  </span>
+                  <span className={`text-base font-bold ${
+                    storeConnectionState === ConnectionState.CONNECTED ? 'text-emerald-400' : 
+                    storeConnectionState === ConnectionState.CONNECTING ? 'text-amber-400' : 'text-slate-500'
+                  }`}>
+                    {storeConnectionState === ConnectionState.CONNECTED ? 'ONLINE' : 
+                     storeConnectionState === ConnectionState.CONNECTING ? 'SYNC...' : 'OFFLINE'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Latency */}
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                   <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Latence</span>
+                   <span className={`text-xl font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                     {storeConnectionState === ConnectionState.CONNECTED && latency > 0 ? `${latency}ms` : '-'}
+                   </span>
+                </div>
+
+                 {/* Vision Status */}
+                 <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                   <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Vision</span>
+                   <span className={`text-lg font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                     {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'ON' : 'OFF'}
+                   </span>
+                </div>
+              </div>
+
+              {/* Toggles Status */}
+              <div className="grid grid-cols-1 gap-3 mt-2">
+                 <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${isWakeWordEnabled ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}>
+                    <span className="text-base text-slate-200 font-medium">Wake Word</span>
+                    <span className={`text-base font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
+                 </div>
+                 <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${isFunctionCallingEnabled ? 'border-blue-500/30 bg-blue-500/10' : 'border-white/10 bg-white/5'}`}>
+                    <span className="text-base text-slate-200 font-medium">Fonctions</span>
+                    <span className={`text-base font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
+                 </div>
+                 <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${isGoogleSearchEnabled ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
+                    <span className="text-base text-slate-200 font-medium">Recherche</span>
+                    <span className={`text-base font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
+                 </div>
+                 
+                 {/* Eye Tracking Toggle */}
+                 <button 
+                   onClick={() => setIsEyeTrackingEnabled(!isEyeTrackingEnabled)}
+                   className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-colors cursor-pointer w-full hover:bg-white/10 touch-manipulation ${isEyeTrackingEnabled ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/10 bg-white/5'}`}
+                 >
+                    <span className="text-base text-slate-200 font-medium">Suivi Yeux</span>
+                    <span className={`text-base font-bold ${isEyeTrackingEnabled ? 'text-purple-400' : 'text-slate-500'}`}>{isEyeTrackingEnabled ? 'ON' : 'OFF'}</span>
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <VideoOverlay
         isVideoActive={isVideoActive}
         isScreenShareActive={isScreenShareActive}
@@ -490,97 +569,11 @@ const App: React.FC = () => {
             onToggleGoogleSearch={handleGoogleSearchToggle}
             onEditPersonality={() => setIsPersonalityEditorOpen(true)}
             onOpenToolsList={() => setIsToolsListOpen(true)}
+            onOpenSystemStatus={() => setIsSystemStatusModalOpen(true)}
         />
 
-        {/* Desktop Layout: Sidebar + Main Content - Mode Kiosque */}
-        <div className="relative flex-grow flex flex-col lg:flex-row lg:pt-0 xl:pt-0">
-          {/* Desktop Sidebar - Mode Kiosque: Toujours visible et simplifié */}
-          <aside
-            className={`hidden lg:flex lg:flex-col lg:overflow-hidden custom-scrollbar z-20 lg:w-80 xl:w-96 lg:border-r lg:border-white/10 lg:bg-black/60 lg:backdrop-blur-xl lg:p-6 xl:p-8 lg:gap-6 shadow-[5px_0_30px_rgba(0,0,0,0.5)]`}
-          >
-            {/* Mode Kiosque: Sidebar toujours visible */}
-            <div className="opacity-100">
-            {/* Status Panel - Mode Kiosque: Agrandi */}
-            <div className="glass-intense rounded-2xl p-6 space-y-4 hover-lift glass-hover animate-fade-in border border-white/10 group transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <h3 className="text-base font-display font-bold text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></span>
-                État du Système
-              </h3>
-              
-              <div className="space-y-4">
-                {/* Connection Status - Mode Kiosque: Agrandi */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[60px]">
-                  <span className="text-base text-slate-200 font-semibold">Connexion</span>
-                  <div className="flex items-center gap-3">
-                    <span className={`relative flex h-4 w-4`}>
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                        storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-400' : 
-                        storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-400' : 'hidden'
-                      }`}></span>
-                      <span className={`relative inline-flex rounded-full h-4 w-4 ${
-                        storeConnectionState === ConnectionState.CONNECTED ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' : 
-                        storeConnectionState === ConnectionState.CONNECTING ? 'bg-amber-500' : 
-                        'bg-slate-600'
-                      }`}></span>
-                    </span>
-                    <span className={`text-base font-bold ${
-                      storeConnectionState === ConnectionState.CONNECTED ? 'text-emerald-400' : 
-                      storeConnectionState === ConnectionState.CONNECTING ? 'text-amber-400' : 'text-slate-500'
-                    }`}>
-                      {storeConnectionState === ConnectionState.CONNECTED ? 'ONLINE' : 
-                       storeConnectionState === ConnectionState.CONNECTING ? 'SYNC...' : 'OFFLINE'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Latency - Mode Kiosque: Agrandi */}
-                  <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[80px]">
-                     <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Latence</span>
-                     <span className={`text-xl font-bold font-mono ${latency > 200 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                       {storeConnectionState === ConnectionState.CONNECTED && latency > 0 ? `${latency}ms` : '-'}
-                     </span>
-                  </div>
-
-                   {/* Vision Status - Mode Kiosque: Agrandi */}
-                   <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 group-hover:bg-white/10 transition-colors duration-300 min-h-[80px]">
-                     <span className="text-sm text-slate-400 uppercase tracking-wider mb-2">Vision</span>
-                     <span className={`text-lg font-bold ${isVideoActive || isScreenShareActive ? 'text-indigo-400' : 'text-slate-500'}`}>
-                       {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'ON' : 'OFF'}
-                     </span>
-                  </div>
-                </div>
-
-                {/* Toggles Status - Mode Kiosque: Agrandi */}
-                <div className="grid grid-cols-1 gap-3 mt-2">
-                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isWakeWordEnabled ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}>
-                      <span className="text-base text-slate-200 font-medium">Wake Word</span>
-                      <span className={`text-base font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
-                   </div>
-                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isFunctionCallingEnabled ? 'border-blue-500/30 bg-blue-500/10' : 'border-white/10 bg-white/5'}`}>
-                      <span className="text-base text-slate-200 font-medium">Fonctions</span>
-                      <span className={`text-base font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
-                   </div>
-                   <div className={`flex items-center justify-between px-4 py-3 rounded-xl border min-h-[56px] ${isGoogleSearchEnabled ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
-                      <span className="text-base text-slate-200 font-medium">Recherche</span>
-                      <span className={`text-base font-bold ${isGoogleSearchEnabled ? 'text-green-400' : 'text-slate-500'}`}>{isGoogleSearchEnabled ? 'ON' : 'OFF'}</span>
-                   </div>
-                   
-                   {/* Eye Tracking Toggle - Mode Kiosque: Agrandi */}
-                   <button 
-                     onClick={() => setIsEyeTrackingEnabled(!isEyeTrackingEnabled)}
-                     className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-colors cursor-pointer w-full hover:bg-white/10 min-h-[56px] touch-manipulation ${isEyeTrackingEnabled ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/10 bg-white/5'}`}
-                   >
-                      <span className="text-base text-slate-200 font-medium">Suivi Yeux</span>
-                      <span className={`text-base font-bold ${isEyeTrackingEnabled ? 'text-purple-400' : 'text-slate-500'}`}>{isEyeTrackingEnabled ? 'ON' : 'OFF'}</span>
-                   </button>
-                </div>
-              </div>
-            </div>
-
-            </div>
-          </aside>
-
+        {/* Desktop Layout: Main Content - Mode Kiosque */}
+        <div className="relative flex-grow flex flex-col lg:pt-0 xl:pt-0">
           {/* Main Content Area - Mode Kiosque: Optimisé pour plein écran */}
           <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-8 safe-area-bottom lg:px-8 xl:px-12">
             <ControlPanel 

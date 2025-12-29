@@ -21,6 +21,7 @@ interface HeaderProps {
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
   onEditPersonality?: () => void;
+  onOpenSystemStatus?: () => void;
 }
 
 // --- Icons --- Mode Kiosque: Ajustées
@@ -48,6 +49,11 @@ const Icons = {
   Edit: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+    </svg>
+  ),
+  System: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   )
 };
@@ -153,6 +159,7 @@ const Header: React.FC<HeaderProps> = ({
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
   onEditPersonality,
+  onOpenSystemStatus,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -235,6 +242,19 @@ const Header: React.FC<HeaderProps> = ({
                     />
                   </>
                 )}
+              </div>
+            )}
+
+            {/* System Status Button - Always visible */}
+            {onOpenSystemStatus && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md">
+                <ControlButton 
+                  active={false}
+                  onClick={onOpenSystemStatus}
+                  icon={<Icons.System />}
+                  label="État du Système"
+                  themeColor={currentPersonality.themeColor}
+                />
               </div>
             )}
 
