@@ -114,7 +114,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         <button
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className="group relative flex items-center gap-1 md:gap-1.5 sm:gap-2 px-1.5 md:px-2.5 sm:px-3 md:px-4 py-1.5 md:py-2 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[36px] md:min-h-[44px]"
+          className="group relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[44px]"
           style={{
             boxShadow: documents.length > 0 
               ? '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
@@ -122,11 +122,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           }}
           aria-label="Gérer les documents"
         >
-          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-white transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           {documents.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-4 h-4 md:w-5 md:h-5 bg-indigo-500 rounded-full flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white">
+            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-indigo-500 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white flex-shrink-0">
               {documents.length}
             </span>
           )}

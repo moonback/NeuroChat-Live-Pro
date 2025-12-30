@@ -94,94 +94,94 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         }
       }}
     >
-      <div className="relative w-full h-full max-w-5xl max-h-[90vh] m-4 flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden"
+      <div className="relative w-full h-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] m-2 sm:m-4 flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden"
         style={{
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.3)'
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/20 border border-blue-500/30">
-              <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center justify-between p-4 sm:p-5 md:p-6 border-b border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30 gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/20 border border-blue-500/30 flex-shrink-0">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
               </svg>
             </div>
-            <div>
-              <h2 className="text-2xl font-display font-bold text-white">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-display font-bold text-white truncate">
                 Fonctions Disponibles
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">
                 Liste complète des fonctions accessibles à l'IA
               </p>
             </div>
-            <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-sm font-semibold">
+            <span className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs sm:text-sm font-semibold whitespace-nowrap flex-shrink-0">
               {functions.length} fonction{functions.length > 1 ? 's' : ''}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            className="p-2 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0"
             aria-label="Fermer la modal"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-          <div className="space-y-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 md:p-6">
+          <div className="space-y-6 sm:space-y-8">
             {Object.entries(categories).map(([category, categoryFunctions]) => {
               if (categoryFunctions.length === 0) return null;
               
               return (
-                <div key={category} className="space-y-4">
-                  <div className="flex items-center gap-3 pb-2 border-b border-white/10">
-                    <span className="text-2xl">{getCategoryIcon(category)}</span>
-                    <h3 className="text-lg font-display font-bold text-white">
+                <div key={category} className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-2 sm:gap-3 pb-2 border-b border-white/10">
+                    <span className="text-xl sm:text-2xl flex-shrink-0">{getCategoryIcon(category)}</span>
+                    <h3 className="text-base sm:text-lg font-display font-bold text-white truncate flex-1">
                       {category}
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-300 text-xs font-semibold">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-300 text-[10px] sm:text-xs font-semibold flex-shrink-0">
                       {categoryFunctions.length}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {categoryFunctions.map((func) => (
                       <div
                         key={func.name}
-                        className="p-4 rounded-lg glass border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-300 group cursor-default"
+                        className="p-3 sm:p-4 rounded-lg glass border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-300 group cursor-default"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-white font-mono text-sm group-hover:text-blue-300 transition-colors">
+                          <h4 className="font-semibold text-white font-mono text-xs sm:text-sm group-hover:text-blue-300 transition-colors break-all">
                             {func.name}
                           </h4>
                         </div>
-                        <p className="text-sm text-slate-300 mb-3 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-slate-300 mb-2 sm:mb-3 leading-relaxed">
                           {func.description}
                         </p>
                         
                         {func.parameters && func.parameters.properties && Object.keys(func.parameters.properties).length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-white/5">
-                            <p className="text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide">
+                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/5">
+                            <p className="text-[10px] sm:text-xs text-slate-400 mb-1.5 sm:mb-2 font-semibold uppercase tracking-wide">
                               Paramètres:
                             </p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1 sm:space-y-1.5">
                               {Object.entries(func.parameters.properties).map(([paramName, paramDef]: [string, any]) => {
                                 const isRequired = func.parameters?.required?.includes(paramName);
                                 return (
-                                  <div key={paramName} className="flex items-start gap-2 text-xs">
-                                    <code className="text-blue-300 font-mono">
+                                  <div key={paramName} className="flex items-start gap-1.5 sm:gap-2 text-[10px] sm:text-xs flex-wrap">
+                                    <code className="text-blue-300 font-mono break-all">
                                       {paramName}
                                     </code>
                                     {isRequired && (
-                                      <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold">
+                                      <span className="px-1 sm:px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[9px] sm:text-[10px] font-semibold whitespace-nowrap">
                                         requis
                                       </span>
                                     )}
-                                    <span className="text-slate-400">
+                                    <span className="text-slate-400 whitespace-nowrap">
                                       ({paramDef.type || 'any'})
                                     </span>
                                   </div>
@@ -189,7 +189,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
                               })}
                             </div>
                             {func.parameters.required && func.parameters.required.length === 0 && (
-                              <p className="text-xs text-slate-500 italic mt-2">
+                              <p className="text-[10px] sm:text-xs text-slate-500 italic mt-1.5 sm:mt-2">
                                 Aucun paramètre requis
                               </p>
                             )}
@@ -205,12 +205,12 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
-          <div className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="p-3 sm:p-4 border-t border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs text-slate-400 text-center">
+            <p className="text-[10px] sm:text-xs text-slate-400 text-center">
               Ces fonctions sont disponibles pour l'IA lorsque l'appel de fonction est activé dans les paramètres
             </p>
           </div>
