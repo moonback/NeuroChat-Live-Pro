@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,7 +14,11 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "electron": "wait-on tcp:3000 && cross-env VITE_DEV_SERVER_URL=http://localhost:3000 electron .",
+    "compile:electron": "tsc -p tsconfig.electron.json",
+    "electron:dev": "npm run compile:electron && echo {\"type\":\"commonjs\"} > dist-electron/package.json && concurrently -k \"npm run dev\" \"npm run electron\"",
+    "electron:build": "npm run build && npm run compile:electron && echo {\"type\":\"commonjs\"} > dist-electron/package.json && electron-builder"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
@@ -31,12 +36,40 @@
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.22",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.15",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.1.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "com.neurochat.pro",
+    "productName": "NeuroChat Pro",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/logo.png"
+    }
   }
 }
