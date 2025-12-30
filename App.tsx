@@ -146,6 +146,11 @@ const App: React.FC = () => {
     resetVisionState,
     sessionRef,
     onPersonalityChange: (newPersonality) => {
+      // Désactiver la caméra si on quitte la personnalité Vision
+      if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
+        setIsVideoActive(false);
+      }
+      
       // Changer la personnalité
       setPersonality(newPersonality);
       
@@ -186,6 +191,11 @@ const App: React.FC = () => {
 
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
+    // Désactiver la caméra si on quitte la personnalité Vision
+    if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
+      setIsVideoActive(false);
+    }
+    
     setPersonality(newPersonality);
     
     // Activer automatiquement la caméra si la personnalité Vision est sélectionnée
