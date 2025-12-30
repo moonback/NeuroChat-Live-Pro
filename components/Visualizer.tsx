@@ -732,18 +732,180 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
 
       ctx.restore();
 
-      // 9. Effet de pulsation ambiante lors des pics audio
-      if (audioLevel > 0.35) {
-        const pulseIntensity = (audioLevel - 0.35) * 2;
+      // 9. MODE OVERLOAD - Effets maximum lors des pics audio
+      const overloadThreshold = 0.35;
+      const isOverload = audioLevel > overloadThreshold;
+      const overloadIntensity = isOverload ? Math.min((audioLevel - overloadThreshold) * 3, 1) : 0;
+
+      if (isOverload) {
+        // A. Pulsation ambiante explosive
+        const pulseIntensity = overloadIntensity;
         const pulseGradient = ctx.createRadialGradient(
           centerX, centerY, baseRadius * 2,
-          centerX, centerY, baseRadius * 4
+          centerX, centerY, baseRadius * 5
         );
-        pulseGradient.addColorStop(0, `${baseColor}, ${pulseIntensity * 0.2})`);
+        pulseGradient.addColorStop(0, `${baseColor}, ${pulseIntensity * 0.4})`);
+        pulseGradient.addColorStop(0.5, `${baseColor}, ${pulseIntensity * 0.2})`);
         pulseGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
         ctx.fillStyle = pulseGradient;
         ctx.fillRect(0, 0, w, h);
+
+        // B. Effet RGB Chromatic Aberration (Glitch)
+        const glitchOffset = overloadIntensity * 8;
+        ctx.globalCompositeOperation = 'screen';
+        
+        // Canal Rouge
+        ctx.globalAlpha = 0.3 * overloadIntensity;
+        ctx.fillStyle = `rgba(${rgb.r}, 0, 0, 1)`;
+        ctx.fillRect(0, 0, w, h);
+        
+        // Canal Vert (décalé)
+        ctx.save();
+        ctx.translate(glitchOffset, 0);
+        ctx.fillStyle = `rgba(0, ${rgb.g}, 0, 1)`;
+        ctx.fillRect(-glitchOffset, 0, w, h);
+        ctx.restore();
+        
+        // Canal Bleu (décalé opposé)
+        ctx.save();
+        ctx.translate(-glitchOffset, 0);
+        ctx.fillStyle = `rgba(0, 0, ${rgb.b}, 1)`;
+        ctx.fillRect(glitchOffset, 0, w, h);
+        ctx.restore();
+        
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+
+        // C. Scanlines horizontales
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 * overloadIntensity})`;
+        ctx.lineWidth = 1;
+        const scanlineSpacing = 4;
+        for (let y = 0; y < h; y += scanlineSpacing) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        // D. Flash blanc aux coins
+        const flashGradient = ctx.createRadialGradient(
+          centerX, centerY, 0,
+          centerX, centerY, Math.max(w, h)
+        );
+        flashGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        flashGradient.addColorStop(0.7, `rgba(255, 255, 255, ${0.05 * overloadIntensity})`);
+        flashGradient.addColorStop(1, `rgba(255, 255, 255, ${0.15 * overloadIntensity})`);
+        ctx.fillStyle = flashGradient;
+        ctx.fillRect(0, 0, w, h);
+
+        // E. Rayons énergétiques radiaux
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        const numRays = 12;
+        for (let i = 0; i < numRays; i++) {
+          const angle = (Math.PI * 2 * i) / numRays + rotationOffset * 2;
+          const rayLength = Math.max(w, h) * 0.6;
+          
+          const rayGradient = ctx.createLinearGradient(
+            0, 0,
+            Math.cos(angle) * rayLength, Math.sin(angle) * rayLength
+          );
+          rayGradient.addColorStop(0, `${baseColor}, ${0.4 * overloadIntensity})`);
+          rayGradient.addColorStop(0.5, `${baseColor}, ${0.1 * overloadIntensity})`);
+          rayGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(angle) * rayLength, Math.sin(angle) * rayLength);
+          ctx.strokeStyle = rayGradient;
+          ctx.lineWidth = 3 + overloadIntensity * 5;
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // F. Particules explosives
+        const numParticles = Math.floor(15 * overloadIntensity);
+        for (let i = 0; i < numParticles; i++) {
+          const particleAngle = (Math.PI * 2 * i) / numParticles + rotationOffset * 3;
+          const particleDistance = baseRadius * (3 + Math.sin(Date.now() / 200 + i) * 1.5);
+          const px = centerX + Math.cos(particleAngle) * particleDistance;
+          const py = centerY + Math.sin(particleAngle) * particleDistance;
+          
+          ctx.save();
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = `${baseColor}, ${overloadIntensity})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 2 + overloadIntensity * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `${baseColor}, ${0.7 * overloadIntensity})`;
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // G. Distorsion temporelle (effet de vibration)
+        const shake = overloadIntensity * 3;
+        const shakeX = (Math.random() - 0.5) * shake;
+        const shakeY = (Math.random() - 0.5) * shake;
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+        ctx.restore();
+
+        // H. Anneaux d'énergie concentriques
+        const numRings = 5;
+        for (let i = 0; i < numRings; i++) {
+          const ringRadius = baseRadius * (3 + i * 0.8) + (Date.now() / 100) % 50;
+          const ringOpacity = (1 - i / numRings) * overloadIntensity * 0.3;
+          
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `${baseColor}, ${ringOpacity})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // I. Effet de bloom intense sur les yeux
+        [leftEyeCenterX, rightEyeCenterX].forEach(eyeX => {
+          const bloomGradient = ctx.createRadialGradient(
+            eyeX, eyeCenterY, 0,
+            eyeX, eyeCenterY, baseRadius * 4
+          );
+          bloomGradient.addColorStop(0, `rgba(255, 255, 255, ${0.6 * overloadIntensity})`);
+          bloomGradient.addColorStop(0.3, `${baseColor}, ${0.4 * overloadIntensity})`);
+          bloomGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          
+          ctx.fillStyle = bloomGradient;
+          ctx.beginPath();
+          ctx.arc(eyeX, eyeCenterY, baseRadius * 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // J. Grille déformée en arrière-plan
+        ctx.strokeStyle = `${baseColor}, ${0.15 * overloadIntensity})`;
+        ctx.lineWidth = 1;
+        const gridSize = 50;
+        const waveAmplitude = 20 * overloadIntensity;
+        
+        // Lignes horizontales ondulées
+        for (let y = 0; y < h; y += gridSize) {
+          ctx.beginPath();
+          for (let x = 0; x < w; x += 10) {
+            const waveY = y + Math.sin(x / 50 + Date.now() / 500) * waveAmplitude;
+            if (x === 0) ctx.moveTo(x, waveY);
+            else ctx.lineTo(x, waveY);
+          }
+          ctx.stroke();
+        }
+        
+        // Lignes verticales ondulées
+        for (let x = 0; x < w; x += gridSize) {
+          ctx.beginPath();
+          for (let y = 0; y < h; y += 10) {
+            const waveX = x + Math.sin(y / 50 + Date.now() / 500) * waveAmplitude;
+            if (y === 0) ctx.moveTo(waveX, y);
+            else ctx.lineTo(waveX, y);
+          }
+          ctx.stroke();
+        }
       }
     };
 
