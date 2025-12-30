@@ -261,7 +261,7 @@ const App: React.FC = () => {
   }, [disconnect]);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
+    <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset bg-noise">
       {/* Premium Multi-Layer Background System */}
       
       {/* Base Layer - Deep Black with Subtle Noise */}

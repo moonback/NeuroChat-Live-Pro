@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const node_path_1 = __importDefault(require("node:path"));
+const node_fs_1 = __importDefault(require("node:fs"));
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -135,5 +136,38 @@ electron_1.app.on('activate', () => {
 electron_1.app.whenReady().then(() => {
     createWindow();
     createTray();
+    // IPC Handlers for File System Access
+    electron_1.ipcMain.handle('select-directory', async () => {
+        if (!win)
+            return null;
+        const result = await electron_1.dialog.showOpenDialog(win, {
+            properties: ['openDirectory']
+        });
+        return result.canceled ? null : result.filePaths[0];
+    });
+    electron_1.ipcMain.handle('list-files', async (_, dirPath) => {
+        try {
+            const files = await node_fs_1.default.promises.readdir(dirPath, { withFileTypes: true });
+            return files.map(dirent => ({
+                name: dirent.name,
+                isDirectory: dirent.isDirectory(),
+                path: node_path_1.default.join(dirPath, dirent.name)
+            }));
+        }
+        catch (error) {
+            console.error('Error listing files:', error);
+            throw error;
+        }
+    });
+    electron_1.ipcMain.handle('read-file', async (_, filePath) => {
+        try {
+            const content = await node_fs_1.default.promises.readFile(filePath, 'utf-8');
+            return content;
+        }
+        catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    });
 });
 //# sourceMappingURL=main.js.map

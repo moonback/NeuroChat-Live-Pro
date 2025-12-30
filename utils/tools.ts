@@ -29,6 +29,39 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       },
       required: []
     }
+  },
+  request_folder_access: {
+    name: 'request_folder_access',
+    description: 'Demande à l\'utilisateur de sélectionner un dossier local pour permettre à l\'assistant d\'y accéder (lecture/liste de fichiers). Utilisez ceci quand l\'utilisateur demande d\'accéder à ses fichiers.',
+    parameters: { type: 'object', properties: {}, required: [] }
+  },
+  list_files: {
+    name: 'list_files',
+    description: 'Liste les fichiers et dossiers dans le répertoire spécifié. Si aucun chemin n\'est fourni, liste le dossier racine autorisé.',
+    parameters: {
+      type: 'object',
+      properties: {
+        dirPath: {
+          type: 'string',
+          description: 'Chemin complet du dossier à lister (optionnel)'
+        }
+      },
+      required: []
+    }
+  },
+  read_file: {
+    name: 'read_file',
+    description: 'Lit le contenu textuel d\'un fichier spécifique.',
+    parameters: {
+      type: 'object',
+      properties: {
+        filePath: {
+          type: 'string',
+          description: 'Chemin complet du fichier à lire'
+        }
+      },
+      required: ['filePath']
+    }
   }
 };
 
@@ -42,6 +75,57 @@ export async function executeFunction(
   const { name, args } = functionCall;
   
   console.log(`[Tools] Exécution de la fonction: ${name}`, args);
+
+  // Gestion des fichiers
+  if (name === 'request_folder_access') {
+    try {
+      const ipcRenderer = (window as any).ipcRenderer;
+      if (!ipcRenderer) return { result: 'error', message: "Cette fonctionnalité n'est disponible que dans l'application de bureau." };
+      
+      const path = await ipcRenderer.invoke('select-directory');
+      if (path) {
+        localStorage.setItem('allowed_folder_path', path);
+        return { result: 'success', path, message: `Accès accordé au dossier : ${path}` };
+      } else {
+        return { result: 'cancelled', message: "Sélection annulée" };
+      }
+    } catch (e: any) {
+      return { result: 'error', message: e.message };
+    }
+  }
+
+  if (name === 'list_files') {
+    try {
+      const ipcRenderer = (window as any).ipcRenderer;
+      if (!ipcRenderer) return { result: 'error', message: "Cette fonctionnalité n'est disponible que dans l'application de bureau." };
+
+      const rootPath = localStorage.getItem('allowed_folder_path');
+      if (!rootPath) return { result: 'error', message: "Aucun dossier autorisé. Veuillez d'abord utiliser request_folder_access." };
+
+      const { dirPath } = args || {};
+      const targetPath = dirPath || rootPath;
+      
+      const files = await ipcRenderer.invoke('list-files', targetPath);
+      return { result: 'success', files };
+    } catch (e: any) {
+      return { result: 'error', message: e.message };
+    }
+  }
+
+  if (name === 'read_file') {
+    try {
+      const ipcRenderer = (window as any).ipcRenderer;
+      if (!ipcRenderer) return { result: 'error', message: "Cette fonctionnalité n'est disponible que dans l'application de bureau." };
+
+      const { filePath } = args || {};
+      if (!filePath) return { result: 'error', message: "Chemin de fichier manquant" };
+
+      const content = await ipcRenderer.invoke('read-file', filePath);
+      return { result: 'success', content };
+    } catch (e: any) {
+      return { result: 'error', message: e.message };
+    }
+  }
   
   // Gestion du changement de personnalité
   if (name === 'change_personality') {

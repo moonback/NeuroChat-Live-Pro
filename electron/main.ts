@@ -1,5 +1,6 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog } from 'electron'
 import path from 'node:path'
+import fs from 'node:fs'
 
 // The built directory structure
 //
@@ -145,4 +146,37 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   createWindow()
   createTray()
+
+  // IPC Handlers for File System Access
+  ipcMain.handle('select-directory', async () => {
+    if (!win) return null
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory']
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('list-files', async (_, dirPath: string) => {
+    try {
+      const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
+      return files.map(dirent => ({
+        name: dirent.name,
+        isDirectory: dirent.isDirectory(),
+        path: path.join(dirPath, dirent.name)
+      }));
+    } catch (error) {
+      console.error('Error listing files:', error);
+      throw error;
+    }
+  })
+
+  ipcMain.handle('read-file', async (_, filePath: string) => {
+    try {
+      const content = await fs.promises.readFile(filePath, 'utf-8');
+      return content;
+    } catch (error) {
+      console.error('Error reading file:', error);
+      throw error;
+    }
+  })
 })
