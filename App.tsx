@@ -149,6 +149,11 @@ const App: React.FC = () => {
       // Changer la personnalité
       setPersonality(newPersonality);
       
+      // Activer automatiquement la caméra si la personnalité Vision est sélectionnée
+      if (newPersonality.id === 'omnivision') {
+        setIsVideoActive(true);
+      }
+      
       // Si connecté, reconnecter pour appliquer le nouveau system prompt
       if (storeConnectionState === ConnectionState.CONNECTED) {
         disconnect();
@@ -182,6 +187,11 @@ const App: React.FC = () => {
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
     setPersonality(newPersonality);
+    
+    // Activer automatiquement la caméra si la personnalité Vision est sélectionnée
+    if (newPersonality.id === 'omnivision') {
+      setIsVideoActive(true);
+    }
     
     // If connected, we need to update the session (reconnect for now to apply system prompt)
     if (storeConnectionState === ConnectionState.CONNECTED) {
