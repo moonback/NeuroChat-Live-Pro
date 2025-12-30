@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { ConnectionState, Personality } from '../types';
 import { AVAILABLE_PERSONALITIES } from '../constants';
 import Loader from './Loader';
@@ -63,6 +63,16 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
     </svg>
   ),
+  ChevronDown: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  ),
+  Check: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  ),
   Power: () => (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
@@ -91,6 +101,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
+  
+  // Personality selector state
+  const [isPersonalityDropdownOpen, setIsPersonalityDropdownOpen] = useState(false);
+  const personalityDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (personalityDropdownRef.current && !personalityDropdownRef.current.contains(event.target as Node)) {
+        setIsPersonalityDropdownOpen(false);
+      }
+    };
+
+    if (isPersonalityDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isPersonalityDropdownOpen]);
 
   // --- Components ---
 
@@ -163,83 +191,119 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </div>
 
-      {/* 2. PERSONALITY CARD (Disconnected State Only) - Flottant à droite au milieu */}
-      {!isConnected && (
-         <div className="fixed top-1/2 right-6 -translate-y-1/2 pointer-events-auto w-80 max-w-sm animate-in fade-in slide-in-from-right-4 duration-700 z-20">
-            <div 
-                className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#050508]/60 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-white/10 hover:bg-[#050508]/80"
+      {/* 2. PERSONALITY SELECTOR (Disconnected State Only) - Flottant à droite au milieu */}
+      {!isConnected && onSelectPersonality && (
+         <div 
+           ref={personalityDropdownRef}
+           className="fixed top-1/2 right-6 -translate-y-1/2 pointer-events-auto z-20"
+         >
+            {/* Main Card - Clickable */}
+            <button
+              onClick={() => setIsPersonalityDropdownOpen(!isPersonalityDropdownOpen)}
+              className="group relative w-80 max-w-sm overflow-hidden rounded-2xl border border-white/5 bg-[#050508]/60 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-white/10 hover:bg-[#050508]/80 animate-in fade-in slide-in-from-right-4 duration-700 focus:outline-none focus:ring-2 focus:ring-white/20"
+              aria-label="Sélectionner une personnalité"
+              aria-expanded={isPersonalityDropdownOpen}
             >
-                {/* Select Overlay */}
-                {onSelectPersonality && (
-                  <button
-                    aria-label="Changer de personnalité"
-                    className="absolute inset-0 w-full h-full z-30 cursor-pointer transition-all group/overlay bg-transparent hover:bg-white/5 focus:outline-none"
-                    type="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      // Suggestion UX : ouvrir une modal ou panneau sélecteur dédié
-                      // Ici, fallback rapide : next option cyclique pour démo UX
-                      const currentIndex = AVAILABLE_PERSONALITIES.findIndex(p => p.id === currentPersonality.id);
-                      const next =
-                        AVAILABLE_PERSONALITIES[(currentIndex + 1) % AVAILABLE_PERSONALITIES.length];
-                      if (next && next.id !== currentPersonality.id) onSelectPersonality(next);
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        const currentIndex = AVAILABLE_PERSONALITIES.findIndex(p => p.id === currentPersonality.id);
-                        const next =
-                          AVAILABLE_PERSONALITIES[(currentIndex + 1) % AVAILABLE_PERSONALITIES.length];
-                        if (next && next.id !== currentPersonality.id) onSelectPersonality(next);
-                      }
-                    }}
-                    title="Changer de personnalité"
-                  >
-                    <span className="sr-only">Changer la personnalité utilisée</span>
-                  </button>
-                )}
-
-                <div className="relative z-10 flex items-center justify-between p-4">
-                   {/* Left Icon/Color - Mode Kiosque: Ajusté */}
+              <div className="relative z-10 flex items-center justify-between p-4">
+                 {/* Left Icon/Color */}
+                 <div 
+                   className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/5 shadow-inner transition-transform duration-300 group-hover:scale-110"
+                   style={{ color: currentPersonality.themeColor }}
+                 >
                    <div 
-                     className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/5 shadow-inner"
-                     style={{ color: currentPersonality.themeColor }}
-                   >
-                     <div 
-                       className="w-3 h-3 rounded-full shadow-[0_0_15px_currentColor]"
-                       style={{ backgroundColor: currentPersonality.themeColor }} 
-                     />
-                   </div>
+                     className="w-3 h-3 rounded-full shadow-[0_0_15px_currentColor] transition-all duration-300"
+                     style={{ backgroundColor: currentPersonality.themeColor }} 
+                   />
+                 </div>
 
-                   {/* Text Info - Mode Kiosque: Ajusté */}
-                   <div className="flex-1 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2 text-zinc-500 mb-1">
-                         <Icons.ChevronUp />
-                      </div>
-                      <h2 className="text-lg font-bold text-white tracking-tight leading-none">
-                        {currentPersonality.name}
-                      </h2>
-                      <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider font-medium">
-                        {currentPersonality.id === 'sara' ? 'Standard Model' : 'Custom Model'}
-                      </p>
-                   </div>
-                   
-                   {/* Right: Hint - Mode Kiosque: Ajusté */}
-                   <div className="flex flex-col items-center justify-center w-12 h-12">
-                      <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
-                      <div className="w-1 h-1 rounded-full bg-white/20 mb-1" />
-                      <div className="w-1 h-1 rounded-full bg-white/20" />
-                   </div>
+                 {/* Text Info */}
+                 <div className="flex-1 px-4 text-left">
+                    <div className="flex items-center justify-center gap-2 text-zinc-500 mb-1">
+                       {isPersonalityDropdownOpen ? <Icons.ChevronDown /> : <Icons.ChevronUp />}
+                    </div>
+                    <h2 className="text-lg font-bold text-white tracking-tight leading-none">
+                      {currentPersonality.name}
+                    </h2>
+                    <p className="text-xs text-zinc-400 mt-1 line-clamp-1">
+                      {currentPersonality.description}
+                    </p>
+                 </div>
+                 
+                 {/* Right: Chevron */}
+                 <div className="flex items-center justify-center w-8 h-8 text-zinc-400 transition-transform duration-300 group-hover:text-white">
+                    {isPersonalityDropdownOpen ? <Icons.ChevronDown /> : <Icons.ChevronUp />}
+                 </div>
+              </div>
+
+              {/* Bottom Progress/Deco Line */}
+              <div 
+                className="absolute bottom-0 left-0 h-[2px] w-full opacity-50 transition-all duration-500 group-hover:opacity-100"
+                style={{ 
+                  background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)` 
+                }}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isPersonalityDropdownOpen && (
+              <div className="mt-3 w-80 max-w-sm rounded-2xl border border-white/10 bg-[#050508]/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  {AVAILABLE_PERSONALITIES.map((personality) => {
+                    const isSelected = personality.id === currentPersonality.id;
+                    return (
+                      <button
+                        key={personality.id}
+                        onClick={() => {
+                          if (!isSelected) {
+                            onSelectPersonality(personality);
+                          }
+                          setIsPersonalityDropdownOpen(false);
+                        }}
+                        className={`
+                          w-full flex items-start gap-3 p-4 transition-all duration-200
+                          ${isSelected 
+                            ? 'bg-white/5 border-l-2' 
+                            : 'hover:bg-white/5 border-l-2 border-transparent hover:border-white/10'
+                          }
+                        `}
+                        style={isSelected ? { borderLeftColor: personality.themeColor } : {}}
+                      >
+                        {/* Color Indicator */}
+                        <div 
+                          className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center mt-0.5"
+                          style={{ color: personality.themeColor }}
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-full shadow-[0_0_12px_currentColor]"
+                            style={{ backgroundColor: personality.themeColor }} 
+                          />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-base font-bold text-white">
+                              {personality.name}
+                            </h3>
+                            {isSelected && (
+                              <div 
+                                className="flex-shrink-0"
+                                style={{ color: personality.themeColor }}
+                              >
+                                <Icons.Check />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">
+                            {personality.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-
-                {/* Bottom Progress/Deco Line */}
-                <div 
-                  className="absolute bottom-0 left-0 h-[2px] w-full opacity-50 transition-all duration-500 group-hover:opacity-100"
-                  style={{ 
-                    background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)` 
-                  }}
-                />
-            </div>
+              </div>
+            )}
          </div>
       )}
 
