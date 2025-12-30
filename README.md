@@ -7,16 +7,19 @@
 
 ## 📖 À propos
 
-**NeuroChat Live Pro** est un assistant IA conversationnel avancé conçu pour offrir une expérience utilisateur fluide et immersive grâce à des conversations vocales en temps réel. Propulsé par **Google Gemini Live**, il combine 6 personnalités spécialisées, la reconnaissance vocale, la vision par ordinateur et des outils interactifs pour répondre à des besoins variés : assistance générale, accompagnement TDAH/HPI, pédagogie, renseignement géopolitique, analyse visuelle et traduction vocale.
+**NeuroChat Live Pro** est un assistant IA conversationnel avancé conçu pour offrir une expérience utilisateur fluide et immersive grâce à des conversations vocales en temps réel. Propulsé par **Google Gemini Live**, il combine 9 personnalités spécialisées, la reconnaissance vocale, la vision par ordinateur et des outils interactifs pour répondre à des besoins variés : assistance générale, recherche web, accompagnement TDAH/HPI, pédagogie, renseignement géopolitique, analyse visuelle, traduction vocale, méditation et génération d'idées d'applications.
 
 ### 🎯 Cas d'usage
 
 - **Assistant généraliste** : NeuroChat pour tous vos besoins quotidiens
+- **Recherche web** : WebConsultant pour obtenir des informations actualisées en temps réel
 - **Coaching TDAH/HPI** : Coach Neuro spécialisé pour personnes neuroatypiques
 - **Aide aux devoirs** : Coach Scolaire pour enfants (10-12 ans) avec difficultés d'apprentissage
 - **Renseignement stratégique** : Analyste expert en géopolitique et évaluation de menaces
 - **Analyse visuelle** : Vision pour description et explication d'images via caméra/écran
 - **Traduction vocale** : Traducteur polyglotte pour répéter et traduire en temps réel
+- **Bien-être** : Mindful Sage pour la pleine conscience et la gestion du stress
+- **Développement** : App Ideas Guru pour générer des idées d'applications web
 
 ---
 
@@ -30,9 +33,18 @@
 - Indicateur de latence en temps réel
 
 ### 🎭 Personnalités Multiples
-- **6 personnalités préconçues** : NeuroChat (généraliste), Coach Neuro (TDAH/HPI), Coach Scolaire, Analyste (géopolitique), Vision (analyse visuelle), Traducteur (polyglotte)
+- **9 personnalités préconçues** : 
+  - **NeuroChat** : Assistant généraliste polyvalent
+  - **WebConsultant** : Recherche web en temps réel
+  - **Coach Neuro** : Spécialisé TDAH/HPI et syndrome de l'imposteur
+  - **Coach Scolaire** : Pédagogie pour enfants (10-12 ans)
+  - **Analyste** : Renseignement géopolitique et évaluation de menaces
+  - **Vision** : Analyse visuelle via caméra/écran
+  - **Traducteur** : Traduction vocale polyglotte
+  - **Mindful Sage** : Guide zen pour méditation et bien-être
+  - **App Ideas Guru** : Génération d'idées d'applications web
 - **Éditeur de personnalités** : Créez vos propres assistants personnalisés
-- **Changement à chaud** : Basculez entre personnalités sans redémarrer
+- **Changement à chaud** : Basculez entre personnalités sans redémarrer (via fonction `change_personality`)
 
 ### 👁️ Vision et Analyse Vidéo
 - Capture caméra en direct avec analyse d'images
@@ -40,18 +52,12 @@
 - Détection automatique de contexte visuel
 - Support multi-caméras
 - Analyse contextuelle intelligente (détection de changements, mouvement)
-- Suivi des yeux (eye tracking) optionnel
+- Suivi des yeux (eye tracking) optionnel : Le visage animé du visualiseur suit le mouvement de la souris pour créer une interaction visuelle immersive
 
 ### 🛠️ Outils et Capacités
-- **Appels de fonctions** : 
-  - Calculatrice et conversions (unités, devises, pourcentages)
-  - Gestion du temps (timer, rappels, date/heure)
-  - Gestion d'agenda (création, consultation, suppression d'événements)
-  - Suivi d'heures de travail (logs, résumés par période)
-  - Gestion de notes (sauvegarde, consultation, suppression)
-  - Utilitaires (génération de mots de passe, UUID, nombres aléatoires)
-  - Formatage de texte et comptage
-  - Changement de personnalité vocal (via fonction `change_personality`)
+- **Appels de fonctions** (activable/désactivable) : 
+  - **Changement de personnalité** : Changez de personnalité vocalement pendant la conversation (`change_personality`)
+ 
 - **Google Search** : Recherche en temps réel pour informations actualisées (optionnel, activable/désactivable)
 - **Upload de documents** : Analysez PDF, TXT, MD avec contexte persistant dans la conversation
 
@@ -67,6 +73,12 @@
 - Guide de démarrage rapide intégré
 - Modal d'état du système avec informations détaillées (connexion, latence, vision, toggles)
 - Drawer d'actions mobiles pour accès rapide aux fonctionnalités
+
+### 💻 Application Desktop (Electron)
+- Application native Windows, macOS et Linux
+- Minimisation dans la barre système (tray)
+- Mode "Toujours au-dessus" (always on top)
+- Builds disponibles via `npm run electron:build`
 
 ---
 
@@ -98,6 +110,8 @@
 ### Build & Déploiement
 - **vite-plugin-pwa 1.1.0** (génération service worker)
 - **Workbox** (stratégies de cache, runtime caching)
+- **Electron 39.2** (application desktop)
+- **electron-builder 26.0** (packaging multi-plateforme)
 
 ---
 
@@ -174,6 +188,14 @@ npm run test:e2e:ui  # Interface Playwright
 npm run test:all     # Lance tous les tests (unit + E2E)
 ```
 
+### Electron (Application Desktop)
+
+```bash
+npm run electron:dev      # Démarre l'app Electron en mode développement
+npm run electron:build    # Build de l'application desktop (Windows, macOS, Linux)
+npm run compile:electron # Compile uniquement les fichiers Electron TypeScript
+```
+
 ---
 
 ## 🗂️ Structure du Projet
@@ -213,8 +235,12 @@ NeuroChat-Live-Pro/
 │   ├── audioUtils.ts              # Encodage/décodage audio
 │   ├── documentProcessor.ts       # Traitement documents (PDF, TXT)
 │   ├── toastHelpers.ts            # Helpers pour notifications
-│   ├── tools.ts                   # Fonction calling (timers, calculs)
+│   ├── tools.ts                   # Fonction calling (change_personality, accès fichiers)
 │   ├── videoContextAnalyzer.ts    # Analyse de contexte vidéo
+│
+├── electron/                 # Application Electron (Desktop)
+│   ├── main.ts                    # Processus principal Electron
+│   └── preload.ts                 # Script de préchargement (IPC)
 │
 ├── public/                   # Assets statiques
 │   ├── icon-192.png               # Icônes PWA
@@ -227,7 +253,7 @@ NeuroChat-Live-Pro/
 │
 ├── App.tsx                   # Composant racine
 ├── index.tsx                 # Point d'entrée React
-├── constants.ts              # Personnalités et voix disponibles (6 personnalités, 6 voix)
+├── constants.ts              # Personnalités et voix disponibles (9 personnalités, 6 voix)
 ├── types.ts                  # Types TypeScript globaux
 ├── systemConfig.ts           # Instructions système de base (règles fondamentales)
 │
@@ -258,13 +284,13 @@ Modifiez `constants.ts` :
 
 ```typescript
 export const AVAILABLE_PERSONALITIES: Personality[] = [
-  // ... personnalités existantes (NeuroChat, Coach Neuro, Coach Scolaire, Analyste, Vision, Traducteur)
+  // ... personnalités existantes (NeuroChat, WebConsultant, Coach Neuro, Coach Scolaire, Analyste, Vision, Traducteur, Mindful Sage, App Ideas Guru)
   {
     id: 'ma-personnalite',
     name: 'Mon Assistant',
     description: 'Description courte',
     systemInstruction: `Instructions système détaillées...`,
-    voiceName: 'Puck', // Puck, Charon, Kore, Fenrir, Zephyr, Aoede
+    voiceName: 'Kore', // Puck, Charon, Kore, Fenrir, Zephyr, Aoede
     themeColor: '#3b82f6' // Couleur hex
   }
 ];
@@ -278,8 +304,9 @@ export const AVAILABLE_PERSONALITIES: Personality[] = [
 
 ```typescript
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
-  // Fonction existante
+  // Fonctions existantes
   change_personality: { /* ... */ },
+ 
   
   // Ajouter votre fonction
   ma_fonction: {
@@ -307,6 +334,8 @@ export async function executeFunction(functionCall: FunctionCall, options?: {...
   // ... autres fonctions
 }
 ```
+
+
 
 **Note** : Les fonctions doivent être déclarées dans `AVAILABLE_FUNCTIONS` et leur exécution doit être implémentée dans `executeFunction()`. La configuration des outils est construite via `buildToolsConfig()`.
 
@@ -345,25 +374,49 @@ Ajoutez dans `index.css` :
 
 ---
 
-## 📱 Installation PWA
+## 📱 Installation
 
-### Desktop (Chrome/Edge)
+### Progressive Web App (PWA)
+
+#### Desktop (Chrome/Edge)
 
 1. Ouvrez l'application dans le navigateur
 2. Cliquez sur l'icône d'installation dans la barre d'adresse
 3. Confirmez l'installation
 
-### Mobile (iOS)
+#### Mobile (iOS)
 
 1. Ouvrez dans Safari
 2. Tapez le bouton "Partager"
 3. Sélectionnez "Sur l'écran d'accueil"
 
-### Mobile (Android)
+#### Mobile (Android)
 
 1. Ouvrez dans Chrome
 2. Menu → "Installer l'application"
 3. Confirmez
+
+### Application Desktop (Electron)
+
+#### Windows
+
+1. Téléchargez le fichier `.exe` depuis les releases GitHub
+2. Exécutez l'installateur
+3. L'application sera disponible dans le menu Démarrer
+
+#### macOS
+
+1. Téléchargez le fichier `.dmg` depuis les releases GitHub
+2. Ouvrez le fichier `.dmg`
+3. Glissez l'application dans le dossier Applications
+
+#### Linux
+
+1. Téléchargez le fichier `.AppImage` depuis les releases GitHub
+2. Rendez-le exécutable : `chmod +x NeuroChat-Pro-*.AppImage`
+3. Double-cliquez pour lancer l'application
+
+**Note** : L'application Electron offre des fonctionnalités supplémentaires comme l'accès au système de fichiers local.
 
 ---
 
@@ -549,7 +602,7 @@ Voir [ROADMAP.md](ROADMAP.md) pour la feuille de route détaillée.
 - [ ] Mode multi-utilisateurs (rooms)
 - [ ] Intégration Telegram/WhatsApp
 - [ ] Support des langues (EN, ES, DE)
-- [ ] Amélioration du suivi des yeux (eye tracking)
+- [ ] Implémentation de fonctions supplémentaires (calculatrice, timers, notes, agenda, etc.)
 - [ ] Plus de fonctions disponibles via function calling
 
 ---
