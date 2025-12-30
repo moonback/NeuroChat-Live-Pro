@@ -229,8 +229,8 @@ const StatusIsland = memo(({
 }) => (
   <div 
     className={`
-      fixed top-24 left-6 z-50 pointer-events-auto 
-      transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-top-left
+      fixed bottom-10 left-6 z-50 pointer-events-auto 
+      transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left
       ${isConnected ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-90 -translate-x-4 pointer-events-none'}
     `}
     role="status"
