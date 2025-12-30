@@ -10,6 +10,19 @@ import type { Personality } from '../types';
 // Type pour le callback de changement de personnalité
 export type PersonalityChangeCallback = (personality: Personality) => void;
 
+// Fonction utilitaire pour télécharger un fichier
+function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown') {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // Définitions des fonctions disponibles
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   change_personality: {
@@ -28,6 +41,28 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
         }
       },
       required: []
+    }
+  },
+  generate_conclusion_markdown: {
+    name: 'generate_conclusion_markdown',
+    description: 'Génère et télécharge un fichier markdown avec la conclusion de la demande de l\'utilisateur. Utilise cette fonction quand l\'utilisateur demande à télécharger ou sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation.',
+    parameters: {
+      type: 'object',
+      properties: {
+        conclusion: {
+          type: 'string',
+          description: 'Le contenu de la conclusion à inclure dans le fichier markdown. Doit être une synthèse complète et bien formatée de la demande et de la réponse.'
+        },
+        title: {
+          type: 'string',
+          description: 'Le titre du document (optionnel, par défaut: "Conclusion")'
+        },
+        filename: {
+          type: 'string',
+          description: 'Le nom du fichier à télécharger (optionnel, par défaut: "conclusion-[date].md")'
+        }
+      },
+      required: ['conclusion']
     }
   }
 };
@@ -94,6 +129,67 @@ export async function executeFunction(
       return {
         result: 'error',
         message: 'Le changement de personnalité n\'est pas disponible actuellement'
+      };
+    }
+  }
+  
+  // Gestion de la génération de fichier markdown avec conclusion
+  if (name === 'generate_conclusion_markdown') {
+    const { conclusion, title, filename } = args || {};
+    
+    if (!conclusion || typeof conclusion !== 'string' || conclusion.trim().length === 0) {
+      return {
+        result: 'error',
+        message: 'Le contenu de la conclusion est requis et ne peut pas être vide'
+      };
+    }
+    
+    try {
+      // Générer le nom de fichier avec date si non fourni
+      const date = new Date();
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+      const defaultFilename = `conclusion-${dateStr}-${timeStr}.md`;
+      const finalFilename = filename && filename.trim() 
+        ? (filename.endsWith('.md') ? filename : `${filename}.md`)
+        : defaultFilename;
+      
+      // Créer le contenu markdown formaté
+      const documentTitle = title && title.trim() ? title.trim() : 'Conclusion';
+      const markdownContent = `# ${documentTitle}
+
+**Date:** ${date.toLocaleDateString('fr-FR', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+---
+
+${conclusion}
+
+---
+
+*Document généré par NeuroChat Live Pro*
+`;
+
+      // Télécharger le fichier
+      downloadFile(markdownContent, finalFilename);
+      
+      return {
+        result: 'success',
+        message: `Fichier markdown "${finalFilename}" téléchargé avec succès`,
+        filename: finalFilename,
+        title: documentTitle
+      };
+    } catch (error) {
+      console.error('[Tools] Erreur lors de la génération du fichier markdown:', error);
+      return {
+        result: 'error',
+        message: `Erreur lors de la génération du fichier: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
       };
     }
   }
