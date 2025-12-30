@@ -108,8 +108,9 @@ Avant de commencer, assurez-vous d'avoir :
 - **Node.js** >= 18.0.0 (recommandé : 20.x LTS)
 - **npm** >= 9.0.0 ou **pnpm** >= 8.0.0
 - **Navigateur moderne** : Chrome/Edge 90+, Firefox 88+, Safari 15+
-- **Microphone** fonctionnel
+- **Microphone** fonctionnel (pour conversations vocales)
 - **Clé API Google Gemini** ([Obtenir une clé](https://makersuite.google.com/app/apikey))
+- **Connexion Internet** stable (pour API Gemini Live)
 
 ---
 
@@ -245,9 +246,20 @@ NeuroChat-Live-Pro/
 
 ### Variables d'Environnement
 
-| Variable | Description | Requis |
-|----------|-------------|--------|
-| `GEMINI_API_KEY` | Clé API Google Gemini | ✅ Oui |
+Créez un fichier `.env` à la racine du projet :
+
+```env
+GEMINI_API_KEY=votre_cle_api_gemini_ici
+```
+
+| Variable | Description | Requis | Exemple |
+|----------|-------------|--------|---------|
+| `GEMINI_API_KEY` | Clé API Google Gemini | ✅ Oui | `AIzaSy...` |
+
+> **⚠️ Important** : 
+> - Ne commitez **jamais** votre clé API dans le dépôt Git
+> - Le fichier `.env` est déjà dans `.gitignore`
+> - Pour la production, utilisez les variables d'environnement de votre plateforme d'hébergement
 
 ### Personnalisation
 
@@ -404,7 +416,21 @@ npm run test:e2e:ui
 npm run build
 ```
 
-Le dossier `dist/` contiendra l'application optimisée.
+Le dossier `dist/` contiendra l'application optimisée avec :
+- Code minifié et optimisé
+- Assets statiques (images, sons, icônes)
+- Service Worker pour PWA
+- Manifeste PWA
+- Chunks séparés pour meilleure performance
+
+### Vérification du Build
+
+```bash
+# Prévisualiser le build localement
+npm run preview
+```
+
+L'application sera accessible sur `http://localhost:4173` (port par défaut de Vite preview).
 
 ### Déploiement sur Vercel
 
@@ -487,12 +513,39 @@ git push origin feature/ma-fonctionnalite
 
 ## 🐛 Signaler un Bug
 
-1. Ouvrez une **Issue** sur GitHub
+1. Ouvrez une **Issue** sur GitHub avec le template "Bug Report"
 2. Décrivez le problème avec :
-   - Version du navigateur
-   - Système d'exploitation
-   - Étapes pour reproduire
-   - Captures d'écran si applicable
+   - **Version du navigateur** (ex: Chrome 120, Firefox 121)
+   - **Système d'exploitation** (Windows 11, macOS 14, Linux Ubuntu 22.04)
+   - **Version de Node.js** (`node --version`)
+   - **Étapes pour reproduire** (étapes claires et numérotées)
+   - **Comportement attendu** vs **comportement observé**
+   - **Captures d'écran** ou vidéos si applicable
+   - **Logs de la console** (F12 → Console) si erreurs JavaScript
+   - **Réseau** : Vérifiez l'onglet Network pour erreurs API
+
+### Template de Bug Report
+
+```markdown
+**Description du bug**
+[Description claire et concise]
+
+**Pour reproduire**
+1. Aller à '...'
+2. Cliquer sur '...'
+3. Voir l'erreur
+
+**Comportement attendu**
+[Ce qui devrait se passer]
+
+**Captures d'écran**
+[Si applicable]
+
+**Environnement**
+- OS: [ex: Windows 11]
+- Navigateur: [ex: Chrome 120]
+- Version: [ex: 0.0.0]
+```
 
 ---
 
@@ -529,27 +582,55 @@ Développé avec ❤️ par **Maysson**
 
 ---
 
-## 📞 Support
+## 📞 Support et Communauté
 
-- 📧 Email : support@neurochat.exemple (remplacez par le vôtre)
-- 🐦 Twitter : [@votre_handle](https://twitter.com/votre_handle)
-- 💬 Discord : [Rejoindre le serveur](https://discord.gg/votre-invite)
+### Obtenir de l'Aide
+
+- 📧 **Email** : support@neurochat.exemple (remplacez par le vôtre)
+- 🐦 **Twitter/X** : [@votre_handle](https://twitter.com/votre_handle)
+- 💬 **Discord** : [Rejoindre le serveur](https://discord.gg/votre-invite)
+- 📖 **Documentation** : Consultez les fichiers `ARCHITECTURE.md`, `LOCALSTORAGE_DOCS.md`, `ROADMAP.md`
+- 🐛 **Issues GitHub** : Pour signaler des bugs ou proposer des features
+
+### FAQ (Foire Aux Questions)
+
+**Q: L'application ne se connecte pas à Gemini Live**  
+A: Vérifiez que votre clé API est correcte dans le fichier `.env` et que vous avez une connexion Internet stable.
+
+**Q: Le microphone ne fonctionne pas**  
+A: Vérifiez les permissions du navigateur (Paramètres → Confidentialité → Microphone) et assurez-vous qu'aucune autre application n'utilise le micro.
+
+**Q: L'application est lente**  
+A: Vérifiez votre connexion Internet, la latence de l'API Gemini, et fermez les onglets inutiles pour libérer des ressources.
+
+**Q: Comment exporter mes conversations ?**  
+A: Cette fonctionnalité est prévue pour la V1.0.0 (voir [ROADMAP.md](ROADMAP.md)).
+
+**Q: Puis-je utiliser l'application hors ligne ?**  
+A: Partiellement. L'interface fonctionne hors ligne (PWA), mais les conversations nécessitent une connexion Internet pour l'API Gemini.
 
 ---
 
 ## 🗺️ Roadmap
 
-Voir [ROADMAP.md](ROADMAP.md) pour la feuille de route détaillée.
+Voir [ROADMAP.md](ROADMAP.md) pour la feuille de route détaillée et complète.
 
-### Prochaines Fonctionnalités
+### Prochaines Fonctionnalités (V1.0.0)
 
-- [ ] Export des conversations en PDF/JSON
-- [ ] Historique des sessions avec recherche
-- [ ] Mode multi-utilisateurs (rooms)
-- [ ] Intégration Telegram/WhatsApp
-- [ ] Support des langues (EN, ES, DE)
-- [ ] Amélioration du suivi des yeux (eye tracking)
-- [ ] Plus de fonctions disponibles via function calling
+- [ ] **Historique et export** : Sauvegarde automatique, export PDF/JSON/TXT
+- [ ] **Recherche avancée** : Recherche dans l'historique et les documents
+- [ ] **Thèmes personnalisables** : Mode clair/sombre/auto avec personnalisation
+- [ ] **Support multi-formats** : DOCX, ODT, RTF, images avec OCR
+- [ ] **Optimisations performance** : Latence < 150ms, lazy loading avancé
+- [ ] **Accessibilité complète** : Support lecteur d'écran, navigation clavier
+
+### Vision Long Terme (V2.0.0)
+
+- [ ] **Multi-utilisateurs** : Comptes, synchronisation cloud, collaboration
+- [ ] **Intégrations** : Telegram, WhatsApp, webhooks, API REST
+- [ ] **Mobile natif** : Applications iOS et Android
+- [ ] **Marketplace** : Store de personnalités communautaire
+- [ ] **Mode entreprise** : Gestion d'équipe, SSO, analytics avancés
 
 ---
 
