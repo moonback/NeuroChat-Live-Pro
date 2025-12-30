@@ -34,7 +34,7 @@
 │  │                      App.tsx                             │   │
 │  │  - État global (useState, useRef)                        │   │
 │  │  - Gestion connexion Gemini Live                         │   │
-│  │  - Orchestration audio/vidéo/wake word                   │   │
+│  │  - Orchestration audio/vidéo                             │   │
 │  └────┬─────────────────────────────────────────┬───────────┘   │
 │       │                                         │               │
 │  ┌────▼──────────┐  ┌────────────┐  ┌──────────▼──────────┐   │
@@ -44,14 +44,14 @@
 │  │ - Header      │  │ - useAudio │  │ - audioUtils        │   │
 │  │ - ControlPanel│  │ - useVision│  │ - documentProcessor │   │
 │  │ - Visualizer  │  │ - useStatus│  │ - tools             │   │
-│  │ - VideoOverlay│  │ - useLocal │  │ - wakeWordDetector  │   │
+│  │ - VideoOverlay│  │ - useLocal │  │                     │   │
 │  └───────────────┘  └────────────┘  └─────────────────────┘   │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │              LocalStorage (Client-Side DB)               │   │
 │  │  - Personnalité active                                   │   │
 │  │  - Documents uploadés (base64)                           │   │
-│  │  - Préférences utilisateur (wake word, tools)            │   │
+│  │  - Préférences utilisateur (tools)                      │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────┬───────────────────────────────────┘
                               │
@@ -120,7 +120,7 @@ App.tsx (Root)
 - Gestion de la connexion/déconnexion Gemini Live
 - Orchestration des contextes audio (entrée/sortie)
 - Gestion du cycle de vie de la session
-- Coordination entre audio, vidéo et wake word
+- Coordination entre audio et vidéo
 - Reconnexion automatique en cas de déconnexion
 
 **État Principal :**
@@ -142,8 +142,6 @@ const [currentPersonality, setCurrentPersonality] = useState<Personality>()
 // Documents
 const [uploadedDocuments, setUploadedDocuments] = useState<ProcessedDocument[]>()
 
-// Wake Word
-const [isWakeWordEnabled, setIsWakeWordEnabled] = useState<boolean>()
 ```
 
 ---
@@ -468,7 +466,6 @@ const {
 |------------------------|---------------------|--------------------------------------|
 | `currentPersonality`   | `Personality`       | Personnalité active                  |
 | `uploadedDocuments`    | `ProcessedDocument[]` | Documents uploadés (contenu base64) |
-| `wakeWordEnabled`      | `boolean`           | Wake word activé/désactivé           |
 | `functionCallingEnabled` | `boolean`        | Appel de fonctions activé            |
 | `googleSearchEnabled`  | `boolean`           | Google Search activé                 |
 
@@ -572,39 +569,6 @@ Uploadé le: 2025-01-15 15:00
 ```
 
 ---
-
-### `wakeWordDetector.ts`
-
-**Détection "Bonjour" / "Neurochat" via Web Speech API**
-
-```typescript
-class WakeWordDetector {
-  constructor(config: {
-    wakeWord: string,      // Mot à détecter
-    lang: string,          // Langue ('fr-FR')
-    continuous: boolean,   // Écoute continue
-    onWakeWordDetected: () => void
-  });
-  
-  start(): void;           // Démarrer détection
-  stop(): void;            // Arrêter
-  isActive(): boolean;     // État actif
-  destroy(): void;         // Cleanup
-}
-```
-
-**Détection Flexible :**
-```typescript
-// Accepte variantes
-const transcript = result.transcript.toLowerCase();
-if (
-  transcript.includes('bonjour') ||
-  transcript.includes('neurochat') ||
-  transcript.includes('bonjour neurochat')
-) {
-  onWakeWordDetected();
-}
-```
 
 ---
 
@@ -893,10 +857,7 @@ test('devrait pouvoir se connecter', async ({ page }) => {
 3. Charger depuis localStorage :
    ├─ currentPersonality
    ├─ uploadedDocuments
-   ├─ wakeWordEnabled
    └─ functionCallingEnabled
-   │
-4. Initialiser WakeWordDetector
    │
 5. Attendre interaction utilisateur (clic "Connecter")
 ```
@@ -959,7 +920,6 @@ Tool Calls:
    ├─ Fermer AudioContext
    ├─ Arrêter MediaStream (micro)
    ├─ Arrêter VideoStream (caméra)
-   ├─ Arrêter WakeWordDetector
    └─ Réinitialiser état
    │
 5. Si shouldReload → window.location.reload()
@@ -974,7 +934,6 @@ Tool Calls:
 - **Web Audio API** : Traitement audio temps réel
 - **MediaStream API** : Capture micro/caméra
 - **Canvas API** : Capture/manipulation vidéo
-- **Web Speech API** : Reconnaissance vocale (wake word)
 - **LocalStorage API** : Persistance données
 - **Service Worker API** : Cache PWA
 

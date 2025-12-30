@@ -7,7 +7,6 @@ import { ToastContainer } from './components/Toast';
 import QuickStartGuide from './components/QuickStartGuide';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
-import { WakeWordDetector } from './utils/wakeWordDetector';
 import type { ProcessedDocument } from './utils/documentProcessor';
 import InstallPWA from './components/InstallPWA';
 import ToolsList from './components/ToolsList';
@@ -22,7 +21,6 @@ import {
   showGoogleSearchToggle,
   showDocumentsUpdated,
   showDocumentsLoaded,
-  showWakeWordDetected,
 } from './utils/toastHelpers';
 
 const App: React.FC = () => {
@@ -49,18 +47,12 @@ const App: React.FC = () => {
     connectionState: storeConnectionState,
     currentPersonality,
     uploadedDocuments,
-    isWakeWordEnabled,
-    wakeWordPhrase,
-    isWakeWordListening,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
     isEyeTrackingEnabled,
     setConnectionState: setStoreConnectionState,
     setPersonality,
     setUploadedDocuments,
-    setIsWakeWordEnabled,
-    setWakeWordPhrase,
-    setIsWakeWordListening,
     setIsFunctionCallingEnabled,
     setIsGoogleSearchEnabled,
     setIsEyeTrackingEnabled,
@@ -79,24 +71,6 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
-  const [wakeWordDraft, setWakeWordDraft] = useState<string>(wakeWordPhrase);
-
-  const sanitizeWakeWord = useCallback((value: string) => {
-    const cleaned = value
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return cleaned.slice(0, 40);
-  }, []);
-
-  // Sync draft when modal opens or wake word changes elsewhere
-  useEffect(() => {
-    if (isSystemStatusModalOpen) setWakeWordDraft(wakeWordPhrase);
-  }, [isSystemStatusModalOpen, wakeWordPhrase]);
 
   // Documents Context
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
@@ -204,9 +178,6 @@ const App: React.FC = () => {
     setIsMicMuted(newMutedState);
   }, [toggleMic]);
 
-  // Wake Word Detector Ref
-  const wakeWordDetectorRef = useRef<WakeWordDetector | null>(null);
-  const wakeWordPhraseUsedRef = useRef<string>('');
 
   // Personality Management
   const handlePersonalityChange = (newPersonality: Personality) => {
@@ -282,87 +253,10 @@ const App: React.FC = () => {
     };
   }, [activateAudioContext]);
 
-  // Wake Word Detection - Écoute pour "Neurochat"
-  useEffect(() => {
-    // Initialiser le détecteur de wake word
-    const effectiveWakeWord = sanitizeWakeWord(wakeWordPhrase || 'bonjour') || 'bonjour';
-
-    // Recréer le détecteur si le wake word a changé
-    if (wakeWordDetectorRef.current && wakeWordPhraseUsedRef.current !== effectiveWakeWord) {
-      wakeWordDetectorRef.current.destroy();
-      wakeWordDetectorRef.current = null;
-      setIsWakeWordListening(false);
-    }
-
-    if (!wakeWordDetectorRef.current) {
-      wakeWordDetectorRef.current = new WakeWordDetector({
-        wakeWord: effectiveWakeWord,
-        aliases: [], // on garde volontairement strict pour réduire les faux positifs
-        matchPosition: 'start',
-        minConfidence: 0.55,
-        cooldownMs: 1500,
-        lang: 'fr-FR',
-        continuous: true,
-        onListeningChange: (listening) => setIsWakeWordListening(listening),
-        onWakeWordDetected: () => {
-          console.log('[App] Wake word détecté, tentative de connexion...');
-          // Activer le contexte audio si ce n'est pas déjà fait
-          activateAudioContext();
-          // Émettre un bip pour signaler qu'on peut parler
-          playBeep();
-          
-          // Déclencher la connexion si on n'est pas déjà connecté
-          const currentState = storeConnectionState;
-          console.log('[App] État actuel de la connexion:', currentState);
-          if (currentState === ConnectionState.DISCONNECTED || currentState === ConnectionState.ERROR) {
-            showWakeWordDetected(addToast);
-            setIsIntentionalDisconnect(false);
-            if (connectRef.current) {
-              console.log('[App] Appel de la fonction connect()...');
-              connectRef.current();
-            } else {
-              console.error('[App] Erreur: connectRef.current est null!');
-            }
-          } else {
-            console.log('[App] Déjà connecté, connexion ignorée');
-          }
-        },
-      });
-      wakeWordPhraseUsedRef.current = effectiveWakeWord;
-    }
-
-    // Démarrer l'écoute si on n'est pas connecté ET si le wake word est activé
-    if ((storeConnectionState === ConnectionState.DISCONNECTED || storeConnectionState === ConnectionState.ERROR) && isWakeWordEnabled) {
-      if (wakeWordDetectorRef.current && !wakeWordDetectorRef.current.isActive()) {
-        wakeWordDetectorRef.current.start();
-      }
-    } else {
-      // Arrêter l'écoute si on est connecté OU si le wake word est désactivé
-      if (wakeWordDetectorRef.current && wakeWordDetectorRef.current.isActive()) {
-        wakeWordDetectorRef.current.stop();
-        setIsWakeWordListening(false);
-      }
-    }
-
-    // Cleanup au démontage
-    return () => {
-      if (wakeWordDetectorRef.current) {
-        wakeWordDetectorRef.current.destroy();
-        wakeWordDetectorRef.current = null;
-        setIsWakeWordListening(false);
-      }
-    };
-  }, [storeConnectionState, isWakeWordEnabled, wakeWordPhrase, sanitizeWakeWord, connectionStateRef, setIsIntentionalDisconnect, connectRef, activateAudioContext, playBeep, addToast, setIsWakeWordListening]);
-
-  // Sauvegarder la préférence du wake word dans localStorage
-  // (géré automatiquement par useLocalStorageState)
 
   useEffect(() => {
     return () => {
       disconnect();
-      if (wakeWordDetectorRef.current) {
-        wakeWordDetectorRef.current.destroy();
-      }
     };
   }, [disconnect]);
 
@@ -454,7 +348,6 @@ const App: React.FC = () => {
       
       <QuickStartGuide
         connectionState={storeConnectionState}
-        isWakeWordEnabled={isWakeWordEnabled}
         onClose={() => {}}
       />
       
@@ -556,52 +449,6 @@ const App: React.FC = () => {
 
               {/* Toggles Status */}
               <div className="grid grid-cols-1 gap-4 mt-2">
-                 <div className={`flex items-center justify-between px-5 py-4 rounded-xl border ${isWakeWordEnabled ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}>
-                    <span className="text-base text-slate-200 font-medium">Wake Word</span>
-                    <span className={`text-base font-bold ${isWakeWordEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>{isWakeWordEnabled ? 'ON' : 'OFF'}</span>
-                 </div>
-                 {/* Wake word details */}
-                 <div className="px-5 py-4 rounded-xl border border-white/10 bg-white/5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-base text-slate-200 font-medium">Écoute</span>
-                      <div className="flex items-center gap-3">
-                        {isWakeWordEnabled && isWakeWordListening && (
-                          <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                          </span>
-                        )}
-                        <span className={`text-base font-bold ${isWakeWordEnabled && isWakeWordListening ? 'text-emerald-400' : 'text-slate-500'}`}>
-                          {isWakeWordEnabled && isWakeWordListening ? 'ACTIVE' : 'INACTIVE'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label className="text-sm text-slate-400 whitespace-nowrap" htmlFor="wakeword-input">
-                        Mot-clé
-                      </label>
-                      <input
-                        id="wakeword-input"
-                        value={wakeWordDraft}
-                        onChange={(e) => setWakeWordDraft(e.target.value)}
-                        placeholder="ex: bonjour"
-                        className="w-full max-w-[320px] px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = sanitizeWakeWord(wakeWordDraft);
-                          if (next) setWakeWordPhrase(next);
-                        }}
-                        className="px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200 transition-colors"
-                      >
-                        Enregistrer
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-500 leading-snug">
-                      Conseil: utilisez un mot/une courte phrase unique. La détection est volontairement stricte pour réduire les faux positifs.
-                    </p>
-                 </div>
                  <div className={`flex items-center justify-between px-5 py-4 rounded-xl border ${isFunctionCallingEnabled ? 'border-blue-500/30 bg-blue-500/10' : 'border-white/10 bg-white/5'}`}>
                     <span className="text-base text-slate-200 font-medium">Fonctions</span>
                     <span className={`text-base font-bold ${isFunctionCallingEnabled ? 'text-blue-400' : 'text-slate-500'}`}>{isFunctionCallingEnabled ? 'ON' : 'OFF'}</span>
@@ -695,9 +542,6 @@ const App: React.FC = () => {
               onToggleMic={handleToggleMic}
               onCameraChange={changeCamera}
               onEditPersonality={() => setIsPersonalityEditorOpen(true)}
-              isWakeWordEnabled={isWakeWordEnabled}
-              isWakeWordListening={isWakeWordListening}
-              onToggleWakeWord={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
               onSelectPersonality={handlePersonalityChange}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}

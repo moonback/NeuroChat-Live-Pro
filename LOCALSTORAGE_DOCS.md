@@ -34,7 +34,6 @@
 |------------------|------|----------------|-------------|
 | `currentPersonality` | `Personality` | ~5-10 KB | Personnalité IA active |
 | `uploadedDocuments` | `ProcessedDocument[]` | ~100-500 KB | Documents uploadés (base64) |
-| `wakeWordEnabled` | `boolean` | ~10 bytes | Wake word activé/désactivé |
 | `functionCallingEnabled` | `boolean` | ~10 bytes | Function calling activé |
 | `googleSearchEnabled` | `boolean` | ~10 bytes | Google Search activé |
 
@@ -196,30 +195,6 @@ const [uploadedDocuments, setUploadedDocuments] = useLocalStorageState<Processed
 ---
 
 ### 3. Préférences Booléennes
-
-#### 3.1 Wake Word Enabled
-
-**Structure :**
-```typescript
-wakeWordEnabled: boolean
-```
-
-**Stockage :**
-```typescript
-// Sérialisation
-localStorage.setItem('wakeWordEnabled', 'true');  // ou 'false'
-
-// Désérialisation
-const isEnabled = localStorage.getItem('wakeWordEnabled') === 'true';
-```
-
-**Hook :**
-```typescript
-const [isWakeWordEnabled, setIsWakeWordEnabled] = useLocalStorageState<boolean>(
-  'wakeWordEnabled',
-  false,  // Désactivé par défaut
-  {
-    deserialize: (raw) => raw === 'true',
     serialize: (val) => val ? 'true' : 'false'
   }
 );
@@ -449,7 +424,7 @@ async function uploadDocumentWithQuotaCheck(file: File) {
 
 ### Ce qui EST stocké
 
-✅ Préférences utilisateur (wake word, outils)  
+✅ Préférences utilisateur (outils)  
 ✅ Personnalités personnalisées  
 ✅ Documents uploadés (contenu texte extrait)  
 ✅ État UI (thème, sidebar ouverte)
@@ -520,7 +495,6 @@ Object.keys(localStorage);
 localStorage.getItem('currentPersonality');
 
 // Modifier une valeur
-localStorage.setItem('wakeWordEnabled', 'false');
 
 // Supprimer une clé
 localStorage.removeItem('uploadedDocuments');

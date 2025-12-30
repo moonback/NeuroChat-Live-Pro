@@ -16,8 +16,6 @@ interface ControlPanelProps {
   inputAnalyser?: AnalyserNode | null;
   availableCameras?: MediaDeviceInfo[];
   selectedCameraId?: string;
-  isWakeWordEnabled?: boolean;
-  isWakeWordListening?: boolean;
   isFunctionCallingEnabled?: boolean; // Géré par le Header maintenant, mais gardé pour compatibilité prop
   isGoogleSearchEnabled?: boolean;    // Idem
   onConnect: () => void;
@@ -26,7 +24,6 @@ interface ControlPanelProps {
   onToggleScreenShare?: () => void;
   onToggleMic?: () => void;
   onCameraChange?: (cameraId: string) => void;
-  onToggleWakeWord?: () => void;
   onEditPersonality?: () => void;
   onSelectPersonality?: (personality: Personality) => void;
   onToggleFunctionCalling?: (enabled: boolean) => void;
@@ -83,15 +80,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   inputAnalyser = null,
   availableCameras = [],
   selectedCameraId = '',
-  isWakeWordEnabled = true,
-  isWakeWordListening = false,
   onConnect,
   onDisconnect,
   onToggleVideo,
   onToggleScreenShare,
   onToggleMic,
   onCameraChange,
-  onToggleWakeWord,
   onSelectPersonality,
   onOpenMobileActions,
 }) => {
@@ -258,29 +252,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           }}
         >
           
-          {/* Secondary Controls (Camera, Screen, Wake Word) - Mode Kiosque: Ajusté */}
+          {/* Secondary Controls (Camera, Screen) - Mode Kiosque: Ajusté */}
           <div className="flex items-center gap-2">
-             {/* Wake Word (Only when Disconnected) */}
-             {!isConnected && onToggleWakeWord && (
-                <RoundButton
-                  onClick={onToggleWakeWord}
-                  active={isWakeWordEnabled || false}
-                  activeColor="bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  icon={<Icons.Mic />}
-                  indicator={
-                    (isWakeWordEnabled && isWakeWordListening) ? (
-                      <>
-                        <span className="absolute -top-1 -right-1 inline-flex h-3 w-3">
-                          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50 animate-ping" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                        </span>
-                      </>
-                    ) : null
-                  }
-                  tooltip={isWakeWordEnabled ? (isWakeWordListening ? "Wake word: écoute active" : "Wake word: activé") : "dite 'Assistant' pour commencer"}
-                />
-             )}
-
              {/* Microphone Toggle (Only when Connected) */}
              {isConnected && onToggleMic && (
                <RoundButton

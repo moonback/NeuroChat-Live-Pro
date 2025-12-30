@@ -3,13 +3,11 @@ import { ConnectionState } from '../types';
 
 interface QuickStartGuideProps {
   connectionState: ConnectionState;
-  isWakeWordEnabled: boolean;
   onClose: () => void;
 }
 
 const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   connectionState,
-  isWakeWordEnabled,
   onClose
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -35,7 +33,7 @@ const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
     },
     {
       title: "Activation simple",
-      content: "Cliquez sur 'Activer' pour démarrer une session, ou dites 'Bonjour' si la détection vocale est activée.",
+      content: "Cliquez sur 'Activer' pour démarrer une session.",
       icon: "🎤"
     },
     {

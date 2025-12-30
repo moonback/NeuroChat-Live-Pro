@@ -56,11 +56,8 @@
 - **Upload de documents** : Analysez PDF, TXT, MD avec contexte persistant dans la conversation
 
 ### 🔊 Activation Vocale
-- **Wake Word Detection** : "Bonjour" pour activer l'assistant (optionnel, activable/désactivable)
 - Mode mains libres automatique
 - Détection de fin de session vocale
-- Activation/désactivation du wake word via interface
-- Bip audio de confirmation lors de la détection
 
 ### 📱 Progressive Web App (PWA)
 - Installation sur mobile et desktop
@@ -85,7 +82,6 @@
 - **Google Gemini 2.5 Flash** (modèle multimodal)
 - **@google/genai SDK 1.30** (API Live)
 - **Web Audio API** (traitement audio natif, encodage/décodage)
-- **Web Speech API** (reconnaissance vocale pour wake word)
 
 ### Gestion d'État & Stockage
 - **Zustand 5.0** (gestion d'état globale avec persistance)
@@ -219,7 +215,6 @@ NeuroChat-Live-Pro/
 │   ├── toastHelpers.ts            # Helpers pour notifications
 │   ├── tools.ts                   # Fonction calling (timers, calculs)
 │   ├── videoContextAnalyzer.ts    # Analyse de contexte vidéo
-│   └── wakeWordDetector.ts        # Détection "Bonjour"
 │
 ├── public/                   # Assets statiques
 │   ├── icon-192.png               # Icônes PWA

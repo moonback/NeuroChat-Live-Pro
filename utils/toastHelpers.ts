@@ -100,9 +100,6 @@ export const showScreenShareError = (addToast: AddToastFn) => {
 // Helpers généraux
 // ============================================
 
-export const showWakeWordDetected = (addToast: AddToastFn) => {
-  addToast('info', 'Wake Word Détecté', 'Connexion au chat en cours...');
-};
 
 export const showError = (addToast: AddToastFn, title: string, message: string) => {
   addToast('error', title, message);
@@ -156,7 +153,6 @@ export const useToastNotifications = () => {
     notifyScreenShareError: () => showScreenShareError(addToast),
 
     // Généraux
-    notifyWakeWordDetected: () => showWakeWordDetected(addToast),
     notifyError: (title: string, message: string) => showError(addToast, title, message),
     notifySuccess: (title: string, message: string) => showSuccess(addToast, title, message),
     notifyInfo: (title: string, message: string) => showInfo(addToast, title, message),
