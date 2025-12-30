@@ -5,6 +5,7 @@ import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
+import ConclusionsModal from './components/ConclusionsModal';
 import { ToastContainer } from './components/Toast';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
@@ -160,6 +161,7 @@ const App: React.FC = () => {
   const [isToolsListOpen, setIsToolsListOpen] = useState(false);
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
+  const [isConclusionsModalOpen, setIsConclusionsModalOpen] = useState(false);
 
   // Documents Context
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
@@ -331,6 +333,8 @@ const App: React.FC = () => {
   const closeMobileActions = useCallback(() => setIsMobileActionsDrawerOpen(false), []);
   const openSystemStatus = useCallback(() => setIsSystemStatusModalOpen(true), []);
   const closeSystemStatus = useCallback(() => setIsSystemStatusModalOpen(false), []);
+  const openConclusions = useCallback(() => setIsConclusionsModalOpen(true), []);
+  const closeConclusions = useCallback(() => setIsConclusionsModalOpen(false), []);
 
   // Audio context activation on first interaction
   useEffect(() => {
@@ -412,6 +416,12 @@ const App: React.FC = () => {
         onToggleEyeTracking={handleEyeTrackingToggle}
       />
 
+      <ConclusionsModal
+        isOpen={isConclusionsModalOpen}
+        onClose={closeConclusions}
+        currentPersonality={currentPersonality}
+      />
+
       <MobileActionsDrawer
         isOpen={isMobileActionsDrawerOpen && !isConnected}
         onClose={closeMobileActions}
@@ -460,6 +470,7 @@ const App: React.FC = () => {
           onEditPersonality={openPersonalityEditor}
           onOpenToolsList={openToolsList}
           onOpenSystemStatus={openSystemStatus}
+          onOpenConclusions={openConclusions}
         />
 
         {/* Main Content Area */}

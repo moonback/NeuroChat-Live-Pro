@@ -10,17 +10,57 @@ import type { Personality } from '../types';
 // Type pour le callback de changement de personnalité
 export type PersonalityChangeCallback = (personality: Personality) => void;
 
-// Fonction utilitaire pour télécharger un fichier
-function downloadFile(content: string, filename: string, mimeType: string = 'text/markdown') {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+// Type pour une conclusion sauvegardée
+export interface SavedConclusion {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  markdown: string;
+}
+
+// Clé localStorage pour les conclusions
+const CONCLUSIONS_STORAGE_KEY = 'neurochat_conclusions';
+
+// Fonctions utilitaires pour gérer les conclusions sauvegardées
+export function getSavedConclusions(): SavedConclusion[] {
+  try {
+    const json = localStorage.getItem(CONCLUSIONS_STORAGE_KEY);
+    if (!json) return [];
+    const conclusions = JSON.parse(json);
+    return Array.isArray(conclusions) ? conclusions : [];
+  } catch (error) {
+    console.error('[Tools] Erreur lors de la récupération des conclusions:', error);
+    return [];
+  }
+}
+
+export function getSavedConclusionById(id: string): SavedConclusion | null {
+  const conclusions = getSavedConclusions();
+  return conclusions.find(c => c.id === id) || null;
+}
+
+export function deleteSavedConclusion(id: string): boolean {
+  try {
+    const conclusions = getSavedConclusions();
+    const filtered = conclusions.filter(c => c.id !== id);
+    if (filtered.length === conclusions.length) {
+      return false; // Conclusion non trouvée
+    }
+    localStorage.setItem(CONCLUSIONS_STORAGE_KEY, JSON.stringify(filtered));
+    return true;
+  } catch (error) {
+    console.error('[Tools] Erreur lors de la suppression de la conclusion:', error);
+    return false;
+  }
+}
+
+export function clearAllSavedConclusions(): void {
+  try {
+    localStorage.removeItem(CONCLUSIONS_STORAGE_KEY);
+  } catch (error) {
+    console.error('[Tools] Erreur lors de la suppression de toutes les conclusions:', error);
+  }
 }
 
 // Définitions des fonctions disponibles
@@ -45,21 +85,17 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   generate_conclusion_markdown: {
     name: 'generate_conclusion_markdown',
-    description: 'Génère et télécharge un fichier markdown avec la conclusion de la demande de l\'utilisateur. Utilise cette fonction quand l\'utilisateur demande à télécharger ou sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation.',
+    description: 'Sauvegarde une conclusion dans le localStorage. Utilise cette fonction quand l\'utilisateur demande à sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation.',
     parameters: {
       type: 'object',
       properties: {
         conclusion: {
           type: 'string',
-          description: 'Le contenu de la conclusion à inclure dans le fichier markdown. Doit être une synthèse complète et bien formatée de la demande et de la réponse.'
+          description: 'Le contenu de la conclusion à sauvegarder. Doit être une synthèse complète et bien formatée de la demande et de la réponse.'
         },
         title: {
           type: 'string',
           description: 'Le titre du document (optionnel, par défaut: "Conclusion")'
-        },
-        filename: {
-          type: 'string',
-          description: 'Le nom du fichier à télécharger (optionnel, par défaut: "conclusion-[date].md")'
         }
       },
       required: ['conclusion']
@@ -133,9 +169,9 @@ export async function executeFunction(
     }
   }
   
-  // Gestion de la génération de fichier markdown avec conclusion
+  // Gestion de la sauvegarde de conclusion dans localStorage
   if (name === 'generate_conclusion_markdown') {
-    const { conclusion, title, filename } = args || {};
+    const { conclusion, title } = args || {};
     
     if (!conclusion || typeof conclusion !== 'string' || conclusion.trim().length === 0) {
       return {
@@ -145,17 +181,10 @@ export async function executeFunction(
     }
     
     try {
-      // Générer le nom de fichier avec date si non fourni
       const date = new Date();
-      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-      const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
-      const defaultFilename = `conclusion-${dateStr}-${timeStr}.md`;
-      const finalFilename = filename && filename.trim() 
-        ? (filename.endsWith('.md') ? filename : `${filename}.md`)
-        : defaultFilename;
+      const documentTitle = title && title.trim() ? title.trim() : 'Conclusion';
       
       // Créer le contenu markdown formaté
-      const documentTitle = title && title.trim() ? title.trim() : 'Conclusion';
       const markdownContent = `# ${documentTitle}
 
 **Date:** ${date.toLocaleDateString('fr-FR', { 
@@ -176,20 +205,64 @@ ${conclusion}
 *Document généré par NeuroChat Live Pro*
 `;
 
-      // Télécharger le fichier
-      downloadFile(markdownContent, finalFilename);
+      // Créer l'objet de conclusion
+      const savedConclusion: SavedConclusion = {
+        id: `conclusion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: documentTitle,
+        content: conclusion,
+        createdAt: date.toISOString(),
+        markdown: markdownContent
+      };
+      
+      // Récupérer les conclusions existantes
+      const existingConclusionsJson = localStorage.getItem(CONCLUSIONS_STORAGE_KEY);
+      let existingConclusions: SavedConclusion[] = [];
+      
+      if (existingConclusionsJson) {
+        try {
+          existingConclusions = JSON.parse(existingConclusionsJson);
+          // Vérifier que c'est un tableau
+          if (!Array.isArray(existingConclusions)) {
+            existingConclusions = [];
+          }
+        } catch (e) {
+          console.warn('[Tools] Erreur lors de la lecture des conclusions existantes, réinitialisation:', e);
+          existingConclusions = [];
+        }
+      }
+      
+      // Ajouter la nouvelle conclusion au début du tableau
+      existingConclusions.unshift(savedConclusion);
+      
+      // Limiter à 100 conclusions pour éviter de saturer le localStorage
+      if (existingConclusions.length > 100) {
+        existingConclusions = existingConclusions.slice(0, 100);
+      }
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem(CONCLUSIONS_STORAGE_KEY, JSON.stringify(existingConclusions));
       
       return {
         result: 'success',
-        message: `Fichier markdown "${finalFilename}" téléchargé avec succès`,
-        filename: finalFilename,
-        title: documentTitle
+        message: `Conclusion "${documentTitle}" sauvegardée avec succès dans le localStorage`,
+        id: savedConclusion.id,
+        title: documentTitle,
+        totalConclusions: existingConclusions.length
       };
     } catch (error) {
-      console.error('[Tools] Erreur lors de la génération du fichier markdown:', error);
+      console.error('[Tools] Erreur lors de la sauvegarde de la conclusion:', error);
+      
+      // Gérer le cas où localStorage est plein
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        return {
+          result: 'error',
+          message: 'Le localStorage est plein. Veuillez supprimer d\'anciennes conclusions pour libérer de l\'espace.'
+        };
+      }
+      
       return {
         result: 'error',
-        message: `Erreur lors de la génération du fichier: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+        message: `Erreur lors de la sauvegarde: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
       };
     }
   }
