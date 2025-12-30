@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { ConnectionState, Personality } from '../types';
 import VoiceSelector from './VoiceSelector';
 import Tooltip from './Tooltip';
@@ -22,6 +22,7 @@ interface HeaderProps {
   onOpenToolsList: () => void;
   onEditPersonality?: () => void;
   onOpenSystemStatus?: () => void;
+  autoHideDelay?: number; // Configurable auto-hide delay
 }
 
 // --- Icons ---
@@ -45,31 +46,66 @@ const Icons = {
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
+  ),
+  Lock: () => (
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
   )
 };
 
+// --- Utility: Debounce Hook ---
+function useDebounce<T extends (...args: unknown[]) => void>(
+  callback: T,
+  delay: number
+): T {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const debouncedCallback = useCallback((...args: Parameters<T>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]) as T;
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback;
+}
+
 // --- Sub-Components ---
 
-// 1. Sleek Status Badge
+// 1. Enhanced Status Badge with richer animations
 const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionState }) => {
   const statusConfig = {
     [ConnectionState.CONNECTED]: {
-      label: 'ONLINE',
+      label: 'CONNECTÉ',
       colorClass: 'bg-emerald-500',
       textClass: 'text-emerald-400',
-      glow: 'shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+      glow: 'shadow-[0_0_12px_rgba(16,185,129,0.5)]',
+      ringColor: 'ring-emerald-500/30'
     },
     [ConnectionState.CONNECTING]: {
-      label: 'SYNC...',
+      label: 'SYNCHRONISATION',
       colorClass: 'bg-amber-500',
       textClass: 'text-amber-400',
-      glow: 'shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+      glow: 'shadow-[0_0_12px_rgba(245,158,11,0.5)]',
+      ringColor: 'ring-amber-500/30'
     },
     [ConnectionState.DISCONNECTED]: {
-      label: 'OFFLINE',
+      label: 'HORS LIGNE',
       colorClass: 'bg-zinc-600',
       textClass: 'text-zinc-500',
-      glow: ''
+      glow: '',
+      ringColor: 'ring-zinc-600/30'
     }
   };
 
@@ -78,59 +114,172 @@ const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionStat
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
   return (
-    <div className="group flex items-center gap-3 px-4 py-2 rounded-full bg-black/20 border border-white/5 backdrop-blur-sm transition-all duration-300 hover:bg-black/40">
+    <div 
+      className={`
+        group flex items-center gap-3 px-5 py-2.5 rounded-full 
+        bg-black/30 border border-white/10 backdrop-blur-md 
+        transition-all duration-500 hover:bg-black/50 hover:border-white/20
+        hover:scale-105 active:scale-95
+        ${isConnected ? 'ring-2 ' + config.ringColor : ''}
+      `}
+      role="status"
+      aria-live="polite"
+      aria-label={`État de connexion: ${config.label}`}
+    >
+      {/* Animated status indicator */}
       <div className="relative flex h-3 w-3">
+        {/* Outer pulse ring */}
         {(isConnected || isConnecting) && (
-          <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${config.colorClass}`} />
+          <span 
+            className={`
+              absolute -inset-1 rounded-full opacity-40
+              ${config.colorClass} animate-ping
+            `} 
+            style={{ animationDuration: isConnecting ? '1s' : '2s' }}
+          />
         )}
-        <span className={`relative inline-flex rounded-full h-3 w-3 ${config.colorClass} ${config.glow}`} />
+        {/* Middle glow ring */}
+        {isConnected && (
+          <span 
+            className={`
+              absolute -inset-0.5 rounded-full opacity-60 animate-pulse
+              ${config.colorClass}
+            `} 
+          />
+        )}
+        {/* Core dot */}
+        <span 
+          className={`
+            relative inline-flex rounded-full h-3 w-3 
+            ${config.colorClass} ${config.glow}
+            transition-all duration-300
+          `} 
+        />
       </div>
-      <span className={`text-sm font-bold tracking-[0.15em] ${config.textClass} transition-colors duration-300`}>
-        {config.label}
+      
+      {/* Status text with typing animation for connecting */}
+      <span className={`text-sm font-bold tracking-[0.12em] ${config.textClass} transition-colors duration-300`}>
+        {isConnecting ? (
+          <span className="inline-flex items-center gap-1">
+            SYNC
+            <span className="flex gap-0.5">
+              <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+              <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+              <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+            </span>
+          </span>
+        ) : (
+          config.label
+        )}
       </span>
     </div>
   );
 });
 
-// 2. Enhanced Control Button
-const ControlButton = ({ 
+StatusBadge.displayName = 'StatusBadge';
+
+// 2. Enhanced Control Button with ripple effect and better feedback
+const ControlButton = memo(({ 
   active, 
   onClick, 
   icon, 
   label, 
-  themeColor 
+  themeColor,
+  disabled = false,
+  disabledReason
 }: { 
   active: boolean; 
   onClick: () => void; 
   icon: React.ReactNode; 
   label: string;
   themeColor: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }) => {
+  const [isPressed, setIsPressed] = useState(false);
+  const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    
+    // Create ripple effect
+    const button = buttonRef.current;
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const id = Date.now();
+      
+      setRipples(prev => [...prev, { x, y, id }]);
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== id));
+      }, 600);
+    }
+    
+    onClick();
+  };
+
+  const tooltipContent = disabled && disabledReason 
+    ? `${label} - ${disabledReason}` 
+    : label;
+
   return (
-    <Tooltip content={label} position="bottom">
+    <Tooltip content={tooltipContent} position="bottom">
       <button
-        onClick={onClick}
+        ref={buttonRef}
+        onClick={handleClick}
+        onMouseDown={() => !disabled && setIsPressed(true)}
+        onMouseUp={() => setIsPressed(false)}
+        onMouseLeave={() => setIsPressed(false)}
+        disabled={disabled}
+        aria-pressed={active}
+        aria-label={label}
+        aria-disabled={disabled}
         className={`
           relative group flex items-center justify-center w-12 h-12 rounded-xl
           transition-all duration-300 ease-out
           border-2 overflow-hidden
-          ${active 
-            ? 'text-white shadow-xl scale-105' 
-            : 'text-zinc-400 border-transparent hover:text-zinc-200 hover:scale-105 active:scale-95'
+          ${disabled 
+            ? 'opacity-40 cursor-not-allowed grayscale' 
+            : active 
+              ? 'text-white shadow-xl' 
+              : 'text-zinc-400 border-transparent hover:text-zinc-200'
           }
+          ${!disabled && !active ? 'hover:scale-105 active:scale-90' : ''}
+          ${isPressed && !disabled ? 'scale-90' : ''}
+          ${active && !disabled ? 'scale-105' : ''}
         `}
-        style={active ? { 
+        style={active && !disabled ? { 
           borderColor: `${themeColor}60`, 
           backgroundColor: `${themeColor}15`,
           boxShadow: `0 0 20px ${themeColor}30, inset 0 0 20px ${themeColor}10` 
         } : {
           borderColor: 'transparent',
-          backgroundColor: 'transparent'
+          backgroundColor: disabled ? 'rgba(255,255,255,0.02)' : 'transparent'
         }}
       >
+        {/* Ripple effects */}
+        {ripples.map(ripple => (
+          <span
+            key={ripple.id}
+            className="absolute rounded-full animate-ripple pointer-events-none"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              backgroundColor: active ? themeColor : 'rgba(255,255,255,0.3)',
+              transform: 'translate(-50%, -50%)'
+            }}
+          />
+        ))}
+
         {/* Animated background gradient */}
         <div 
-          className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${active ? 'opacity-100' : ''}`}
+          className={`
+            absolute inset-0 opacity-0 transition-opacity duration-300 
+            ${!disabled && 'group-hover:opacity-100'} 
+            ${active && !disabled ? 'opacity-100' : ''}
+          `}
           style={{
             background: active 
               ? `linear-gradient(135deg, ${themeColor}20 0%, ${themeColor}05 100%)`
@@ -139,40 +288,75 @@ const ControlButton = ({
         />
         
         {/* Icon with enhanced styling */}
-        <div className={`relative z-10 transition-all duration-300 ${active ? 'scale-110 drop-shadow-lg' : 'group-hover:scale-110'}`}>
+        <div className={`
+          relative z-10 transition-all duration-300 
+          ${active && !disabled ? 'scale-110 drop-shadow-lg' : ''} 
+          ${!disabled && 'group-hover:scale-110'}
+        `}>
           {icon}
         </div>
+
+        {/* Disabled lock indicator */}
+        {disabled && (
+          <div className="absolute -bottom-0.5 -right-0.5 p-1 rounded-full bg-zinc-800 text-zinc-500 z-20">
+            <Icons.Lock />
+          </div>
+        )}
         
         {/* Active indicator with glow */}
-        {active && (
+        {active && !disabled && (
           <>
             <span 
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full z-10"
+              className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full z-10 animate-pulse"
               style={{ 
                 backgroundColor: themeColor,
                 boxShadow: `0 0 8px ${themeColor}, 0 0 16px ${themeColor}40`
               }}
             />
             <div 
-              className="absolute inset-0 rounded-xl opacity-20 blur-md"
+              className="absolute inset-0 rounded-xl opacity-20 blur-md animate-pulse"
               style={{ backgroundColor: themeColor }}
             />
           </>
         )}
         
-        {/* Hover ripple effect */}
-        <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div 
-            className="absolute inset-0 rounded-xl"
-            style={{
-              background: `radial-gradient(circle at center, ${themeColor}20 0%, transparent 70%)`
-            }}
-          />
-        </div>
+        {/* Hover glow effect */}
+        {!disabled && (
+          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div 
+              className="absolute inset-0 rounded-xl"
+              style={{
+                background: `radial-gradient(circle at center, ${themeColor}20 0%, transparent 70%)`
+              }}
+            />
+          </div>
+        )}
       </button>
     </Tooltip>
   );
-};
+});
+
+ControlButton.displayName = 'ControlButton';
+
+// 3. Section Divider Component
+const SectionDivider = memo(() => (
+  <div className="h-8 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+));
+
+SectionDivider.displayName = 'SectionDivider';
+
+// 4. Control Group Container
+const ControlGroup = memo(({ children, label }: { children: React.ReactNode; label: string }) => (
+  <div 
+    className="flex items-center gap-2 p-2 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/10 backdrop-blur-md shadow-lg transition-all duration-300 hover:from-white/[0.08] hover:to-white/[0.03]"
+    role="group"
+    aria-label={label}
+  >
+    {children}
+  </div>
+));
+
+ControlGroup.displayName = 'ControlGroup';
 
 // --- Main Component ---
 const Header: React.FC<HeaderProps> = ({
@@ -188,71 +372,99 @@ const Header: React.FC<HeaderProps> = ({
   onToggleGoogleSearch,
   onEditPersonality,
   onOpenSystemStatus,
+  autoHideDelay = 5000, // Default 5 seconds
 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [hasEntered, setHasEntered] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
-  useEffect(() => {
-    // Cache automatiquement le header après 3 secondes d'inactivité
-    let hideTimeout: NodeJS.Timeout;
-    
-    const resetHideTimeout = () => {
-      clearTimeout(hideTimeout);
+  // Debounced mouse move handler for performance
+  const handleMouseMoveDebounced = useDebounce((clientY: number) => {
+    if (clientY <= 100) {
       setIsVisible(true);
-      
-      hideTimeout = setTimeout(() => {
-        setIsVisible(false);
-      }, 3000); // Cache après 3 secondes
-    };
+      resetHideTimeout();
+    }
+  }, 50);
 
-    // Réinitialise le timer lors des interactions
+  const resetHideTimeout = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    setIsVisible(true);
+    
+    hideTimeoutRef.current = setTimeout(() => {
+      setIsVisible(false);
+    }, autoHideDelay);
+  }, [autoHideDelay]);
+
+  useEffect(() => {
+    // Trigger entrance animation
+    requestAnimationFrame(() => {
+      setHasEntered(true);
+    });
+
     const handleInteraction = () => {
       resetHideTimeout();
     };
 
-    // Détecte quand la souris est dans la zone du header (même s'il est caché)
     const handleMouseMove = (e: MouseEvent) => {
-      if (e.clientY <= 80) { // Zone du header (environ 80px du haut)
+      if (e.clientY <= 100) {
         setIsVisible(true);
         resetHideTimeout();
       } else {
-        handleInteraction();
+        handleMouseMoveDebounced(e.clientY);
       }
     };
 
-    // Événements qui réinitialisent le timer
+    // Event listeners
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mousedown', handleInteraction, { passive: true });
     window.addEventListener('touchstart', handleInteraction, { passive: true });
     window.addEventListener('keydown', handleInteraction, { passive: true });
 
-    // Démarrer le timer initial
+    // Start initial timer
     resetHideTimeout();
 
     return () => {
-      clearTimeout(hideTimeout);
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
     };
-  }, []);
+  }, [resetHideTimeout, handleMouseMoveDebounced]);
 
-  // Base styles for the header container
-  const headerBaseClass = `
-    fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b
-    bg-[#050508]/80 backdrop-blur-xl border-white/5 py-4
-    ${isVisible ? 'translate-y-0' : '-translate-y-full'}
-  `;
+  const disabledReason = isConnected ? "Déconnectez-vous pour modifier" : undefined;
 
   return (
     <>
-      <header className={headerBaseClass}>
+      <header 
+        className={`
+          fixed top-0 left-0 w-full z-50 border-b
+          bg-[#050508]/85 backdrop-blur-xl border-white/5 py-4
+          transition-all duration-500 ease-out
+          ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}
+          ${hasEntered ? 'header-entered' : 'header-entering'}
+        `}
+        role="banner"
+        aria-label="Navigation principale"
+      >
         {/* Ambient Glow effect based on personality */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-32 opacity-[0.08] pointer-events-none blur-[60px]"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-32 opacity-[0.08] pointer-events-none blur-[60px] transition-all duration-700"
           style={{ 
-            background: `radial-gradient(circle, ${currentPersonality.themeColor} 0%, transparent 70%)` 
+            background: `radial-gradient(ellipse, ${currentPersonality.themeColor} 0%, transparent 70%)` 
+          }}
+        />
+
+        {/* Subtle top border glow */}
+        <div 
+          className="absolute top-0 left-0 w-full h-[1px] opacity-30"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${currentPersonality.themeColor}50 50%, transparent 100%)`
           }}
         />
 
@@ -264,42 +476,47 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* RIGHT: Controls */}
-          <div className="flex items-center gap-4 z-10">
-            {/* Context Aware Controls */}
-            {!isConnected && (
-              <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-md shadow-lg">
-                <ControlButton 
-                  active={isGoogleSearchEnabled} 
-                  onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
-                  icon={<Icons.Search />}
-                  label="Recherche Web"
-                  themeColor={currentPersonality.themeColor}
-                />
-                <ControlButton 
-                  active={isFunctionCallingEnabled} 
-                  onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
-                  icon={<Icons.Function />}
-                  label="Fonctions Avancées"
-                  themeColor={currentPersonality.themeColor}
-                />
-                {onEditPersonality && (
-                  <>
-                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                    <ControlButton 
-                      active={false}
-                      onClick={onEditPersonality}
-                      icon={<Icons.Edit />}
-                      label="Modifier Personnalité"
-                      themeColor={currentPersonality.themeColor}
-                    />
-                  </>
-                )}
-              </div>
-            )}
+          <nav className="flex items-center gap-4 z-10" aria-label="Contrôles">
+            
+            {/* AI Features Group - Always visible, disabled when connected */}
+            <ControlGroup label="Fonctionnalités IA">
+              <ControlButton 
+                active={isGoogleSearchEnabled} 
+                onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
+                icon={<Icons.Search />}
+                label="Recherche Web"
+                themeColor={currentPersonality.themeColor}
+                disabled={isConnected}
+                disabledReason={disabledReason}
+              />
+              <ControlButton 
+                active={isFunctionCallingEnabled} 
+                onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
+                icon={<Icons.Function />}
+                label="Fonctions Avancées"
+                themeColor={currentPersonality.themeColor}
+                disabled={isConnected}
+                disabledReason={disabledReason}
+              />
+              {onEditPersonality && (
+                <>
+                  <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                  <ControlButton 
+                    active={false}
+                    onClick={onEditPersonality}
+                    icon={<Icons.Edit />}
+                    label="Modifier Personnalité"
+                    themeColor={currentPersonality.themeColor}
+                    disabled={isConnected}
+                    disabledReason={disabledReason}
+                  />
+                </>
+              )}
+            </ControlGroup>
 
-            {/* System Status Button - Always visible */}
+            {/* System Status Button */}
             {onOpenSystemStatus && (
-              <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-md shadow-lg">
+              <ControlGroup label="Système">
                 <ControlButton 
                   active={false}
                   onClick={onOpenSystemStatus}
@@ -307,43 +524,67 @@ const Header: React.FC<HeaderProps> = ({
                   label="État du Système"
                   themeColor={currentPersonality.themeColor}
                 />
-              </div>
+              </ControlGroup>
             )}
 
-            {/* Resources (Docs & Voice) */}
-            <div className="flex items-center gap-4 pl-4 border-l border-white/10">
-              <div className="relative group">
+            <SectionDivider />
+
+            {/* Resources Group (Docs & Voice) */}
+            <ControlGroup label="Ressources">
+              <div className="relative group px-1">
                 <DocumentUploader
                   documents={uploadedDocuments}
                   onDocumentsChange={onDocumentsChange}
                   disabled={isConnected}
                 />
                 {uploadedDocuments.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white shadow-lg ring-2 ring-black">
+                  <span 
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-lg ring-2 ring-black/50 transition-transform duration-300 group-hover:scale-110"
+                    style={{ backgroundColor: currentPersonality.themeColor }}
+                  >
                     {uploadedDocuments.length}
                   </span>
                 )}
               </div>
               
-              <div className={`${isConnected ? 'opacity-50 grayscale cursor-not-allowed' : ''} transition-all duration-300`}>
-                <VoiceSelector
-                  currentVoice={selectedVoice}
-                  onVoiceChange={onVoiceChange}
-                  disabled={isConnected}
-                />
+              <div className="w-[1px] h-6 bg-white/10 mx-1" />
+              
+              <div className={`
+                transition-all duration-300 px-1
+                ${isConnected ? 'opacity-40 grayscale cursor-not-allowed' : ''}
+              `}>
+                <Tooltip content={isConnected ? "Déconnectez-vous pour changer la voix" : "Sélectionner une voix"} position="bottom">
+                  <div>
+                    <VoiceSelector
+                      currentVoice={selectedVoice}
+                      onVoiceChange={onVoiceChange}
+                      disabled={isConnected}
+                    />
+                  </div>
+                </Tooltip>
               </div>
-            </div>
-          </div>
+            </ControlGroup>
+          </nav>
         </div>
 
         {/* Scanline Effect when connected */}
         {isConnected && (
           <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50">
-             <div 
-               className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-transparent via-current to-transparent opacity-75 blur-[2px] animate-[scanLine_3s_linear_infinite]"
-               style={{ color: currentPersonality.themeColor }}
-             />
+            <div 
+              className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-transparent via-current to-transparent opacity-75 blur-[2px] animate-scanLine"
+              style={{ color: currentPersonality.themeColor }}
+            />
           </div>
+        )}
+
+        {/* Bottom border glow when connected */}
+        {isConnected && (
+          <div 
+            className="absolute bottom-0 left-0 w-full h-[2px] opacity-60"
+            style={{
+              background: `linear-gradient(90deg, transparent 10%, ${currentPersonality.themeColor} 50%, transparent 90%)`
+            }}
+          />
         )}
       </header>
 
@@ -351,6 +592,59 @@ const Header: React.FC<HeaderProps> = ({
         @keyframes scanLine {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(400%); }
+        }
+        
+        .animate-scanLine {
+          animation: scanLine 3s linear infinite;
+        }
+        
+        @keyframes ripple {
+          0% {
+            width: 0;
+            height: 0;
+            opacity: 0.5;
+          }
+          100% {
+            width: 150px;
+            height: 150px;
+            opacity: 0;
+          }
+        }
+        
+        .animate-ripple {
+          animation: ripple 0.6s ease-out forwards;
+        }
+        
+        @keyframes headerSlideDown {
+          0% { 
+            transform: translateY(-100%); 
+            opacity: 0; 
+          }
+          100% { 
+            transform: translateY(0); 
+            opacity: 1; 
+          }
+        }
+        
+        .header-entering {
+          animation: headerSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        .header-entered {
+          /* Animation complete, normal transitions take over */
+        }
+        
+        @keyframes buttonGlow {
+          0%, 100% { 
+            filter: drop-shadow(0 0 3px var(--glow-color)); 
+          }
+          50% { 
+            filter: drop-shadow(0 0 8px var(--glow-color)) drop-shadow(0 0 16px var(--glow-color)); 
+          }
+        }
+        
+        .animate-glow {
+          animation: buttonGlow 2s ease-in-out infinite;
         }
       `}</style>
     </>
