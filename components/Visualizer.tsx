@@ -233,6 +233,156 @@ const Visualizer: React.FC<VisualizerProps> = ({ analyserRef, color, isActive, i
         return false;
       });
 
+      // 3.5 Détails du Visage (Structure, Nez, Sourcils)
+      const drawFaceDetails = () => {
+        if (!ctx) return;
+        ctx.save();
+        
+        // Les sourcils réagissent légèrement à l'intensité audio
+        const browOffset = audioLevel * baseRadius * 0.2;
+        const browY = eyeCenterY - baseRadius * 1.4 - browOffset;
+        const browW = baseRadius * 1.6;
+        const noseTopY = eyeCenterY - baseRadius * 0.2;
+        const noseTipY = eyeCenterY + baseRadius * 1.0;
+        
+        ctx.lineCap = 'round';
+
+        // 1. Sourcils (Eyebrows) - Expressifs
+        ctx.strokeStyle = `${baseColor}, 0.7)`;
+        ctx.lineWidth = 3;
+
+        // Sourcil Gauche
+        ctx.beginPath();
+        ctx.moveTo(leftEyeCenterX - browW * 0.6, browY + baseRadius * 0.3); // Extérieur
+        ctx.lineTo(leftEyeCenterX - browW * 0.1, browY); // Intérieur (Arche)
+        ctx.lineTo(leftEyeCenterX + browW * 0.4, browY + baseRadius * 0.15); // Vers le nez
+        ctx.stroke();
+
+        // Sourcil Droit
+        ctx.beginPath();
+        ctx.moveTo(rightEyeCenterX + browW * 0.6, browY + baseRadius * 0.3); // Extérieur
+        ctx.lineTo(rightEyeCenterX + browW * 0.1, browY); // Intérieur (Arche)
+        ctx.lineTo(rightEyeCenterX - browW * 0.4, browY + baseRadius * 0.15); // Vers le nez
+        ctx.stroke();
+
+        // 2. Nez (Nose) - Style Cyber Tech
+        ctx.strokeStyle = `${baseColor}, 0.5)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        // Arête du nez (lignes verticales brisées)
+        const noseBridgeW = baseRadius * 0.3;
+        ctx.moveTo(centerX - noseBridgeW, noseTopY);
+        ctx.lineTo(centerX - noseBridgeW * 0.6, noseTipY - baseRadius * 0.4);
+        ctx.lineTo(centerX - noseBridgeW * 0.8, noseTipY);
+        
+        ctx.moveTo(centerX + noseBridgeW, noseTopY);
+        ctx.lineTo(centerX + noseBridgeW * 0.6, noseTipY - baseRadius * 0.4);
+        ctx.lineTo(centerX + noseBridgeW * 0.8, noseTipY);
+        
+        // Bout du nez (petit triangle ou ligne)
+        ctx.moveTo(centerX - noseBridgeW * 0.5, noseTipY + baseRadius * 0.1);
+        ctx.lineTo(centerX, noseTipY + baseRadius * 0.25);
+        ctx.lineTo(centerX + noseBridgeW * 0.5, noseTipY + baseRadius * 0.1);
+        ctx.stroke();
+
+        // 3. Contour du Visage (Jawline/Face Shape) - Subtil
+        ctx.strokeStyle = `${baseColor}, 0.25)`;
+        ctx.lineWidth = 1.5;
+        const faceW = baseRadius * 4.0; // Largeur du visage
+        const chinY = centerY + baseRadius * 3.5; // Menton bas
+        const jawY = centerY + baseRadius * 1.2; // Hauteur mâchoire
+
+        ctx.beginPath();
+        // Côté Gauche
+        ctx.moveTo(centerX - faceW, centerY - baseRadius * 1.5); // Temple haut
+        ctx.lineTo(centerX - faceW * 0.9, jawY); // Angle mâchoire
+        ctx.lineTo(centerX - baseRadius * 0.8, chinY); // Vers le menton
+        
+        // Côté Droit
+        ctx.moveTo(centerX + faceW, centerY - baseRadius * 1.5); // Temple haut
+        ctx.lineTo(centerX + faceW * 0.9, jawY); // Angle mâchoire
+        ctx.lineTo(centerX + baseRadius * 0.8, chinY); // Vers le menton
+
+        ctx.stroke();
+
+        // 4. Marques Tech sur les Joues (Cyber Cheeks)
+        const cheekY = eyeCenterY + baseRadius * 0.8;
+        const cheekW = baseRadius * 0.5;
+        const cheekH = baseRadius * 0.2;
+        
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = `${baseColor}, 0.3)`;
+        
+        // Joue Gauche (Circuit simple)
+        ctx.beginPath();
+        ctx.moveTo(leftEyeCenterX - cheekW, cheekY);
+        ctx.lineTo(leftEyeCenterX - cheekW * 0.5, cheekY + cheekH);
+        ctx.lineTo(leftEyeCenterX + cheekW * 0.2, cheekY + cheekH);
+        ctx.stroke();
+        
+        // Petite LED Joue Gauche
+        ctx.fillStyle = `${baseColor}, ${0.4 + audioLevel})`;
+        ctx.beginPath();
+        ctx.arc(leftEyeCenterX - cheekW, cheekY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Joue Droite (Symétrique)
+        ctx.beginPath();
+        ctx.moveTo(rightEyeCenterX + cheekW, cheekY);
+        ctx.lineTo(rightEyeCenterX + cheekW * 0.5, cheekY + cheekH);
+        ctx.lineTo(rightEyeCenterX - cheekW * 0.2, cheekY + cheekH);
+        ctx.stroke();
+        
+         // Petite LED Joue Droite
+        ctx.fillStyle = `${baseColor}, ${0.4 + audioLevel})`;
+        ctx.beginPath();
+        ctx.arc(rightEyeCenterX + cheekW, cheekY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5. Capteur Frontal (Mind's Eye / Forehead Sensor)
+        const foreheadY = eyeCenterY - baseRadius * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(centerX - baseRadius * 0.1, foreheadY);
+        ctx.lineTo(centerX, foreheadY - baseRadius * 0.15); // Pointe haut
+        ctx.lineTo(centerX + baseRadius * 0.1, foreheadY);
+        ctx.lineTo(centerX, foreheadY + baseRadius * 0.15); // Pointe bas
+        ctx.closePath();
+        
+        ctx.strokeStyle = `${baseColor}, 0.6)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Glow central front
+        if (audioLevel > 0.1) {
+            ctx.fillStyle = `${baseColor}, ${audioLevel * 0.5})`;
+            ctx.fill();
+        }
+
+        // 6. Lignes de Connexion (Wireframe feel)
+        ctx.strokeStyle = `${baseColor}, 0.1)`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        
+        // Lignes Yeux -> Nez
+        ctx.moveTo(leftEyeCenterX + baseRadius * 0.5, eyeCenterY + baseRadius * 0.2);
+        ctx.lineTo(centerX - noseBridgeW, noseTopY);
+        
+        ctx.moveTo(rightEyeCenterX - baseRadius * 0.5, eyeCenterY + baseRadius * 0.2);
+        ctx.lineTo(centerX + noseBridgeW, noseTopY);
+
+        // Lignes Nez -> Bouche (Philtrum tech)
+        const mouthTopY = centerY + baseRadius * 1.8 - (baseRadius * 0.4); // Approx haut bouche
+        ctx.moveTo(centerX, noseTipY + baseRadius * 0.25);
+        ctx.lineTo(centerX, mouthTopY);
+
+        ctx.stroke();
+
+        ctx.restore();
+      };
+      
+      drawFaceDetails();
+
       const drawEye = (
         eyeCx: number,
         eyeCy: number,
