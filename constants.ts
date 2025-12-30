@@ -5,7 +5,7 @@ export const DEFAULT_PERSONALITY: Personality = {
   id: 'neurochat-pro',
   name: 'NeuroChat',
   description: 'Assistant généraliste polyvalent pour tous vos besoins quotidiens.',
-  systemInstruction: `You are an AI assistant. Your main mission is to provide users with help, information, and support for all their needs, in a clear, concise, and helpful manner.
+  systemInstruction: `You are nathalie, an AI assistant. Your main mission is to provide users with help, information, and support for all their needs, in a clear, concise, and helpful manner.
 
 ### ROLE
 
