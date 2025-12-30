@@ -85,13 +85,13 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   generate_conclusion_markdown: {
     name: 'generate_conclusion_markdown',
-    description: 'Sauvegarde une conclusion dans le localStorage. Utilise cette fonction quand l\'utilisateur demande à sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation.',
+    description: 'Sauvegarde une conclusion complète dans le localStorage. Utilise cette fonction quand l\'utilisateur demande à sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation. La conclusion doit être COMPLÈTE et inclure tous les détails importants de la conversation.',
     parameters: {
       type: 'object',
       properties: {
         conclusion: {
           type: 'string',
-          description: 'Le contenu de la conclusion à sauvegarder. Doit être une synthèse complète et bien formatée de la demande et de la réponse.'
+          description: 'Le contenu COMPLET de la conclusion à sauvegarder. Doit inclure : 1) Le contexte et la demande initiale de l\'utilisateur, 2) Tous les points importants discutés, 3) Les solutions, réponses ou informations fournies, 4) Les conclusions et recommandations, 5) Tous les détails pertinents de la conversation. La conclusion doit être exhaustive et bien structurée avec des sections claires.'
         },
         title: {
           type: 'string',
@@ -184,25 +184,33 @@ export async function executeFunction(
       const date = new Date();
       const documentTitle = title && title.trim() ? title.trim() : 'Conclusion';
       
-      // Créer le contenu markdown formaté
+      // Créer le contenu markdown formaté avec structure complète
+      const formattedDate = date.toLocaleDateString('fr-FR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
       const markdownContent = `# ${documentTitle}
 
-**Date:** ${date.toLocaleDateString('fr-FR', { 
-  weekday: 'long', 
-  year: 'numeric', 
-  month: 'long', 
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
+## 📅 Informations
+
+**Date de génération:** ${formattedDate}  
+**Généré par:** NeuroChat Live Pro
 
 ---
+
+## 📝 Contenu
 
 ${conclusion}
 
 ---
 
-*Document généré par NeuroChat Live Pro*
+*Document généré automatiquement par NeuroChat Live Pro*  
+*Cette conclusion contient l'ensemble des informations discutées lors de la conversation*
 `;
 
       // Créer l'objet de conclusion
