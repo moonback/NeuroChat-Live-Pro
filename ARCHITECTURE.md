@@ -104,8 +104,6 @@ App.tsx (Root)
 ├── ToolsList (Drawer)
 │   └── FunctionDeclarationList
 │
-├── QuickStartGuide (Tutorial)
-│
 ├── ToastContainer
 │   └── Toast[] (Notifications)
 │

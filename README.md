@@ -190,7 +190,6 @@ NeuroChat-Live-Pro/
 │   ├── LatencyIndicator.tsx       # Indicateur de latence
 │   ├── Loader.tsx                 # Composant de chargement
 │   ├── PersonalityEditor.tsx      # Éditeur de personnalités
-│   ├── QuickStartGuide.tsx        # Guide de démarrage rapide
 │   ├── Toast.tsx                  # Système de notifications
 │   ├── ToolsList.tsx              # Liste des outils disponibles
 │   ├── Tooltip.tsx                # Infobulles

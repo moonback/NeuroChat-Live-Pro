@@ -4,7 +4,6 @@ import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
 import { ToastContainer } from './components/Toast';
-import QuickStartGuide from './components/QuickStartGuide';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
 import type { ProcessedDocument } from './utils/documentProcessor';
@@ -365,11 +364,6 @@ const App: React.FC = () => {
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <InstallPWA />
-      
-      <QuickStartGuide
-        connectionState={storeConnectionState}
-        onClose={() => {}}
-      />
       
       <PersonalityEditor 
         isOpen={isPersonalityEditorOpen}
