@@ -55,3 +55,15 @@ export interface FunctionResponse {
 export interface ToolCall {
   functionCalls: FunctionCall[];
 }
+
+// Extension globale de l'objet Window pour Electron
+declare global {
+  interface Window {
+    ipcRenderer?: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+      send: (channel: string, ...args: any[]) => void;
+      on: (channel: string, func: (...args: any[]) => void) => void;
+      off: (channel: string, func: (...args: any[]) => void) => void;
+    };
+  }
+}

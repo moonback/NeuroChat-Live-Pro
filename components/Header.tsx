@@ -21,6 +21,7 @@ interface HeaderProps {
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
   onEditPersonality?: () => void;
+  onOpenPersonalityFilesEditor?: () => void; // Nouveau bouton
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
   autoHideDelay?: number; // Configurable auto-hide delay
@@ -57,6 +58,11 @@ const Icons = {
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
     </svg>
+  ),
+  Brain: () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
   )
 };
 
@@ -66,7 +72,7 @@ function useDebounce<T extends (...args: unknown[]) => void>(
   delay: number
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const debouncedCallback = useCallback((...args: Parameters<T>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -120,7 +126,7 @@ const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionStat
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
   return (
-    <div 
+    <div
       className={`
         group flex items-center gap-3 px-5 py-2.5 rounded-full 
         bg-black/30 border border-white/10 backdrop-blur-md 
@@ -136,33 +142,33 @@ const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionStat
       <div className="relative flex h-3 w-3">
         {/* Outer pulse ring */}
         {(isConnected || isConnecting) && (
-          <span 
+          <span
             className={`
               absolute -inset-1 rounded-full opacity-40
               ${config.colorClass} animate-ping
-            `} 
+            `}
             style={{ animationDuration: isConnecting ? '1s' : '2s' }}
           />
         )}
         {/* Middle glow ring */}
         {isConnected && (
-          <span 
+          <span
             className={`
               absolute -inset-0.5 rounded-full opacity-60 animate-pulse
               ${config.colorClass}
-            `} 
+            `}
           />
         )}
         {/* Core dot */}
-        <span 
+        <span
           className={`
             relative inline-flex rounded-full h-3 w-3 
             ${config.colorClass} ${config.glow}
             transition-all duration-300
-          `} 
+          `}
         />
       </div>
-      
+
       {/* Status text with typing animation for connecting */}
       <span className={`text-sm font-bold tracking-[0.12em] ${config.textClass} transition-colors duration-300`}>
         {isConnecting ? (
@@ -185,18 +191,18 @@ const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionStat
 StatusBadge.displayName = 'StatusBadge';
 
 // 2. Enhanced Control Button with ripple effect and better feedback
-const ControlButton = memo(({ 
-  active, 
-  onClick, 
-  icon, 
-  label, 
+const ControlButton = memo(({
+  active,
+  onClick,
+  icon,
+  label,
   themeColor,
   disabled = false,
   disabledReason
-}: { 
-  active: boolean; 
-  onClick: () => void; 
-  icon: React.ReactNode; 
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
   label: string;
   themeColor: string;
   disabled?: boolean;
@@ -208,7 +214,7 @@ const ControlButton = memo(({
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
-    
+
     // Create ripple effect
     const button = buttonRef.current;
     if (button) {
@@ -216,18 +222,18 @@ const ControlButton = memo(({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const id = Date.now();
-      
+
       setRipples(prev => [...prev, { x, y, id }]);
       setTimeout(() => {
         setRipples(prev => prev.filter(r => r.id !== id));
       }, 600);
     }
-    
+
     onClick();
   };
 
-  const tooltipContent = disabled && disabledReason 
-    ? `${label} - ${disabledReason}` 
+  const tooltipContent = disabled && disabledReason
+    ? `${label} - ${disabledReason}`
     : label;
 
   return (
@@ -246,20 +252,20 @@ const ControlButton = memo(({
           relative group flex items-center justify-center w-12 h-12 rounded-xl
           transition-all duration-300 ease-out
           border-2 overflow-hidden
-          ${disabled 
-            ? 'opacity-40 cursor-not-allowed grayscale' 
-            : active 
-              ? 'text-white shadow-xl' 
+          ${disabled
+            ? 'opacity-40 cursor-not-allowed grayscale'
+            : active
+              ? 'text-white shadow-xl'
               : 'text-zinc-400 border-transparent hover:text-zinc-200'
           }
           ${!disabled && !active ? 'hover:scale-105 active:scale-90' : ''}
           ${isPressed && !disabled ? 'scale-90' : ''}
           ${active && !disabled ? 'scale-105' : ''}
         `}
-        style={active && !disabled ? { 
-          borderColor: `${themeColor}60`, 
+        style={active && !disabled ? {
+          borderColor: `${themeColor}60`,
           backgroundColor: `${themeColor}15`,
-          boxShadow: `0 0 20px ${themeColor}30, inset 0 0 20px ${themeColor}10` 
+          boxShadow: `0 0 20px ${themeColor}30, inset 0 0 20px ${themeColor}10`
         } : {
           borderColor: 'transparent',
           backgroundColor: disabled ? 'rgba(255,255,255,0.02)' : 'transparent'
@@ -280,19 +286,19 @@ const ControlButton = memo(({
         ))}
 
         {/* Animated background gradient */}
-        <div 
+        <div
           className={`
             absolute inset-0 opacity-0 transition-opacity duration-300 
             ${!disabled && 'group-hover:opacity-100'} 
             ${active && !disabled ? 'opacity-100' : ''}
           `}
           style={{
-            background: active 
+            background: active
               ? `linear-gradient(135deg, ${themeColor}20 0%, ${themeColor}05 100%)`
               : `linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)`
           }}
         />
-        
+
         {/* Icon with enhanced styling */}
         <div className={`
           relative z-10 transition-all duration-300 
@@ -308,28 +314,28 @@ const ControlButton = memo(({
             <Icons.Lock />
           </div>
         )}
-        
+
         {/* Active indicator with glow */}
         {active && !disabled && (
           <>
-            <span 
+            <span
               className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full z-10 animate-pulse"
-              style={{ 
+              style={{
                 backgroundColor: themeColor,
                 boxShadow: `0 0 8px ${themeColor}, 0 0 16px ${themeColor}40`
               }}
             />
-            <div 
+            <div
               className="absolute inset-0 rounded-xl opacity-20 blur-md animate-pulse"
               style={{ backgroundColor: themeColor }}
             />
           </>
         )}
-        
+
         {/* Hover glow effect */}
         {!disabled && (
           <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div 
+            <div
               className="absolute inset-0 rounded-xl"
               style={{
                 background: `radial-gradient(circle at center, ${themeColor}20 0%, transparent 70%)`
@@ -353,7 +359,7 @@ SectionDivider.displayName = 'SectionDivider';
 
 // 4. Control Group Container
 const ControlGroup = memo(({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div 
+  <div
     className="flex items-center gap-2 p-2 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/10 backdrop-blur-md shadow-lg transition-all duration-300 hover:from-white/[0.08] hover:to-white/[0.03]"
     role="group"
     aria-label={label}
@@ -377,6 +383,7 @@ const Header: React.FC<HeaderProps> = ({
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
   onEditPersonality,
+  onOpenPersonalityFilesEditor,
   onOpenSystemStatus,
   onOpenConclusions,
   autoHideDelay = 5000, // Default 5 seconds
@@ -399,7 +406,7 @@ const Header: React.FC<HeaderProps> = ({
       clearTimeout(hideTimeoutRef.current);
     }
     setIsVisible(true);
-    
+
     hideTimeoutRef.current = setTimeout(() => {
       setIsVisible(false);
     }, autoHideDelay);
@@ -448,7 +455,7 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header 
+      <header
         className={`
           fixed top-0 left-0 w-full z-50 border-b
           bg-[#050508]/85 backdrop-blur-xl border-white/5 py-4
@@ -460,15 +467,15 @@ const Header: React.FC<HeaderProps> = ({
         aria-label="Navigation principale"
       >
         {/* Ambient Glow effect based on personality */}
-        <div 
+        <div
           className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-32 opacity-[0.08] pointer-events-none blur-[60px] transition-all duration-700"
-          style={{ 
-            background: `radial-gradient(ellipse, ${currentPersonality.themeColor} 0%, transparent 70%)` 
+          style={{
+            background: `radial-gradient(ellipse, ${currentPersonality.themeColor} 0%, transparent 70%)`
           }}
         />
 
         {/* Subtle top border glow */}
-        <div 
+        <div
           className="absolute top-0 left-0 w-full h-[1px] opacity-30"
           style={{
             background: `linear-gradient(90deg, transparent 0%, ${currentPersonality.themeColor}50 50%, transparent 100%)`
@@ -476,7 +483,7 @@ const Header: React.FC<HeaderProps> = ({
         />
 
         <div className="max-w-[90rem] mx-auto px-6 flex items-center justify-between relative">
-          
+
           {/* LEFT: Status Badge */}
           <div className="flex items-center z-10">
             <StatusBadge connectionState={connectionState} />
@@ -484,11 +491,11 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* RIGHT: Controls */}
           <nav className="flex items-center gap-4 z-10" aria-label="Contrôles">
-            
+
             {/* AI Features Group - Always visible, disabled when connected */}
             <ControlGroup label="Fonctionnalités IA">
-              <ControlButton 
-                active={isGoogleSearchEnabled} 
+              <ControlButton
+                active={isGoogleSearchEnabled}
                 onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
                 icon={<Icons.Search />}
                 label="Recherche Web"
@@ -496,8 +503,8 @@ const Header: React.FC<HeaderProps> = ({
                 disabled={isConnected}
                 disabledReason={disabledReason}
               />
-              <ControlButton 
-                active={isFunctionCallingEnabled} 
+              <ControlButton
+                active={isFunctionCallingEnabled}
                 onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
                 icon={<Icons.Function />}
                 label="Fonctions Avancées"
@@ -508,11 +515,25 @@ const Header: React.FC<HeaderProps> = ({
               {onEditPersonality && (
                 <>
                   <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                  <ControlButton 
+                  <ControlButton
                     active={false}
                     onClick={onEditPersonality}
                     icon={<Icons.Edit />}
                     label="Modifier Personnalité"
+                    themeColor={currentPersonality.themeColor}
+                    disabled={isConnected}
+                    disabledReason={disabledReason}
+                  />
+                </>
+              )}
+              {onOpenPersonalityFilesEditor && (
+                <>
+                  <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                  <ControlButton
+                    active={false}
+                    onClick={onOpenPersonalityFilesEditor}
+                    icon={<Icons.Brain />}
+                    label="Fichiers & Mémoire"
                     themeColor={currentPersonality.themeColor}
                     disabled={isConnected}
                     disabledReason={disabledReason}
@@ -524,7 +545,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* System Status Button */}
             {onOpenSystemStatus && (
               <ControlGroup label="Système">
-                <ControlButton 
+                <ControlButton
                   active={false}
                   onClick={onOpenSystemStatus}
                   icon={<Icons.System />}
@@ -537,7 +558,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* Conclusions Button */}
             {onOpenConclusions && (
               <ControlGroup label="Documents">
-                <ControlButton 
+                <ControlButton
                   active={false}
                   onClick={onOpenConclusions}
                   icon={<Icons.FileText />}
@@ -558,7 +579,7 @@ const Header: React.FC<HeaderProps> = ({
                   disabled={isConnected}
                 />
                 {uploadedDocuments.length > 0 && (
-                  <span 
+                  <span
                     className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-lg ring-2 ring-black/50 transition-transform duration-300 group-hover:scale-110"
                     style={{ backgroundColor: currentPersonality.themeColor }}
                   >
@@ -566,9 +587,9 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 )}
               </div>
-              
+
               <div className="w-[1px] h-6 bg-white/10 mx-1" />
-              
+
               <div className={`
                 transition-all duration-300 px-1
                 ${isConnected ? 'opacity-40 grayscale cursor-not-allowed' : ''}
@@ -590,7 +611,7 @@ const Header: React.FC<HeaderProps> = ({
         {/* Scanline Effect when connected */}
         {isConnected && (
           <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50">
-            <div 
+            <div
               className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-transparent via-current to-transparent opacity-75 blur-[2px] animate-scanLine"
               style={{ color: currentPersonality.themeColor }}
             />
@@ -599,7 +620,7 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Bottom border glow when connected */}
         {isConnected && (
-          <div 
+          <div
             className="absolute bottom-0 left-0 w-full h-[2px] opacity-60"
             style={{
               background: `linear-gradient(90deg, transparent 10%, ${currentPersonality.themeColor} 50%, transparent 90%)`
