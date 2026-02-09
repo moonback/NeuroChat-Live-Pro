@@ -103,16 +103,30 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   run_terminal_command: {
     name: 'run_terminal_command',
-    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système, gérer des fichiers locaux ou automatiser des tâches.',
+    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système, gérer des fichiers locaux ou AUTOMATISER DES TÂCHES COMME OUVRIR DES APPLICATIONS. Pour ouvrir une application sur Windows, utilisez "start <nom_du_fichier_ou_app>" (ex: "start notepad", "start chrome", "start .").',
     parameters: {
       type: 'object',
       properties: {
         command: {
           type: 'string',
-          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami")'
+          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami", "start calc")'
         }
       },
       required: ['command']
+    }
+  },
+  set_screen_share: {
+    name: 'set_screen_share',
+    description: 'Active ou désactive le partage d\'écran sur le PC de l\'utilisateur. Cela permet à l\'assistant de voir ce qui se passe sur l\'écran pour aider l\'utilisateur.',
+    parameters: {
+      type: 'object',
+      properties: {
+        enabled: {
+          type: 'boolean',
+          description: 'True pour activer le partage d\'écran, False pour l\'arrêter.'
+        }
+      },
+      required: ['enabled']
     }
   }
 };
@@ -122,6 +136,7 @@ export async function executeFunction(
   functionCall: FunctionCall,
   options?: {
     onPersonalityChange?: PersonalityChangeCallback;
+    onToggleScreenShare?: (enabled: boolean) => void;
   }
 ): Promise<any> {
   const { name, args } = functionCall;
@@ -317,6 +332,31 @@ ${conclusion}
       return {
         result: 'error',
         message: 'L\'exécution de commandes terminal nécessite que l\'application soit lancée via la version Desktop (Electron). Cette fonctionnalité n\'est pas disponible dans le navigateur standard pour des raisons de sécurité.'
+      };
+    }
+  }
+
+  // Gestion du partage d'écran
+  if (name === 'set_screen_share') {
+    const { enabled } = args || {};
+
+    if (enabled === undefined) {
+      return {
+        result: 'error',
+        message: 'Le paramètre "enabled" est requis'
+      };
+    }
+
+    if (options?.onToggleScreenShare) {
+      options.onToggleScreenShare(enabled);
+      return {
+        result: 'success',
+        message: `Partage d'écran ${enabled ? 'activé' : 'désactivé'} avec succès`
+      };
+    } else {
+      return {
+        result: 'error',
+        message: 'Le contrôle du partage d\'écran n\'est pas disponible actuellement'
       };
     }
   }

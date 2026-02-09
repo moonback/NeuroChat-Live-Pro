@@ -34,6 +34,7 @@ interface UseGeminiLiveSessionProps {
   isVideoActive: boolean;
   startFrameTransmission: () => void;
   resetVisionState: () => void;
+  onToggleScreenShare?: (enabled: boolean) => void;
   sessionRef: React.MutableRefObject<any>;
   onPersonalityChange?: PersonalityChangeCallback;
 }
@@ -54,6 +55,7 @@ export const useGeminiLiveSession = ({
   isVideoActive,
   startFrameTransmission,
   resetVisionState,
+  onToggleScreenShare,
   sessionRef,
   onPersonalityChange,
 }: UseGeminiLiveSessionProps) => {
@@ -462,7 +464,8 @@ export const useGeminiLiveSession = ({
                     name: functionName,
                     args: functionArgs
                   }, {
-                    onPersonalityChange: onPersonalityChange
+                    onPersonalityChange: onPersonalityChange,
+                    onToggleScreenShare: onToggleScreenShare
                   });
 
                   const response = {

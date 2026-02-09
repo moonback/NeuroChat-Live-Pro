@@ -197,6 +197,8 @@ const App: React.FC = () => {
     availableCameras,
     selectedCameraId,
     changeCamera,
+    startScreenShare,
+    stopScreenShare,
     startFrameTransmission,
     resetVisionState,
     videoRef,
@@ -236,6 +238,13 @@ const App: React.FC = () => {
     isVideoActive,
     startFrameTransmission,
     resetVisionState,
+    onToggleScreenShare: (enabled) => {
+      if (enabled) {
+        startScreenShare();
+      } else {
+        stopScreenShare();
+      }
+    },
     sessionRef,
     onPersonalityChange: (newPersonality) => {
       if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
