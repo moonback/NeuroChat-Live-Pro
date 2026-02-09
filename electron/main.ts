@@ -356,4 +356,120 @@ app.whenReady().then(() => {
       return { error: String(error), result: 'error' }
     }
   })
+
+  // --- Deep OS Integration: Window Management ---
+
+  ipcMain.handle('window-control', async (_, action: 'minimize' | 'maximize' | 'unmaximize' | 'close' | 'show' | 'hide' | 'center' | 'focus') => {
+    if (!win) return { result: 'error', message: 'Window not found' }
+    try {
+      switch (action) {
+        case 'minimize': win.minimize(); break
+        case 'maximize': win.maximize(); break
+        case 'unmaximize': win.unmaximize(); break
+        case 'close': win.close(); break
+        case 'show': win.show(); break
+        case 'hide': win.hide(); break
+        case 'center': win.center(); break
+        case 'focus': win.focus(); break
+      }
+      return { result: 'success', action }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('window-set-always-on-top', async (_, enabled: boolean) => {
+    if (!win) return { result: 'error', message: 'Window not found' }
+    try {
+      win.setAlwaysOnTop(enabled)
+      return { result: 'success', alwaysOnTop: win.isAlwaysOnTop() }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('window-get-state', async () => {
+    if (!win) return { result: 'error', message: 'Window not found' }
+    return {
+      isMaximized: win.isMaximized(),
+      isMinimized: win.isMinimized(),
+      isVisible: win.isVisible(),
+      isAlwaysOnTop: win.isAlwaysOnTop(),
+      bounds: win.getBounds()
+    }
+  })
+
+  // --- Deep OS Integration: File Management (Native Dialogs & FS) ---
+
+  ipcMain.handle('file-dialog-open', async (_, options: Electron.OpenDialogOptions) => {
+    if (!win) return { result: 'error', message: 'Window not found' }
+    try {
+      const result = await dialog.showOpenDialog(win, options)
+      return { result: 'success', ...result }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('file-dialog-save', async (_, options: Electron.SaveDialogOptions) => {
+    if (!win) return { result: 'error', message: 'Window not found' }
+    try {
+      const result = await dialog.showSaveDialog(win, options)
+      return { result: 'success', ...result }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('file-rename', async (_, { oldPath, newPath }: { oldPath: string, newPath: string }) => {
+    try {
+      await fs.rename(oldPath, newPath)
+      return { result: 'success' }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('file-delete', async (_, filePath: string) => {
+    try {
+      await fs.unlink(filePath)
+      return { result: 'success' }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('file-get-info', async (_, filePath: string) => {
+    try {
+      const stats = await fs.stat(filePath)
+      return {
+        result: 'success',
+        size: stats.size,
+        atime: stats.atime,
+        mtime: stats.mtime,
+        ctime: stats.ctime,
+        birthtime: stats.birthtime,
+        isDirectory: stats.isDirectory(),
+        isFile: stats.isFile()
+      }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
+
+  ipcMain.handle('file-list-dir', async (_, dirPath: string) => {
+    try {
+      const files = await fs.readdir(dirPath, { withFileTypes: true })
+      return {
+        result: 'success',
+        files: files.map(f => ({
+          name: f.name,
+          isDirectory: f.isDirectory(),
+          isFile: f.isFile()
+        }))
+      }
+    } catch (error) {
+      return { result: 'error', message: String(error) }
+    }
+  })
 })

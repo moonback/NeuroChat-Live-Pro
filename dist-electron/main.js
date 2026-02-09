@@ -335,5 +335,139 @@ electron_1.app.whenReady().then(() => {
             return { error: String(error), result: 'error' };
         }
     });
+    // --- Deep OS Integration: Window Management ---
+    electron_1.ipcMain.handle('window-control', async (_, action) => {
+        if (!win)
+            return { result: 'error', message: 'Window not found' };
+        try {
+            switch (action) {
+                case 'minimize':
+                    win.minimize();
+                    break;
+                case 'maximize':
+                    win.maximize();
+                    break;
+                case 'unmaximize':
+                    win.unmaximize();
+                    break;
+                case 'close':
+                    win.close();
+                    break;
+                case 'show':
+                    win.show();
+                    break;
+                case 'hide':
+                    win.hide();
+                    break;
+                case 'center':
+                    win.center();
+                    break;
+                case 'focus':
+                    win.focus();
+                    break;
+            }
+            return { result: 'success', action };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('window-set-always-on-top', async (_, enabled) => {
+        if (!win)
+            return { result: 'error', message: 'Window not found' };
+        try {
+            win.setAlwaysOnTop(enabled);
+            return { result: 'success', alwaysOnTop: win.isAlwaysOnTop() };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('window-get-state', async () => {
+        if (!win)
+            return { result: 'error', message: 'Window not found' };
+        return {
+            isMaximized: win.isMaximized(),
+            isMinimized: win.isMinimized(),
+            isVisible: win.isVisible(),
+            isAlwaysOnTop: win.isAlwaysOnTop(),
+            bounds: win.getBounds()
+        };
+    });
+    // --- Deep OS Integration: File Management (Native Dialogs & FS) ---
+    electron_1.ipcMain.handle('file-dialog-open', async (_, options) => {
+        if (!win)
+            return { result: 'error', message: 'Window not found' };
+        try {
+            const result = await electron_1.dialog.showOpenDialog(win, options);
+            return { result: 'success', ...result };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('file-dialog-save', async (_, options) => {
+        if (!win)
+            return { result: 'error', message: 'Window not found' };
+        try {
+            const result = await electron_1.dialog.showSaveDialog(win, options);
+            return { result: 'success', ...result };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('file-rename', async (_, { oldPath, newPath }) => {
+        try {
+            await promises_1.default.rename(oldPath, newPath);
+            return { result: 'success' };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('file-delete', async (_, filePath) => {
+        try {
+            await promises_1.default.unlink(filePath);
+            return { result: 'success' };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('file-get-info', async (_, filePath) => {
+        try {
+            const stats = await promises_1.default.stat(filePath);
+            return {
+                result: 'success',
+                size: stats.size,
+                atime: stats.atime,
+                mtime: stats.mtime,
+                ctime: stats.ctime,
+                birthtime: stats.birthtime,
+                isDirectory: stats.isDirectory(),
+                isFile: stats.isFile()
+            };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
+    electron_1.ipcMain.handle('file-list-dir', async (_, dirPath) => {
+        try {
+            const files = await promises_1.default.readdir(dirPath, { withFileTypes: true });
+            return {
+                result: 'success',
+                files: files.map(f => ({
+                    name: f.name,
+                    isDirectory: f.isDirectory(),
+                    isFile: f.isFile()
+                }))
+            };
+        }
+        catch (error) {
+            return { result: 'error', message: String(error) };
+        }
+    });
 });
 //# sourceMappingURL=main.js.map

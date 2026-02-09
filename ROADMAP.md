@@ -33,7 +33,7 @@ Feuille de route pour l'évolution de NeuroChat Pro d'un assistant conversationn
 ---
 
 ## 🔮 Phase 4 : Agent de Système Total (Vision 2026)
-- [ ] **Deep OS Integration** : Contrôle natif des fenêtres et des fichiers sans passer par le terminal.
+- [x] **Deep OS Integration** : Contrôle natif des fenêtres et des fichiers sans passer par le terminal.
 - [ ] **Self-Correction** : Capacité de l'IA à déboguer ses propres appels d'outils.
 - [ ] **Mobile Companion** : Application mobile connectée à l'instance Desktop pour un usage en mobilité.
 - [ ] **Compétenes Spécialisées** : Modules de compétences téléchargeables (Codeur Expert, Analyste Financier, Coach Santé).

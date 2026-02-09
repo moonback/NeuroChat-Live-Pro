@@ -56,8 +56,8 @@ export class BrowserService {
                     });
                 }
 
-                // Si la page principale a été fermée mais pas le browser, on en ouvre une nouvelle
-                if (!this.page && this.context) {
+                // Si la page principale a été fermée ou est invalide mais pas le browser, on en ouvre une nouvelle
+                if ((!this.page || this.page.isClosed()) && this.context) {
                     this.page = await this.context.newPage();
                     this.page.on('close', () => {
                         this.page = null;
@@ -88,32 +88,57 @@ export class BrowserService {
 
     async navigate(url: string, newTab: boolean = false) {
         const page = await this.init(newTab);
-        // Use 'load' for more completeness, but with a reasonable timeout
-        await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(e => {
-            console.warn('[BrowserService] Navigation timeout or error, trying to proceed anyway:', e.message);
-        });
 
-        return {
-            url: page.url(),
-            title: await page.title(),
-            status: 'success',
-            tabOpened: newTab
-        };
+        try {
+            // Use 'load' for more completeness, but with a reasonable timeout
+            await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(e => {
+                console.warn('[BrowserService] Navigation timeout or error, trying to proceed anyway:', e.message);
+            });
+
+            // Re-verify if page is still open before calling title()
+            if (page.isClosed()) {
+                return { status: 'error', message: 'La page a été fermée pendant la navigation' };
+            }
+
+            const title = await page.title().catch(() => 'Sans titre');
+
+            return {
+                url: page.url(),
+                title: title,
+                status: 'success',
+                tabOpened: newTab
+            };
+        } catch (error) {
+            console.error('[BrowserService] Navigate failed:', error);
+            return { status: 'error', message: String(error) };
+        }
     }
 
     async search(query: string) {
         const page = await this.init();
         const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-        await page.goto(searchUrl, { waitUntil: 'load', timeout: 30000 }).catch(() => { });
 
-        // Try to wait for results to appear
-        await page.waitForSelector('#search', { timeout: 5000 }).catch(() => { });
+        try {
+            await page.goto(searchUrl, { waitUntil: 'load', timeout: 30000 }).catch(() => { });
 
-        return {
-            status: 'success',
-            url: page.url(),
-            title: await page.title()
-        };
+            // Try to wait for results to appear
+            await page.waitForSelector('#search', { timeout: 5000 }).catch(() => { });
+
+            if (page.isClosed()) {
+                return { status: 'error', message: 'La page a été fermée pendant la recherche' };
+            }
+
+            const title = await page.title().catch(() => 'Recherche Google');
+
+            return {
+                status: 'success',
+                url: page.url(),
+                title: title
+            };
+        } catch (error) {
+            console.error('[BrowserService] Search failed:', error);
+            return { status: 'error', message: String(error) };
+        }
     }
 
     async click(selector: string) {
@@ -196,6 +221,7 @@ export class BrowserService {
 
     async screenshot() {
         const page = await this.init();
+        if (page.isClosed()) throw new Error('Navigateur fermé');
         const buffer = await page.screenshot({
             type: 'jpeg',
             quality: 70, // Reduced quality for faster transfer

@@ -306,6 +306,60 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       properties: {},
       required: []
     }
+  },
+  manage_window: {
+    name: 'manage_window',
+    description: 'Contrôle les fenêtres de l\'application de manière native. Permet de minimiser, maximiser, fermer ou changer l\'état "toujours au-dessus". Préférer cet outil au terminal pour la gestion des fenêtres.',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['minimize', 'maximize', 'unmaximize', 'close', 'show', 'hide', 'center', 'focus'],
+          description: 'L\'action à effectuer sur la fenêtre.'
+        },
+        alwaysOnTop: {
+          type: 'boolean',
+          description: 'Si défini, active ou désactive le mode "Toujours au-dessus".'
+        },
+        getState: {
+          type: 'boolean',
+          description: 'Si true, retourne l\'état actuel de la fenêtre (taille, position, visibilité).'
+        }
+      },
+      required: []
+    }
+  },
+  os_file_operation: {
+    name: 'os_file_operation',
+    description: 'Effectue des opérations natives sur le système de fichiers sans passer par le terminal. Lecture, écriture, déplacement, suppression de fichiers et dossiers, ou ouverture de boîtes de dialogue natives.',
+    parameters: {
+      type: 'object',
+      properties: {
+        operation: {
+          type: 'string',
+          enum: ['read', 'write', 'delete', 'rename', 'list_dir', 'get_info', 'open_dialog', 'save_dialog'],
+          description: 'L\'opération de fichier à effectuer.'
+        },
+        path: {
+          type: 'string',
+          description: 'Le chemin du fichier ou du dossier.'
+        },
+        content: {
+          type: 'string',
+          description: 'Le contenu à écrire (pour l\'opération "write").'
+        },
+        newPath: {
+          type: 'string',
+          description: 'Le nouveau chemin (pour l\'opération "rename").'
+        },
+        dialogOptions: {
+          type: 'object',
+          description: 'Options pour les boîtes de dialogue (open_dialog ou save_dialog).'
+        }
+      },
+      required: ['operation']
+    }
   }
 };
 
@@ -730,6 +784,61 @@ ${content}
       message: 'Capture d\'écran effectuée',
       image: base64
     };
+  }
+
+  // --- Deep OS Integration: Window Management Implementation ---
+
+  if (name === 'manage_window') {
+    const { action, alwaysOnTop, getState } = args || {};
+
+    try {
+      if (getState) {
+        return await window.ipcRenderer?.invoke('window-get-state');
+      }
+
+      if (alwaysOnTop !== undefined) {
+        return await window.ipcRenderer?.invoke('window-set-always-on-top', alwaysOnTop);
+      }
+
+      if (action) {
+        return await window.ipcRenderer?.invoke('window-control', action);
+      }
+
+      return { result: 'error', message: 'Aucune action spécifiée pour manage_window' };
+    } catch (error) {
+      return { result: 'error', message: String(error) };
+    }
+  }
+
+  // --- Deep OS Integration: File Operation Implementation ---
+
+  if (name === 'os_file_operation') {
+    const { operation, path: filePath, content, newPath, dialogOptions } = args || {};
+
+    try {
+      switch (operation) {
+        case 'read':
+          return await window.ipcRenderer?.invoke('read-file', filePath);
+        case 'write':
+          return await window.ipcRenderer?.invoke('write-file', { path: filePath, content });
+        case 'delete':
+          return await window.ipcRenderer?.invoke('file-delete', filePath);
+        case 'rename':
+          return await window.ipcRenderer?.invoke('file-rename', { oldPath: filePath, newPath });
+        case 'list_dir':
+          return await window.ipcRenderer?.invoke('file-list-dir', filePath);
+        case 'get_info':
+          return await window.ipcRenderer?.invoke('file-get-info', filePath);
+        case 'open_dialog':
+          return await window.ipcRenderer?.invoke('file-dialog-open', dialogOptions);
+        case 'save_dialog':
+          return await window.ipcRenderer?.invoke('file-dialog-save', dialogOptions);
+        default:
+          return { result: 'error', message: `Opération inconnue: ${operation}` };
+      }
+    } catch (error) {
+      return { result: 'error', message: String(error) };
+    }
   }
 
   console.warn(`[Tools] ⚠️ Fonction inconnue: ${name}`);
