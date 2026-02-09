@@ -128,6 +128,84 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       },
       required: ['enabled']
     }
+  },
+  browser_navigate: {
+    name: 'browser_navigate',
+    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Utilisez cela pour accéder à des sites web, effectuer des recherches ou consulter des informations en ligne.',
+    parameters: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'L\'URL complète vers laquelle naviguer (ex: "https://www.google.com")'
+        }
+      },
+      required: ['url']
+    }
+  },
+  browser_click: {
+    name: 'browser_click',
+    description: 'Clique sur un élément spécifique de la page web actuelle en utilisant un sélecteur CSS.',
+    parameters: {
+      type: 'object',
+      properties: {
+        selector: {
+          type: 'string',
+          description: 'Le sélecteur CSS de l\'élément à cliquer (ex: "button[type=\'submit\']", "#search-input")'
+        }
+      },
+      required: ['selector']
+    }
+  },
+  browser_type: {
+    name: 'browser_type',
+    description: 'Saisit du texte dans un champ de formulaire spécifique sur la page web actuelle.',
+    parameters: {
+      type: 'object',
+      properties: {
+        selector: {
+          type: 'string',
+          description: 'Le sélecteur CSS du champ de saisie'
+        },
+        text: {
+          type: 'string',
+          description: 'Le texte à saisir'
+        }
+      },
+      required: ['selector', 'text']
+    }
+  },
+  browser_press: {
+    name: 'browser_press',
+    description: 'Appuie sur une touche du clavier (ex: "Enter", "Tab", "Escape").',
+    parameters: {
+      type: 'object',
+      properties: {
+        key: {
+          type: 'string',
+          description: 'La touche à presser'
+        }
+      },
+      required: ['key']
+    }
+  },
+  browser_get_content: {
+    name: 'browser_get_content',
+    description: 'Récupère le contenu textuel de la page web actuelle. Utilisez cela pour lire des articles, des résultats de recherche ou analyser des données.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  browser_screenshot: {
+    name: 'browser_screenshot',
+    description: 'Prend une capture d\'écran de la page web actuelle et la retourne au format base64.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
   }
 };
 
@@ -361,6 +439,45 @@ ${conclusion}
     }
   }
 
+  // --- Gestion des outils du navigateur autonome ---
+
+  if (name === 'browser_navigate') {
+    const { url } = args || {};
+    if (!url) return { result: 'error', message: 'URL requise' };
+    return await window.ipcRenderer?.invoke('browser-navigate', url);
+  }
+
+  if (name === 'browser_click') {
+    const { selector } = args || {};
+    if (!selector) return { result: 'error', message: 'Sélecteur requis' };
+    return await window.ipcRenderer?.invoke('browser-click', selector);
+  }
+
+  if (name === 'browser_type') {
+    const { selector, text } = args || {};
+    if (!selector || text === undefined) return { result: 'error', message: 'Sélecteur et texte requis' };
+    return await window.ipcRenderer?.invoke('browser-type', { selector, text });
+  }
+
+  if (name === 'browser_press') {
+    const { key } = args || {};
+    if (!key) return { result: 'error', message: 'Touche requise' };
+    return await window.ipcRenderer?.invoke('browser-press', key);
+  }
+
+  if (name === 'browser_get_content') {
+    return await window.ipcRenderer?.invoke('browser-get-content');
+  }
+
+  if (name === 'browser_screenshot') {
+    const base64 = await window.ipcRenderer?.invoke('browser-screenshot');
+    return {
+      status: 'success',
+      message: 'Capture d\'écran effectuée',
+      image: base64 // L'assistant pourra peut-être "voir" l'image si on l'injecte dans le flux vision ou si on lui dit qu'il l'a prise
+    };
+  }
+
   console.warn(`[Tools] ⚠️ Fonction inconnue: ${name}`);
   return {
     result: 'error',
@@ -368,7 +485,9 @@ ${conclusion}
   };
 }
 
-// Créer une réponse de fonction pour l'API
+/**
+ * Créer une réponse de fonction pour l'API
+ */
 export function createFunctionResponse(
   functionCall: FunctionCall,
   result: any
@@ -380,7 +499,9 @@ export function createFunctionResponse(
   };
 }
 
-// Construire la configuration des outils pour l'API Live
+/**
+ * Construire la configuration des outils pour l'API Live
+ */
 export function buildToolsConfig(
   enableFunctionCalling: boolean = true,
   enableGoogleSearch: boolean = false

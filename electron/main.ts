@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
+import { browserService } from './browserService'
 
 const execPromise = promisify(exec)
 
@@ -237,6 +238,72 @@ app.whenReady().then(() => {
         error: error instanceof Error ? error.message : String(error),
         result: 'error'
       }
+    }
+  })
+
+  // --- Handlers IPC pour le navigateur autonome ---
+
+  ipcMain.handle('browser-navigate', async (_, url: string) => {
+    try {
+      return await browserService.navigate(url)
+    } catch (error) {
+      console.error('[Browser] Navigation error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-click', async (_, selector: string) => {
+    try {
+      return await browserService.click(selector)
+    } catch (error) {
+      console.error('[Browser] Click error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-type', async (_, { selector, text }: { selector: string, text: string }) => {
+    try {
+      return await browserService.type(selector, text)
+    } catch (error) {
+      console.error('[Browser] Type error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-press', async (_, key: string) => {
+    try {
+      return await browserService.press(key)
+    } catch (error) {
+      console.error('[Browser] Press error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-get-content', async () => {
+    try {
+      return await browserService.getContent()
+    } catch (error) {
+      console.error('[Browser] GetContent error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-screenshot', async () => {
+    try {
+      return await browserService.screenshot()
+    } catch (error) {
+      console.error('[Browser] Screenshot error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-close', async () => {
+    try {
+      await browserService.close()
+      return { status: 'success' }
+    } catch (error) {
+      console.error('[Browser] Close error:', error)
+      return { error: String(error), result: 'error' }
     }
   })
 })

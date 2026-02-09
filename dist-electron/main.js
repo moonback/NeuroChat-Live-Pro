@@ -9,6 +9,7 @@ const promises_1 = __importDefault(require("node:fs/promises"));
 const node_fs_1 = require("node:fs");
 const node_child_process_1 = require("node:child_process");
 const node_util_1 = require("node:util");
+const browserService_1 = require("./browserService");
 const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
 // The built directory structure
 //
@@ -218,6 +219,71 @@ electron_1.app.whenReady().then(() => {
                 error: error instanceof Error ? error.message : String(error),
                 result: 'error'
             };
+        }
+    });
+    // --- Handlers IPC pour le navigateur autonome ---
+    electron_1.ipcMain.handle('browser-navigate', async (_, url) => {
+        try {
+            return await browserService_1.browserService.navigate(url);
+        }
+        catch (error) {
+            console.error('[Browser] Navigation error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-click', async (_, selector) => {
+        try {
+            return await browserService_1.browserService.click(selector);
+        }
+        catch (error) {
+            console.error('[Browser] Click error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-type', async (_, { selector, text }) => {
+        try {
+            return await browserService_1.browserService.type(selector, text);
+        }
+        catch (error) {
+            console.error('[Browser] Type error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-press', async (_, key) => {
+        try {
+            return await browserService_1.browserService.press(key);
+        }
+        catch (error) {
+            console.error('[Browser] Press error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-get-content', async () => {
+        try {
+            return await browserService_1.browserService.getContent();
+        }
+        catch (error) {
+            console.error('[Browser] GetContent error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-screenshot', async () => {
+        try {
+            return await browserService_1.browserService.screenshot();
+        }
+        catch (error) {
+            console.error('[Browser] Screenshot error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-close', async () => {
+        try {
+            await browserService_1.browserService.close();
+            return { status: 'success' };
+        }
+        catch (error) {
+            console.error('[Browser] Close error:', error);
+            return { error: String(error), result: 'error' };
         }
     });
 });
