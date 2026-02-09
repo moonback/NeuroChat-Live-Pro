@@ -133,7 +133,7 @@ async function addToHistory(file: 'soul' | 'user' | 'memory', action: string, de
 
 export async function loadSoulFile(): Promise<SoulData> {
     // Essayer de charger '/SOUL.md' (chemin relatif root public pour fetch/electron)
-    const content = await readContent('/SOUL.md') || '';
+    const content = await readContent('SOUL.md') || '';
 
     if (!content) {
         return {
@@ -153,15 +153,25 @@ export async function loadSoulFile(): Promise<SoulData> {
 
     for (const line of lines) {
         const trimmed = line.trim();
+        // Détection du nom
         if (trimmed.startsWith('I am ')) {
-            name = trimmed.replace('I am ', '').replace(',', '').trim();
-        } else if (trimmed === '## Personality') {
+            name = trimmed.replace('I am ', '').replace(',', '').replace(/\./g, '').trim();
+        } else if (trimmed.toLowerCase().startsWith('je suis ')) {
+            name = trimmed.replace(/je suis /i, '').replace(/\*/g, '').replace(/\./g, '').trim();
+        }
+
+        // Détection des sections
+        else if (trimmed === '## Personality' || trimmed === '## Ma Nature Unique' || trimmed === '## Personnalité') {
             currentSection = 'personality';
-        } else if (trimmed === '## Values') {
+        } else if (trimmed === '## Values' || trimmed === '## Mes Valeurs Fondamentales' || trimmed === '## Valeurs') {
             currentSection = 'values';
-        } else if (trimmed.startsWith('- ') && currentSection === 'personality') {
+        }
+
+        // Extraction des items
+        else if (trimmed.startsWith('- ') && currentSection === 'personality') {
             personality.push(trimmed.substring(2));
         } else if (trimmed.startsWith('- ') && currentSection === 'values') {
+            // Si c'est une valeur avec un titre en gras, on essaie de garder juste le titre ou le tout
             values.push(trimmed.substring(2));
         }
     }
@@ -170,7 +180,7 @@ export async function loadSoulFile(): Promise<SoulData> {
 }
 
 export async function loadUserFile(): Promise<UserData> {
-    const content = await readContent('/USER.md') || '';
+    const content = await readContent('USER.md') || '';
 
     // Parse
     const lines = content.split('\n');
@@ -194,7 +204,7 @@ export async function loadUserFile(): Promise<UserData> {
 }
 
 export async function loadMemoryFile(): Promise<MemoryData> {
-    const content = await readContent('/memory/MEMORY.md') || '';
+    const content = await readContent('memory/MEMORY.md') || '';
 
     // Parse
     const lines = content.split('\n');
@@ -240,7 +250,7 @@ export async function saveSoulFile(data: SoulData): Promise<boolean> {
     content += '\n## Values\n\n';
     data.values.forEach(v => content += `- ${v}\n`);
 
-    const success = await writeContent('/SOUL.md', content);
+    const success = await writeContent('SOUL.md', content);
     if (success) await addToHistory('soul', 'update', 'Updated personality/values');
     return success;
 }
@@ -251,7 +261,7 @@ export async function saveUserFile(data: UserData): Promise<boolean> {
     content += `- Timezone: ${data.preferences.timezone || '(your timezone)'}\n`;
     content += `- Language: ${data.preferences.language || '(your preferred language)'}\n`;
 
-    const success = await writeContent('/USER.md', content);
+    const success = await writeContent('USER.md', content);
     if (success) await addToHistory('user', 'update', 'Updated user preferences');
     return success;
 }
@@ -271,7 +281,7 @@ export async function saveMemoryFile(data: MemoryData): Promise<boolean> {
     if (data.importantNotes.length > 0) data.importantNotes.forEach(n => content += `${n}\n`);
     else content += '(Things to remember)\n';
 
-    const success = await writeContent('/memory/MEMORY.md', content);
+    const success = await writeContent('memory/MEMORY.md', content);
     if (success) await addToHistory('memory', 'update', 'Updated memory items');
     return success;
 }
