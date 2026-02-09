@@ -21,7 +21,7 @@ interface HeaderProps {
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
 
-  onOpenPersonalityFilesEditor?: () => void; // Nouveau bouton
+
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
   onOpenHistory?: () => void;
@@ -520,20 +520,7 @@ const Header: React.FC<HeaderProps> = ({
                 disabledReason={disabledReason}
               />
 
-              {onOpenPersonalityFilesEditor && (
-                <>
-                  <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                  <ControlButton
-                    active={false}
-                    onClick={onOpenPersonalityFilesEditor}
-                    icon={<Icons.Brain />}
-                    label="Fichiers & Mémoire"
-                    themeColor={currentPersonality.themeColor}
-                    disabled={isConnected}
-                    disabledReason={disabledReason}
-                  />
-                </>
-              )}
+
             </ControlGroup>
 
             {/* System Status Button */}

@@ -3,7 +3,7 @@ import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 
-import PersonalityFilesEditor from './components/PersonalityFilesEditor';
+
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
 import ConclusionsModal from './components/ConclusionsModal';
@@ -315,10 +315,7 @@ const App: React.FC = () => {
         onClose={() => ui.setHistoryModalOpen(false)}
       />
 
-      <PersonalityFilesEditor
-        isOpen={ui.isPersonalityFilesEditorOpen}
-        onClose={() => ui.setPersonalityFilesEditorOpen(false)}
-      />
+
 
       <MobileActionsDrawer
         isOpen={ui.isMobileActionsDrawerOpen && !isConnected}
@@ -364,7 +361,7 @@ const App: React.FC = () => {
           isGoogleSearchEnabled={isGoogleSearchEnabled}
           onToggleGoogleSearch={handleGoogleSearchToggle}
 
-          onOpenPersonalityFilesEditor={() => ui.setPersonalityFilesEditorOpen(true)}
+
           onOpenToolsList={() => ui.setToolsListOpen(true)}
           onOpenSystemStatus={() => ui.setSystemStatusModalOpen(true)}
           onOpenConclusions={() => ui.setConclusionsModalOpen(true)}
