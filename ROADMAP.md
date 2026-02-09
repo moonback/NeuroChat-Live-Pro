@@ -19,7 +19,7 @@ Feuille de route pour l'évolution de NeuroChat Pro d'un assistant conversationn
 - [ ] **Persistance de Session** : Sauvegarde automatique de l'historique complet.
 - [ ] **Vector Memory (RAG)** : Utilisation d'un vector store local pour une mémoire à long terme (recherche dans les documents passés).
 - [ ] **Éditeur de Fichiers Personnalité** : Interface pour éditer directement `SOUL.md`, `USER.md` et `MEMORY.md`.
-- [ ] **OCR Avancé** : Meilleure extraction de texte pour les captures d'écran et PDF complexes.
+- [x] **OCR Avancé** : Meilleure extraction de texte pour les captures d'écran (browser) et PDF complexes.
 - [ ] **Multi-Format** : Support des fichiers Word (.docx) et Excel (.xlsx).
 
 ---
