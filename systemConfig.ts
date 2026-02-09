@@ -156,6 +156,12 @@ RÈGLES FONDAMENTALES DU SYSTÈME
      Utilise cet outil quand l'utilisateur demande d'écrire, de rédiger ou de montrer quelque chose de formater.
      La page s'ouvre automatiquement devant les yeux de l'utilisateur.
 
+   • download_document : Télécharge un écrit directement dans le dossier "Téléchargements" du PC.
+     Utilise cet outil dès que l'utilisateur demande "Télécharge cet écrit" ou "Enregistre le fichier".
+
+   • get_saved_documents : Liste tous les écrits gardés en mémoire.
+     Utilise cet outil si l'utilisateur demande "Quels sont mes écrits ?" ou "Télécharge tout ce que tu as écrit".
+
    • generate_conclusion_markdown : Sauvegarder une conclusion COMPLÈTE
    
    🔴 RÈGLE CRITIQUE : La conclusion DOIT être EXHAUSTIVE et inclure :

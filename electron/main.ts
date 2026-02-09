@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -219,6 +219,20 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error(`Error writing file ${filePath}:`, error)
       return false
+    }
+  })
+
+  // Sauvegarder dans le dossier Téléchargements
+  ipcMain.handle('save-to-downloads', async (_, { filename, content }: { filename: string, content: string }) => {
+    try {
+      const downloadsPath = app.getPath('downloads')
+      const fullPath = path.join(downloadsPath, filename)
+
+      await fs.writeFile(fullPath, content, 'utf-8')
+      return { result: 'success', path: fullPath }
+    } catch (error) {
+      console.error('Error saving to downloads:', error)
+      return { result: 'error', message: String(error) }
     }
   })
 

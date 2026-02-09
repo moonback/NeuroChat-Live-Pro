@@ -119,6 +119,37 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       required: ['content', 'title']
     }
   },
+  download_document: {
+    name: 'download_document',
+    description: 'Télécharge un document sauvegardé ou du contenu markdown directement sur l\'ordinateur de l\'utilisateur (dossier Téléchargements). Utilisez cet outil quand l\'utilisateur demande de télécharger un écrit.',
+    parameters: {
+      type: 'object',
+      properties: {
+        documentId: {
+          type: 'string',
+          description: 'L\'ID du document à télécharger (optionnel si content est fourni)'
+        },
+        content: {
+          type: 'string',
+          description: 'Le contenu markdown à télécharger (si documentId n\'est pas fourni)'
+        },
+        filename: {
+          type: 'string',
+          description: 'Le nom du fichier (ex: "mon_rapport.md")'
+        }
+      },
+      required: ['filename']
+    }
+  },
+  get_saved_documents: {
+    name: 'get_saved_documents',
+    description: 'Récupère la liste de tous les documents, écrits et conclusions sauvegardés en mémoire. Utile pour savoir ce qui est disponible avant de proposer un téléchargement ou une consultation.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
   run_terminal_command: {
     name: 'run_terminal_command',
     description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système ou gérer des fichiers locaux. NOTE: Pour naviguer sur le web ou ouvrir des sites, utilisez PRIORITAIREMENT les outils "browser_*" qui sont intégrés. Évitez d\'utiliser "start chrome" sauf si le navigateur autonome échoue.',
@@ -532,6 +563,57 @@ ${content}
         message: `Erreur lors de la création de la page: ${error instanceof Error ? error.message : String(error)}`
       };
     }
+  }
+
+  // Télécharger un document
+  if (name === 'download_document') {
+    const { documentId, content, filename } = args || {};
+
+    let contentToDownload = content;
+    let finalFilename = filename || 'document.md';
+
+    if (documentId) {
+      const doc = getSavedConclusionById(documentId);
+      if (doc) {
+        contentToDownload = doc.markdown || doc.content;
+        if (!filename) finalFilename = `${doc.title.replace(/\s+/g, '_')}.md`;
+      } else if (!contentToDownload) {
+        return { result: 'error', message: 'Document non trouvé' };
+      }
+    }
+
+    if (!contentToDownload) {
+      return { result: 'error', message: 'Aucun contenu à télécharger' };
+    }
+
+    if (window.ipcRenderer) {
+      try {
+        const response = await window.ipcRenderer.invoke('save-to-downloads', {
+          filename: finalFilename,
+          content: contentToDownload
+        });
+        return response;
+      } catch (error) {
+        return { result: 'error', message: String(error) };
+      }
+    } else {
+      return { result: 'error', message: 'IPC non disponible (version web ?)' };
+    }
+  }
+
+  // Récupérer tous les documents
+  if (name === 'get_saved_documents') {
+    const documents = getSavedConclusions();
+    return {
+      result: 'success',
+      count: documents.length,
+      documents: documents.map(d => ({
+        id: d.id,
+        title: d.title,
+        createdAt: d.createdAt,
+        preview: d.content.substring(0, 100) + '...'
+      }))
+    };
   }
 
   // Gestion de l'exécution d'une commande terminal
