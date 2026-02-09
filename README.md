@@ -44,6 +44,8 @@
 
 ### 🛠️ Outils et Capacités
 - **Appels de fonctions** : 
+  - **Contrôle PC Local** : Exécution de commandes terminal, ouverture d'applications, contrôle du partage d'écran.
+  - **Navigation Autonome** : L'assistant peut naviguer sur le web via Playwright (consulter des sites, cliquer, remplir des formulaires).
   - Calculatrice et conversions (unités, devises, pourcentages)
   - Gestion du temps (timer, rappels, date/heure)
   - Gestion d'agenda (création, consultation, suppression d'événements)
@@ -96,12 +98,24 @@
 - **Testing Library** (React, Jest DOM, User Event)
 
 ### Build & Déploiement
+- **electron-builder** (compilation release pour Windows/Mac/Linux)
 - **vite-plugin-pwa 1.1.0** (génération service worker)
 - **Workbox** (stratégies de cache, runtime caching)
 
 ---
 
-## 📋 Prérequis
+## � Documentation Technique
+
+Pour plus de détails, consultez les documents suivants :
+- [🏗️ ARCHITECTURE.md](ARCHITECTURE.md) : Détails de la structure et du fonctionnement.
+- [🔌 API_DOCS.md](API_DOCS.md) : Référence des IPCs et des outils de l'assistant.
+- [💾 DB_SCHEMA.md](DB_SCHEMA.md) : Organisation du stockage local.
+- [🗺️ ROADMAP.md](ROADMAP.md) : Vision future du projet.
+- [🤝 CONTRIBUTING.md](CONTRIBUTING.md) : Comment aider au développement.
+
+---
+
+## 🚀 Installation Rapide
 
 Avant de commencer, assurez-vous d'avoir :
 

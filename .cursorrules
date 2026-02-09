@@ -1,0 +1,65 @@
+# Cursor Rules - NeuroChat Live Pro
+
+Project context: An advanced AI assistant (NeuroChat) built with Electron, React, and Gemini Live API, capable of real-time voice/vision interactions and autonomous browser control.
+
+## 🛠 Tech Stack
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
+- **State Management**: Zustand 5 (with persistence)
+- **Electron**: Main/Preload process architecture, IPC communication
+- **AI**: Google Gemini Live API (@google/genai), Custom Function Calling
+- **Automation**: Playwright (for autonomous browser control)
+- **Testing**: Vitest (Unit), Playwright (E2E)
+
+## 🎨 Code Style & Conventions
+- **Naming**: 
+  - Components: `PascalCase` (e.g., `ControlPanel.tsx`)
+  - Hooks: `camelCase` starting with `use` (e.g., `useVisionManager.ts`)
+  - Utils/Types: `camelCase` (e.g., `audioUtils.ts`)
+  - CSS Classes: Tailwind utility classes favored over raw CSS
+- **Structure**: 
+  - Use Functional Components with Hooks.
+  - Separate business logic into custom hooks.
+  - Use `types.ts` for shared interfaces.
+- **Organization**:
+  - `components/`: UI components
+  - `hooks/`: Business logic and state orchestration
+  - `electron/`: Main process and IPC handlers
+  - `utils/`: Helper functions (audio, document processing, tools)
+  - `stores/`: Zustand store definitions
+
+## 🏗 Architecture Patterns
+- **IPC Communication**: All system-level actions (FS, Shell, Browser) MUST go through `ipcMain.handle` in `main.ts` and `ipcRenderer.invoke` in the frontend.
+- **Function Calling**: New tools for the assistant should be defined in `AVAILABLE_FUNCTIONS` in `utils/tools.ts` and implemented in `executeFunction`.
+- **Persistence**: Use `localStorage` via Zustand's `persist` middleware or the `useLocalStorageState` hook for client-side data.
+- **Vision/Audio**: High-frequency data (audio blobs, video frames) should be handled via refs (`useRef`) and optimized callbacks to avoid React re-render bottlenecks.
+
+## ✅ Best Practices
+- **Error Handling**: Use `try/catch` in IPC handlers and tool execution. Return structured error objects `{ result: 'error', message: '...' }`.
+- **Type Safety**: Avoid `any`. Define strict types for IPC payloads and tool arguments.
+- **Performance**: 
+  - Throttle video frame capture (max 2 FPS).
+  - Use `requestAnimationFrame` for visualizers.
+  - Optimize tailwind builds by avoiding dynamic class names.
+- **Security**: 
+  - Sanitize file paths in Electron handlers.
+  - Never hardcode API keys (use `.env`).
+
+## 🔄 Common Workflows
+### Adding a New Tool
+1. Define the tool schema in `AVAILABLE_FUNCTIONS` inside `utils/tools.ts`.
+2. Add the execution logic in the `executeFunction` switch/if block.
+3. If it requires system access, add an IPC handler in `electron/main.ts`.
+
+### Creating a Component
+1. Create a `.tsx` file in `components/`.
+2. Use Tailwind for styling.
+3. If it has complex state, create a companion hook in `hooks/`.
+
+## 🚫 Things to Avoid
+- **Direct FS Access**: Never use `fs` or `child_process` directly in the renderer process.
+- **Prop Drilling**: Use Zustand or Context for deeply nested state.
+- **Heavy Re-renders**: Avoid putting high-frequency data (like audio levels) in the main React state.
+
+## 📚 Documentation
+- Document complex logic in `ARCHITECTURE.md`.
+- Keep `tools.ts` comments up to date with new function descriptions.

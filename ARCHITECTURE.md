@@ -53,6 +53,11 @@
 │  │  - Documents uploadés (base64)                           │   │
 │  │  - Préférences utilisateur (tools)                      │   │
 │  └──────────────────────────────────────────────────────────┘   │
+┌─────────────────────────────────────────────────────────────────┐
+│                    ELECTRON LAYER (Main Process)                │
+│  - Gestion Fenêtres & Tray                                      │
+│  - IPC Handlers (FS, Exec, Browser)                             │
+│  - Playwright BrowserService                                    │
 └─────────────────────────────┬───────────────────────────────────┘
                               │
                               │ WebSocket + REST API
@@ -567,6 +572,29 @@ Uploadé le: 2025-01-15 15:00
 ```
 
 ---
+
+---
+
+### 🛠️ Orchestration des Outils (Function Calling)
+
+```mermaid
+sequenceDiagram
+    participant G as Gemini Live (WS)
+    participant F as Frontend (React)
+    participant T as Tools (executeFunction)
+    participant E as Electron (Main)
+    participant B as Browser (Playwright)
+
+    G->>F: ToolCall (browser_navigate, url="...")
+    F->>T: executeFunction("browser_navigate", args)
+    T->>F: ipcRenderer.invoke("browser-navigate", url)
+    F->>E: IPC Request
+    E->>B: browser.goto(url)
+    B-->>E: Page Loaded
+    E-->>F: IPC Response { success: true }
+    F->>F: sendToolResponse(result)
+    F-->>G: ToolResponse Message
+```
 
 ---
 
