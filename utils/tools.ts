@@ -67,17 +67,17 @@ export function clearAllSavedConclusions(): void {
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   change_personality: {
     name: 'change_personality',
-    description: 'Change la personnalité de l\'assistant. L\'utilisateur peut demander à changer de personnalité en mentionnant le nom ou l\'ID de la personnalité souhaitée. Les personnalités disponibles sont: NeuroChat, Coach Neuro, Coach Scolaire, Analyste, Vision, Traducteur.',
+    description: 'Change la personnalité de l\'assistant. L\'utilisateur peut demander à changer de personnalité en mentionnant le nom ou l\'ID de la personnalité souhaitée. Les personnalités disponibles sont: NeuroChat Pro.',
     parameters: {
       type: 'object',
       properties: {
         personalityId: {
           type: 'string',
-          description: 'L\'ID de la personnalité (ex: "neurochat-pro", "general", "learning-buddy", "intelligence-analyst", "omnivision", "parrot-translator")'
+          description: 'L\'ID de la personnalité (ex: "neurochat-pro")'
         },
         personalityName: {
           type: 'string',
-          description: 'Le nom de la personnalité (ex: "NeuroChat Pro", "Assistant TDAH/HPI", "Copain d\'Apprentissage", "Analyste Renseignement", "OmniVision", "Perroquet Polyglotte")'
+          description: 'Le nom de la personnalité (ex: "NeuroChat Pro")'
         }
       },
       required: []
@@ -129,19 +129,33 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       required: ['enabled']
     }
   },
+  browser_search: {
+    name: 'browser_search',
+    description: 'Effectue une recherche directe sur Google et attend les résultats. Plus rapide que de naviguer manuellement.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Les termes de recherche'
+        }
+      },
+      required: ['query']
+    }
+  },
   browser_navigate: {
     name: 'browser_navigate',
-    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Reutilise la fenêtre existante par défaut. Utilisez cela pour accéder à des sites web, effectuer des recherches ou consulter des informations en ligne.',
+    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Reutilise la fenêtre existante par défaut. Utilisez cela pour accéder à des sites web spécifiques.',
     parameters: {
       type: 'object',
       properties: {
         url: {
           type: 'string',
-          description: 'L\'URL complète vers laquelle naviguer (ex: "https://www.google.com")'
+          description: 'L\'URL complète vers laquelle naviguer (ex: "https://fr.wikipedia.org")'
         },
         newTab: {
           type: 'boolean',
-          description: 'Si true, ouvre l\'URL dans un nouvel onglet de la même fenêtre au lieu de naviguer dans l\'onglet actuel.'
+          description: 'Si true, ouvre l\'URL dans un nouvel onglet de la même fenêtre.'
         }
       },
       required: ['url']
@@ -149,27 +163,60 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_click: {
     name: 'browser_click',
-    description: 'Clique sur un élément spécifique de la page web actuelle en utilisant un sélecteur CSS.',
+    description: 'Clique sur un élément spécifique. L\'outil fera défiler la page automatiquement vers l\'élément si nécessaire.',
     parameters: {
       type: 'object',
       properties: {
         selector: {
           type: 'string',
-          description: 'Le sélecteur CSS de l\'élément à cliquer (ex: "button[type=\'submit\']", "#search-input")'
+          description: 'Le sélecteur CSS (ex: "h3 a", "button.submit")'
         }
       },
       required: ['selector']
     }
   },
+  browser_scroll: {
+    name: 'browser_scroll',
+    description: 'Fait défiler la page dans une direction spécifique.',
+    parameters: {
+      type: 'object',
+      properties: {
+        direction: {
+          type: 'string',
+          enum: ['up', 'down', 'top', 'bottom'],
+          description: 'La direction du défilement'
+        }
+      },
+      required: ['direction']
+    }
+  },
+  browser_back: {
+    name: 'browser_back',
+    description: 'Retourne à la page précédente dans l\'historique.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  browser_forward: {
+    name: 'browser_forward',
+    description: 'Avance à la page suivante dans l\'historique.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
   browser_type: {
     name: 'browser_type',
-    description: 'Saisit du texte dans un champ de formulaire spécifique sur la page web actuelle.',
+    description: 'Saisit du texte dans un champ de formulaire.',
     parameters: {
       type: 'object',
       properties: {
         selector: {
           type: 'string',
-          description: 'Le sélecteur CSS du champ de saisie'
+          description: 'Le sélecteur CSS du champ'
         },
         text: {
           type: 'string',
@@ -181,7 +228,7 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_press: {
     name: 'browser_press',
-    description: 'Appuie sur une touche du clavier (ex: "Enter", "Tab", "Escape").',
+    description: 'Appuie sur une touche (ex: "Enter", "Tab").',
     parameters: {
       type: 'object',
       properties: {
@@ -195,7 +242,7 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_get_content: {
     name: 'browser_get_content',
-    description: 'Récupère le contenu textuel de la page web actuelle. Utilisez cela pour lire des articles, des résultats de recherche ou analyser des données.',
+    description: 'Récupère le texte principal de la page. Les scripts et styles sont ignorés pour ne garder que l\'essentiel.',
     parameters: {
       type: 'object',
       properties: {},
@@ -204,7 +251,7 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_screenshot: {
     name: 'browser_screenshot',
-    description: 'Prend une capture d\'écran de la page web actuelle et la retourne au format base64.',
+    description: 'Prend une capture d\'écran de la zone visible.',
     parameters: {
       type: 'object',
       properties: {},
@@ -451,10 +498,30 @@ ${conclusion}
     return await window.ipcRenderer?.invoke('browser-navigate', { url, newTab });
   }
 
+  if (name === 'browser_search') {
+    const { query } = args || {};
+    if (!query) return { result: 'error', message: 'Requête requise' };
+    return await window.ipcRenderer?.invoke('browser-search', query);
+  }
+
   if (name === 'browser_click') {
     const { selector } = args || {};
     if (!selector) return { result: 'error', message: 'Sélecteur requis' };
     return await window.ipcRenderer?.invoke('browser-click', selector);
+  }
+
+  if (name === 'browser_scroll') {
+    const { direction } = args || {};
+    if (!direction) return { result: 'error', message: 'Direction requise' };
+    return await window.ipcRenderer?.invoke('browser-scroll', direction);
+  }
+
+  if (name === 'browser_back') {
+    return await window.ipcRenderer?.invoke('browser-back');
+  }
+
+  if (name === 'browser_forward') {
+    return await window.ipcRenderer?.invoke('browser-forward');
   }
 
   if (name === 'browser_type') {
@@ -478,7 +545,7 @@ ${conclusion}
     return {
       status: 'success',
       message: 'Capture d\'écran effectuée',
-      image: base64 // L'assistant pourra peut-être "voir" l'image si on l'injecte dans le flux vision ou si on lui dit qu'il l'a prise
+      image: base64
     };
   }
 

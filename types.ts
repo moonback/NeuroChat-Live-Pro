@@ -41,8 +41,8 @@ export interface ToolConfig {
 }
 
 export interface FunctionCall {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   args?: Record<string, any>;
 }
 

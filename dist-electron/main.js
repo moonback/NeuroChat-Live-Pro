@@ -231,12 +231,48 @@ electron_1.app.whenReady().then(() => {
             return { error: String(error), result: 'error' };
         }
     });
+    electron_1.ipcMain.handle('browser-search', async (_, query) => {
+        try {
+            return await browserService_1.browserService.search(query);
+        }
+        catch (error) {
+            console.error('[Browser] Search error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
     electron_1.ipcMain.handle('browser-click', async (_, selector) => {
         try {
             return await browserService_1.browserService.click(selector);
         }
         catch (error) {
             console.error('[Browser] Click error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-scroll', async (_, direction) => {
+        try {
+            return await browserService_1.browserService.scroll(direction);
+        }
+        catch (error) {
+            console.error('[Browser] Scroll error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-back', async () => {
+        try {
+            return await browserService_1.browserService.goBack();
+        }
+        catch (error) {
+            console.error('[Browser] Back error:', error);
+            return { error: String(error), result: 'error' };
+        }
+    });
+    electron_1.ipcMain.handle('browser-forward', async () => {
+        try {
+            return await browserService_1.browserService.goForward();
+        }
+        catch (error) {
+            console.error('[Browser] Forward error:', error);
             return { error: String(error), result: 'error' };
         }
     });

@@ -11,7 +11,7 @@ interface MobileActionsDrawerProps {
   onToggleFunctionCalling: (enabled: boolean) => void;
   onToggleGoogleSearch: (enabled: boolean) => void;
   onToggleEyeTracking: (enabled: boolean) => void;
-  onEditPersonality: () => void;
+
   onOpenToolsList: () => void;
   onOpenHistory: () => void;
 }
@@ -261,7 +261,7 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
   onToggleFunctionCalling,
   onToggleGoogleSearch,
   onToggleEyeTracking,
-  onEditPersonality,
+
   onOpenToolsList,
   onOpenHistory,
 }) => {
@@ -345,14 +345,7 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
 
         {/* Content */}
         <div className="p-4 space-y-3">
-          {/* Edit Personality */}
-          <ActionButton
-            onClick={() => handleActionWithClose(onEditPersonality)}
-            icon={<Icons.Edit />}
-            label="Modifier la personnalité"
-            colorScheme="pink"
-            showChevron
-          />
+
 
           <Separator />
 

@@ -88,7 +88,11 @@ export class BrowserService {
 
     async navigate(url: string, newTab: boolean = false) {
         const page = await this.init(newTab);
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Use 'load' for more completeness, but with a reasonable timeout
+        await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(e => {
+            console.warn('[BrowserService] Navigation timeout or error, trying to proceed anyway:', e.message);
+        });
+
         return {
             url: page.url(),
             title: await page.title(),
@@ -97,8 +101,25 @@ export class BrowserService {
         };
     }
 
+    async search(query: string) {
+        const page = await this.init();
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+        await page.goto(searchUrl, { waitUntil: 'load', timeout: 30000 }).catch(() => { });
+
+        // Try to wait for results to appear
+        await page.waitForSelector('#search', { timeout: 5000 }).catch(() => { });
+
+        return {
+            status: 'success',
+            url: page.url(),
+            title: await page.title()
+        };
+    }
+
     async click(selector: string) {
         const page = await this.init();
+        // Scroll to element before clicking
+        await page.locator(selector).first().scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => { });
         await page.click(selector, { timeout: 10000 });
         return { status: 'success' };
     }
@@ -115,21 +136,71 @@ export class BrowserService {
         return { status: 'success' };
     }
 
+    async scroll(direction: 'up' | 'down' | 'top' | 'bottom') {
+        const page = await this.init();
+        await page.evaluate((dir) => {
+            if (dir === 'up') window.scrollBy(0, -window.innerHeight * 0.8);
+            else if (dir === 'down') window.scrollBy(0, window.innerHeight * 0.8);
+            else if (dir === 'top') window.scrollTo(0, 0);
+            else if (dir === 'bottom') window.scrollTo(0, document.body.scrollHeight);
+        }, direction);
+        return { status: 'success' };
+    }
+
+    async goBack() {
+        const page = await this.init();
+        await page.goBack().catch(() => { });
+        return { status: 'success', url: page.url() };
+    }
+
+    async goForward() {
+        const page = await this.init();
+        await page.goForward().catch(() => { });
+        return { status: 'success', url: page.url() };
+    }
+
     async getContent() {
         const page = await this.init();
-        const content = await page.evaluate(() => {
-            // Basic text extraction without too much noise
-            return document.body.innerText;
+        const data = await page.evaluate(() => {
+            // Target main content area if possible to reduce noise
+            const main = document.querySelector('main') || document.querySelector('article') || document.body;
+
+            // Temporary removal of scripts, styles and invisible elements for cleaner text
+            const scripts = document.querySelectorAll('script, style, noscript, svg, iframe');
+            const hidden: any[] = [];
+            scripts.forEach(s => {
+                hidden.push({ parent: s.parentNode, next: s.nextSibling, node: s });
+                s.remove();
+            });
+
+            const content = (main as HTMLElement).innerText;
+
+            // Restore removed elements (optional but safer)
+            hidden.reverse().forEach((h: any) => {
+                if (h.parent) h.parent.insertBefore(h.node, h.next);
+            });
+
+            return {
+                content: content,
+                title: document.title,
+                url: window.location.href
+            };
         });
+
         return {
-            content: content.substring(0, 10000), // Limit to avoid hitting token limits
-            url: page.url()
+            content: data.content.substring(0, 15000), // Slightly increased limit
+            title: data.title,
+            url: data.url
         };
     }
 
     async screenshot() {
         const page = await this.init();
-        const buffer = await page.screenshot({ type: 'jpeg', quality: 80 });
+        const buffer = await page.screenshot({
+            type: 'jpeg',
+            quality: 70, // Reduced quality for faster transfer
+            fullPage: false
+        });
         return buffer.toString('base64');
     }
 

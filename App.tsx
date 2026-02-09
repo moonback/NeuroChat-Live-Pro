@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
-import PersonalityEditor from './components/PersonalityEditor';
+
 import PersonalityFilesEditor from './components/PersonalityFilesEditor';
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
@@ -19,8 +19,12 @@ import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
 import { useGeminiLiveSession } from './hooks/useGeminiLiveSession';
 import { usePersonalityFiles } from './hooks/usePersonalityFiles';
+import { useConnectionLifecycle } from './hooks/useConnectionLifecycle';
 import VideoOverlay from './components/VideoOverlay';
+import BackgroundLayers from './components/BackgroundLayers';
+import ScreenShareOverlay from './components/ScreenShareOverlay';
 import { useAppStore } from './stores/appStore';
+import { useUIStore } from './stores/uiStore';
 import {
   showFunctionCallingToggle,
   showGoogleSearchToggle,
@@ -28,96 +32,14 @@ import {
   showDocumentsLoaded,
 } from './utils/toastHelpers';
 
-// --- Background Layer Component ---
-const BackgroundLayers: React.FC<{
-  themeColor: string;
-  isTalking: boolean;
-  isConnected: boolean;
-}> = React.memo(({ themeColor, isTalking, isConnected }) => (
-  <>
-    {/* Base Layer - Deep Black with Subtle Noise */}
-    <div
-      className="absolute inset-0 bg-[#000000] z-0"
-      style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.015) 1px, transparent 0)',
-        backgroundSize: '40px 40px'
-      }}
-    />
-
-    {/* Primary Ambient Glow - Center */}
-    <div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vh] h-[90vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0 animate-float"
-      style={{
-        background: `radial-gradient(circle, ${themeColor}25, ${themeColor}10 40%, transparent 70%)`,
-        filter: 'blur(80px)',
-        animation: 'pulse-glow 8s ease-in-out infinite'
-      }}
-    />
-
-    {/* Secondary Glow - Top Right for Depth */}
-    <div
-      className="absolute top-[15%] right-[15%] w-[60vh] h-[60vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
-      style={{
-        background: `radial-gradient(circle, ${themeColor}15, transparent 60%)`,
-        filter: 'blur(100px)',
-        animation: 'pulse-glow 10s ease-in-out infinite reverse, float 12s ease-in-out infinite'
-      }}
-    />
-
-    {/* Tertiary Glow - Bottom Left */}
-    <div
-      className="absolute bottom-[10%] left-[20%] w-[50vh] h-[50vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
-      style={{
-        background: `radial-gradient(circle, ${themeColor}12, transparent 60%)`,
-        filter: 'blur(90px)',
-        animation: 'pulse-glow 12s ease-in-out infinite, float 10s ease-in-out infinite reverse'
-      }}
-    />
-
-    {/* Additional Dynamic Glow - Responsive to connection state */}
-    {(isTalking || isConnected) && (
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vh] rounded-full pointer-events-none z-0 transition-opacity duration-1000"
-        style={{
-          background: `radial-gradient(circle, ${themeColor}20, transparent 50%)`,
-          filter: 'blur(120px)',
-          animation: 'pulse-glow 6s ease-in-out infinite',
-          opacity: isTalking ? 0.8 : 0.4
-        }}
-      />
-    )}
-
-    {/* Sophisticated Gradient Overlays */}
-    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0 pointer-events-none transition-opacity duration-1000" />
-    <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent z-0 pointer-events-none transition-opacity duration-1000" />
-
-    {/* Animated mesh gradient overlay for depth */}
-    <div
-      className="absolute inset-0 z-0 pointer-events-none opacity-30"
-      style={{
-        backgroundImage: `linear-gradient(135deg, ${themeColor}05 0%, transparent 50%, ${themeColor}05 100%)`,
-        backgroundSize: '200% 200%',
-        animation: 'gradient-shift 15s ease infinite'
-      }}
-    />
-  </>
-));
-
-BackgroundLayers.displayName = 'BackgroundLayers';
-
-// --- Screen Share Overlay Component ---
-const ScreenShareOverlay: React.FC<{ isActive: boolean }> = React.memo(({ isActive }) => {
-  if (!isActive) return null;
-
-  return (
-    <div className="absolute inset-0 pointer-events-none z-30 border-[6px] border-indigo-500/50 shadow-[inset_0_0_100px_rgba(99,102,241,0.2)] animate-pulse" />
-  );
-});
-
-ScreenShareOverlay.displayName = 'ScreenShareOverlay';
-
-// --- Main App Component ---
+/**
+ * Main App Component
+ * Orchestrates the UI, Gemini Session, Vision, and Audio.
+ */
 const App: React.FC = () => {
+  // UI Store for transient states (modals, drawers)
+  const ui = useUIStore();
+
   const {
     connectionState,
     setConnectionState,
@@ -131,11 +53,9 @@ const App: React.FC = () => {
     removeToast,
   } = useStatusManager();
 
-  const {
-    activateAudioContext,
-  } = useAudioManager();
+  const { activateAudioContext } = useAudioManager();
 
-  // Store Zustand - État global (source unique de vérité)
+  // Store Zustand - Main application state
   const {
     connectionState: storeConnectionState,
     currentPersonality,
@@ -151,28 +71,19 @@ const App: React.FC = () => {
     setIsEyeTrackingEnabled,
   } = useAppStore();
 
-  // Sync useStatusManager with store (unidirectional)
+  // Sync useStatusManager with store state
   useEffect(() => {
     if (connectionState !== storeConnectionState) {
       setConnectionState(storeConnectionState);
     }
-  }, [storeConnectionState]);
+  }, [storeConnectionState, connectionState, setConnectionState]);
 
-  // UI State
+  // Voice State (Local UI state)
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
-  const [isPersonalityEditorOpen, setIsPersonalityEditorOpen] = useState(false);
-  const [isToolsListOpen, setIsToolsListOpen] = useState(false);
-  const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
-  const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
-  const [isConclusionsModalOpen, setIsConclusionsModalOpen] = useState(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [isPersonalityFilesEditorOpen, setIsPersonalityFilesEditorOpen] = useState(false);
 
-  // Documents Context
+  // Documents Context Processing
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
-
-  // Personality Files Context
-  const { systemContext: personalityFilesContext, isLoading: isLoadingPersonalityFiles } = usePersonalityFiles();
+  const { systemContext: personalityFilesContext } = usePersonalityFiles();
 
   useEffect(() => {
     const updateContext = async () => {
@@ -187,10 +98,10 @@ const App: React.FC = () => {
     updateContext();
   }, [uploadedDocuments]);
 
-  // Session Ref (Shared)
+  // Shared Session reference
   const sessionRef = useRef<any>(null);
 
-  // Vision Manager
+  // Vision Management logic
   const {
     isVideoActive,
     setIsVideoActive,
@@ -215,7 +126,7 @@ const App: React.FC = () => {
     sessionRef,
   });
 
-  // Gemini Live Session Hook
+  // Gemini Live Session Management
   const {
     connect,
     disconnect,
@@ -240,15 +151,41 @@ const App: React.FC = () => {
     isVideoActive,
     startFrameTransmission,
     resetVisionState,
-    onToggleScreenShare: (enabled) => {
-      if (enabled) {
-        startScreenShare();
-      } else {
-        stopScreenShare();
-      }
-    },
+    onToggleScreenShare: (enabled) => enabled ? startScreenShare() : stopScreenShare(),
     sessionRef,
     onPersonalityChange: (newPersonality) => {
+      withAutoReconnect(() => {
+        if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
+          setIsVideoActive(false);
+        }
+        setPersonality(newPersonality);
+        if (newPersonality.id === 'omnivision') {
+          setIsVideoActive(true);
+        }
+      });
+    },
+  });
+
+  // Reconnection Orchestrator for setting changes
+  const { withAutoReconnect } = useConnectionLifecycle({ connect, disconnect });
+
+  // Microphone state monitoring
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  useEffect(() => {
+    if (storeConnectionState === ConnectionState.CONNECTED) {
+      setIsMicMuted(getMicMutedState());
+    } else {
+      setIsMicMuted(false);
+    }
+  }, [storeConnectionState, getMicMutedState]);
+
+  const handleToggleMic = useCallback(() => {
+    setIsMicMuted(toggleMic());
+  }, [toggleMic]);
+
+  // Unified Event Handlers with Auto-Reconnect Logic
+  const handlePersonalityChange = useCallback((newPersonality: Personality) => {
+    withAutoReconnect(() => {
       if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
         setIsVideoActive(false);
       }
@@ -256,81 +193,35 @@ const App: React.FC = () => {
       if (newPersonality.id === 'omnivision') {
         setIsVideoActive(true);
       }
-      if (storeConnectionState === ConnectionState.CONNECTED) {
-        disconnect();
-        setTimeout(() => connect(), 500);
-      }
-    },
-  });
+    });
+  }, [currentPersonality.id, setPersonality, setIsVideoActive, withAutoReconnect]);
 
-  // Microphone mute state
-  const [isMicMuted, setIsMicMuted] = useState(false);
-
-  useEffect(() => {
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      const muted = getMicMutedState();
-      setIsMicMuted(muted);
-    } else {
-      setIsMicMuted(false);
-    }
-  }, [storeConnectionState, getMicMutedState]);
-
-  const handleToggleMic = useCallback(() => {
-    const newMutedState = toggleMic();
-    setIsMicMuted(newMutedState);
-  }, [toggleMic]);
-
-  // Personality Management
-  const handlePersonalityChange = useCallback((newPersonality: Personality) => {
-    if (currentPersonality.id === 'omnivision' && newPersonality.id !== 'omnivision') {
-      setIsVideoActive(false);
-    }
-    setPersonality(newPersonality);
-    if (newPersonality.id === 'omnivision') {
-      setIsVideoActive(true);
-    }
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      disconnect();
-      setTimeout(() => connect(), 500);
-    }
-  }, [currentPersonality.id, setPersonality, setIsVideoActive, storeConnectionState, disconnect, connect]);
-
-  // Tools Management
   const handleFunctionCallingToggle = useCallback((enabled: boolean) => {
-    setIsFunctionCallingEnabled(enabled);
-    showFunctionCallingToggle(addToast, enabled);
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      disconnect();
-      setTimeout(() => connect(), 500);
-    }
-  }, [setIsFunctionCallingEnabled, addToast, storeConnectionState, disconnect, connect]);
+    withAutoReconnect(() => {
+      setIsFunctionCallingEnabled(enabled);
+      showFunctionCallingToggle(addToast, enabled);
+    });
+  }, [setIsFunctionCallingEnabled, addToast, withAutoReconnect]);
 
   const handleGoogleSearchToggle = useCallback((enabled: boolean) => {
-    setIsGoogleSearchEnabled(enabled);
-    showGoogleSearchToggle(addToast, enabled);
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      disconnect();
-      setTimeout(() => connect(), 500);
-    }
-  }, [setIsGoogleSearchEnabled, addToast, storeConnectionState, disconnect, connect]);
+    withAutoReconnect(() => {
+      setIsGoogleSearchEnabled(enabled);
+      showGoogleSearchToggle(addToast, enabled);
+    });
+  }, [setIsGoogleSearchEnabled, addToast, withAutoReconnect]);
 
-  const handleEyeTrackingToggle = useCallback((enabled: boolean) => {
-    setIsEyeTrackingEnabled(enabled);
-  }, [setIsEyeTrackingEnabled]);
-
-  // Document Management
   const handleDocumentsChange = useCallback((documents: ProcessedDocument[]) => {
-    setUploadedDocuments(documents);
-    if (storeConnectionState === ConnectionState.CONNECTED) {
-      showDocumentsUpdated(addToast);
-      disconnect();
-      setTimeout(() => connect(), 500);
-    } else {
-      showDocumentsLoaded(addToast, documents.length);
-    }
-  }, [setUploadedDocuments, storeConnectionState, addToast, disconnect, connect]);
+    withAutoReconnect(() => {
+      setUploadedDocuments(documents);
+      if (storeConnectionState === ConnectionState.CONNECTED) {
+        showDocumentsUpdated(addToast);
+      } else {
+        showDocumentsLoaded(addToast, documents.length);
+      }
+    });
+  }, [setUploadedDocuments, storeConnectionState, addToast, withAutoReconnect]);
 
-  // Connection handlers
+  // Main Action Handlers
   const handleConnect = useCallback(() => {
     setIsIntentionalDisconnect(false);
     activateAudioContext();
@@ -342,40 +233,22 @@ const App: React.FC = () => {
     disconnect(true);
   }, [setIsIntentionalDisconnect, disconnect]);
 
-  // Modal handlers
-  const openPersonalityEditor = useCallback(() => setIsPersonalityEditorOpen(true), []);
-  const closePersonalityEditor = useCallback(() => setIsPersonalityEditorOpen(false), []);
-  const openToolsList = useCallback(() => setIsToolsListOpen(true), []);
-  const closeToolsList = useCallback(() => setIsToolsListOpen(false), []);
-  const openMobileActions = useCallback(() => setIsMobileActionsDrawerOpen(true), []);
-  const closeMobileActions = useCallback(() => setIsMobileActionsDrawerOpen(false), []);
-  const openSystemStatus = useCallback(() => setIsSystemStatusModalOpen(true), []);
-  const closeSystemStatus = useCallback(() => setIsSystemStatusModalOpen(false), []);
-  const openConclusions = useCallback(() => setIsConclusionsModalOpen(true), []);
-  const closeConclusions = useCallback(() => setIsConclusionsModalOpen(false), []);
-  const openPersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(true), []);
-  const closePersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(false), []);
-  const openHistory = useCallback(() => setIsHistoryModalOpen(true), []);
-  const closeHistory = useCallback(() => setIsHistoryModalOpen(false), []);
-
-  // Audio context activation on first interaction
+  // Global interactions (Audio Activation)
   useEffect(() => {
     const handleFirstInteraction = () => {
       activateAudioContext();
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-
     document.addEventListener('click', handleFirstInteraction, { once: true });
     document.addEventListener('touchstart', handleFirstInteraction, { once: true });
-
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, [activateAudioContext]);
 
-  // Cleanup on unmount
+  // Final Cleanup
   useEffect(() => {
     return () => {
       disconnect();
@@ -387,17 +260,17 @@ const App: React.FC = () => {
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
 
-      {/* Premium Multi-Layer Background System */}
+      {/* Visual Background Layers */}
       <BackgroundLayers
         themeColor={currentPersonality.themeColor}
         isTalking={isTalking}
         isConnected={isConnected}
       />
 
-      {/* Screen Share Overlay Border */}
+      {/* Screen Sharing Indicator */}
       <ScreenShareOverlay isActive={isScreenShareActive} />
 
-      {/* Premium Visualizer */}
+      {/* Real-time Visualizer */}
       <Visualizer
         analyserRef={analyserRef}
         color={currentPersonality.themeColor}
@@ -405,28 +278,21 @@ const App: React.FC = () => {
         isEyeTrackingEnabled={isEyeTrackingEnabled}
       />
 
-      {/* Toast Notifications */}
+      {/* Toast Management System */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-
-      {/* PWA Install Prompt */}
       <InstallPWA />
 
-      {/* Modals */}
-      <PersonalityEditor
-        isOpen={isPersonalityEditorOpen}
-        onClose={closePersonalityEditor}
-        currentPersonality={currentPersonality}
-        onSave={handlePersonalityChange}
-      />
+      {/* Overlays & Modals */}
+
 
       <ToolsList
-        isOpen={isToolsListOpen}
-        onClose={closeToolsList}
+        isOpen={ui.isToolsListOpen}
+        onClose={() => ui.setToolsListOpen(false)}
       />
 
       <SystemStatusModal
-        isOpen={isSystemStatusModalOpen}
-        onClose={closeSystemStatus}
+        isOpen={ui.isSystemStatusModalOpen}
+        onClose={() => ui.setSystemStatusModalOpen(false)}
         connectionState={storeConnectionState}
         currentPersonality={currentPersonality}
         latency={latency}
@@ -435,41 +301,40 @@ const App: React.FC = () => {
         isFunctionCallingEnabled={isFunctionCallingEnabled}
         isGoogleSearchEnabled={isGoogleSearchEnabled}
         isEyeTrackingEnabled={isEyeTrackingEnabled}
-        onToggleEyeTracking={handleEyeTrackingToggle}
+        onToggleEyeTracking={setIsEyeTrackingEnabled}
       />
 
       <ConclusionsModal
-        isOpen={isConclusionsModalOpen}
-        onClose={closeConclusions}
+        isOpen={ui.isConclusionsModalOpen}
+        onClose={() => ui.setConclusionsModalOpen(false)}
         currentPersonality={currentPersonality}
       />
 
       <HistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={closeHistory}
+        isOpen={ui.isHistoryModalOpen}
+        onClose={() => ui.setHistoryModalOpen(false)}
       />
 
       <PersonalityFilesEditor
-        isOpen={isPersonalityFilesEditorOpen}
-        onClose={closePersonalityFilesEditor}
+        isOpen={ui.isPersonalityFilesEditorOpen}
+        onClose={() => ui.setPersonalityFilesEditorOpen(false)}
       />
 
       <MobileActionsDrawer
-        isOpen={isMobileActionsDrawerOpen && !isConnected}
-        onClose={closeMobileActions}
+        isOpen={ui.isMobileActionsDrawerOpen && !isConnected}
+        onClose={() => ui.setMobileActionsDrawerOpen(false)}
         currentPersonality={currentPersonality}
         isFunctionCallingEnabled={isFunctionCallingEnabled}
         isGoogleSearchEnabled={isGoogleSearchEnabled}
         isEyeTrackingEnabled={isEyeTrackingEnabled}
         onToggleFunctionCalling={handleFunctionCallingToggle}
         onToggleGoogleSearch={handleGoogleSearchToggle}
-        onToggleEyeTracking={handleEyeTrackingToggle}
-        onEditPersonality={openPersonalityEditor}
-        onOpenToolsList={openToolsList}
-        onOpenHistory={openHistory}
+        onToggleEyeTracking={setIsEyeTrackingEnabled}
+        onOpenToolsList={() => ui.setToolsListOpen(true)}
+        onOpenHistory={() => ui.setHistoryModalOpen(true)}
       />
 
-      {/* Video Overlay */}
+      {/* Dynamic Video Layers */}
       <VideoOverlay
         isVideoActive={isVideoActive}
         isScreenShareActive={isScreenShareActive}
@@ -483,10 +348,8 @@ const App: React.FC = () => {
         screenStreamRef={screenStreamRef}
       />
 
-      {/* Main Layout */}
+      {/* Main UI Layout */}
       <div className="relative z-10 w-full h-full flex flex-col lg:flex-row">
-
-        {/* Header */}
         <Header
           connectionState={storeConnectionState}
           currentPersonality={currentPersonality}
@@ -500,15 +363,14 @@ const App: React.FC = () => {
           onToggleFunctionCalling={handleFunctionCallingToggle}
           isGoogleSearchEnabled={isGoogleSearchEnabled}
           onToggleGoogleSearch={handleGoogleSearchToggle}
-          onEditPersonality={openPersonalityEditor}
-          onOpenPersonalityFilesEditor={openPersonalityFilesEditor}
-          onOpenToolsList={openToolsList}
-          onOpenSystemStatus={openSystemStatus}
-          onOpenConclusions={openConclusions}
-          onOpenHistory={openHistory}
+
+          onOpenPersonalityFilesEditor={() => ui.setPersonalityFilesEditorOpen(true)}
+          onOpenToolsList={() => ui.setToolsListOpen(true)}
+          onOpenSystemStatus={() => ui.setSystemStatusModalOpen(true)}
+          onOpenConclusions={() => ui.setConclusionsModalOpen(true)}
+          onOpenHistory={() => ui.setHistoryModalOpen(true)}
         />
 
-        {/* Main Content Area */}
         <div className="relative flex-grow flex flex-col lg:pt-0 xl:pt-0">
           <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-8 safe-area-bottom lg:px-8 xl:px-12">
             <ControlPanel
@@ -527,13 +389,13 @@ const App: React.FC = () => {
               onToggleScreenShare={toggleScreenShare}
               onToggleMic={handleToggleMic}
               onCameraChange={changeCamera}
-              onEditPersonality={openPersonalityEditor}
+
               onSelectPersonality={handlePersonalityChange}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}
               onToggleFunctionCalling={handleFunctionCallingToggle}
               onToggleGoogleSearch={handleGoogleSearchToggle}
-              onOpenMobileActions={openMobileActions}
+              onOpenMobileActions={() => ui.setMobileActionsDrawerOpen(true)}
             />
           </main>
         </div>
