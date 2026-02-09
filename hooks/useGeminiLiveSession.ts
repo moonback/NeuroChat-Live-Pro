@@ -12,6 +12,7 @@ import {
   showConnectionSuccess,
   showFunctionExecuted,
   showFunctionError,
+  showSelfCorrection,
   showSessionEnd,
   showSessionError,
   showSessionCreationError,
@@ -282,8 +283,9 @@ export const useGeminiLiveSession = ({
                   showFunctionExecuted(addToast, fc.name);
                   return { id: fc.id, name: fc.name, response: result };
                 } catch (error) {
-                  showFunctionError(addToast, fc.name);
-                  return { id: fc.id, name: fc.name, response: { result: 'error', message: String(error) } };
+                  console.warn(`[Self-Correction] Tool ${fc.name} failed, informing the model...`, error);
+                  showSelfCorrection(addToast, fc.name);
+                  return { id: fc.id, name: fc.name, response: { result: 'error', message: `Échec de l'outil ${fc.name} : ${String(error)}. Veuillez analyser l'erreur et tenter une correction autonome si possible.` } };
                 }
               }));
               if (sessionRef.current) sessionRef.current.sendToolResponse({ functionResponses });
