@@ -1,25 +1,28 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ConnectionState, Personality } from '../types';
+import { ConnectionState, Personality, ChatSession, ChatMessage } from '../types';
 import { DEFAULT_PERSONALITY } from '../constants';
 import type { ProcessedDocument } from '../utils/documentProcessor';
 
 interface AppState {
   // État de connexion
   connectionState: ConnectionState;
-  
+
   // Personnalité actuelle
   currentPersonality: Personality;
-  
+
   // Documents uploadés
   uploadedDocuments: ProcessedDocument[];
-  
-  
+
+  // Chat History
+  sessions: ChatSession[];
+  currentSessionId: string | null;
+
   // Tools
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
   isEyeTrackingEnabled: boolean;
-  
+
   // Actions
   setConnectionState: (state: ConnectionState) => void;
   setPersonality: (p: Personality) => void;
@@ -27,6 +30,14 @@ interface AppState {
   setIsFunctionCallingEnabled: (enabled: boolean) => void;
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
+
+  // Session Actions
+  createNewSession: (personalityId: string) => string;
+  addMessageToCurrentSession: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  setCurrentSessionId: (id: string | null) => void;
+  deleteSession: (id: string) => void;
+  renameSession: (id: string, title: string) => void;
+  clearHistory: () => void;
 }
 
 // Helper pour désérialiser les documents
@@ -47,21 +58,23 @@ const deserializeDocuments = (raw: string): ProcessedDocument[] => {
 const isPersonality = (value: unknown): value is Personality => {
   return Boolean(
     value &&
-      typeof value === 'object' &&
-      'id' in (value as any) &&
-      'systemInstruction' in (value as any) &&
-      typeof (value as any).id === 'string' &&
-      typeof (value as any).systemInstruction === 'string',
+    typeof value === 'object' &&
+    'id' in (value as any) &&
+    'systemInstruction' in (value as any) &&
+    typeof (value as any).id === 'string' &&
+    typeof (value as any).systemInstruction === 'string',
   );
 };
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // État initial
       connectionState: ConnectionState.DISCONNECTED,
       currentPersonality: DEFAULT_PERSONALITY,
       uploadedDocuments: [],
+      sessions: [],
+      currentSessionId: null,
       isFunctionCallingEnabled: true,
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: true,
@@ -73,25 +86,91 @@ export const useAppStore = create<AppState>()(
       setIsFunctionCallingEnabled: (enabled) => set({ isFunctionCallingEnabled: enabled }),
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
+
+      setCurrentSessionId: (id) => set({ currentSessionId: id }),
+
+      createNewSession: (personalityId) => {
+        const id = crypto.randomUUID();
+        const newSession: ChatSession = {
+          id,
+          title: `Nouvelle conversation`,
+          messages: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          personalityId,
+        };
+        set((state) => ({
+          sessions: [newSession, ...state.sessions],
+          currentSessionId: id,
+        }));
+        return id;
+      },
+
+      addMessageToCurrentSession: (msg) => {
+        const { currentSessionId, sessions } = get();
+        let targetId = currentSessionId;
+
+        // Si pas de session courante, on en crée une
+        if (!targetId) {
+          targetId = get().createNewSession(get().currentPersonality.id);
+        }
+
+        const message: ChatMessage = {
+          ...msg,
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          sessions: state.sessions.map((s) => {
+            if (s.id === targetId) {
+              const messages = [...s.messages, message];
+              // Utiliser le premier message de l'utilisateur comme titre si c'est encore le titre par défaut
+              let title = s.title;
+              if (s.title === 'Nouvelle conversation' && msg.role === 'user' && msg.content) {
+                title = msg.content.substring(0, 40) + (msg.content.length > 40 ? '...' : '');
+              }
+              return {
+                ...s,
+                messages,
+                title,
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return s;
+          }),
+        }));
+      },
+
+      deleteSession: (id) => set((state) => ({
+        sessions: state.sessions.filter((s) => s.id !== id),
+        currentSessionId: state.currentSessionId === id ? null : state.currentSessionId,
+      })),
+
+      renameSession: (id, title) => set((state) => ({
+        sessions: state.sessions.map((s) => (s.id === id ? { ...s, title, updatedAt: new Date().toISOString() } : s)),
+      })),
+
+      clearHistory: () => set({ sessions: [], currentSessionId: null }),
     }),
     {
       name: 'neurochat-storage',
       partialize: (state) => ({
-        // On ne persiste que ce qui doit l'être (pas connectionState)
         currentPersonality: state.currentPersonality,
         uploadedDocuments: state.uploadedDocuments,
+        sessions: state.sessions,
+        currentSessionId: state.currentSessionId,
         isFunctionCallingEnabled: state.isFunctionCallingEnabled,
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
       }),
       merge: (persistedState: any, currentState) => {
-        // Validation et désérialisation personnalisée
         const merged = { ...currentState };
-        
+
         if (persistedState?.currentPersonality && isPersonality(persistedState.currentPersonality)) {
           merged.currentPersonality = persistedState.currentPersonality;
         }
-        
+
         if (persistedState?.uploadedDocuments) {
           if (typeof persistedState.uploadedDocuments === 'string') {
             merged.uploadedDocuments = deserializeDocuments(persistedState.uploadedDocuments);
@@ -102,11 +181,19 @@ export const useAppStore = create<AppState>()(
             }));
           }
         }
-        
+
+        if (persistedState?.sessions) {
+          merged.sessions = persistedState.sessions;
+        }
+
+        if (persistedState?.currentSessionId) {
+          merged.currentSessionId = persistedState.currentSessionId;
+        }
+
         if (typeof persistedState?.isFunctionCallingEnabled === 'boolean') {
           merged.isFunctionCallingEnabled = persistedState.isFunctionCallingEnabled;
         }
-        
+
         if (typeof persistedState?.isGoogleSearchEnabled === 'boolean') {
           merged.isGoogleSearchEnabled = persistedState.isGoogleSearchEnabled;
         }
@@ -114,7 +201,7 @@ export const useAppStore = create<AppState>()(
         if (typeof persistedState?.isEyeTrackingEnabled === 'boolean') {
           merged.isEyeTrackingEnabled = persistedState.isEyeTrackingEnabled;
         }
-        
+
         return merged;
       },
     }

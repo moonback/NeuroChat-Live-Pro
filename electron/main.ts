@@ -243,9 +243,9 @@ app.whenReady().then(() => {
 
   // --- Handlers IPC pour le navigateur autonome ---
 
-  ipcMain.handle('browser-navigate', async (_, url: string) => {
+  ipcMain.handle('browser-navigate', async (_, { url, newTab }: { url: string, newTab?: boolean }) => {
     try {
-      return await browserService.navigate(url)
+      return await browserService.navigate(url, !!newTab)
     } catch (error) {
       console.error('[Browser] Navigation error:', error)
       return { error: String(error), result: 'error' }

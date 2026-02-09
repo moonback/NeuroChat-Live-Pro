@@ -56,6 +56,22 @@ export interface ToolCall {
   functionCalls: FunctionCall[];
 }
 
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model' | 'system';
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  personalityId: string;
+}
+
 // Extension globale de l'objet Window pour Electron
 declare global {
   interface Window {

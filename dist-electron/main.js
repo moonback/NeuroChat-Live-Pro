@@ -222,9 +222,9 @@ electron_1.app.whenReady().then(() => {
         }
     });
     // --- Handlers IPC pour le navigateur autonome ---
-    electron_1.ipcMain.handle('browser-navigate', async (_, url) => {
+    electron_1.ipcMain.handle('browser-navigate', async (_, { url, newTab }) => {
         try {
-            return await browserService_1.browserService.navigate(url);
+            return await browserService_1.browserService.navigate(url, !!newTab);
         }
         catch (error) {
             console.error('[Browser] Navigation error:', error);

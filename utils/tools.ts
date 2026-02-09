@@ -103,13 +103,13 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   run_terminal_command: {
     name: 'run_terminal_command',
-    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système, gérer des fichiers locaux ou AUTOMATISER DES TÂCHES COMME OUVRIR DES APPLICATIONS. Pour ouvrir une application sur Windows, utilisez "start <nom_du_fichier_ou_app>" (ex: "start notepad", "start chrome", "start .").',
+    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système ou gérer des fichiers locaux. NOTE: Pour naviguer sur le web ou ouvrir des sites, utilisez PRIORITAIREMENT les outils "browser_*" qui sont intégrés. Évitez d\'utiliser "start chrome" sauf si le navigateur autonome échoue.',
     parameters: {
       type: 'object',
       properties: {
         command: {
           type: 'string',
-          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami", "start calc")'
+          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami", "start notepad")'
         }
       },
       required: ['command']
@@ -131,13 +131,17 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_navigate: {
     name: 'browser_navigate',
-    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Utilisez cela pour accéder à des sites web, effectuer des recherches ou consulter des informations en ligne.',
+    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Reutilise la fenêtre existante par défaut. Utilisez cela pour accéder à des sites web, effectuer des recherches ou consulter des informations en ligne.',
     parameters: {
       type: 'object',
       properties: {
         url: {
           type: 'string',
           description: 'L\'URL complète vers laquelle naviguer (ex: "https://www.google.com")'
+        },
+        newTab: {
+          type: 'boolean',
+          description: 'Si true, ouvre l\'URL dans un nouvel onglet de la même fenêtre au lieu de naviguer dans l\'onglet actuel.'
         }
       },
       required: ['url']
@@ -442,9 +446,9 @@ ${conclusion}
   // --- Gestion des outils du navigateur autonome ---
 
   if (name === 'browser_navigate') {
-    const { url } = args || {};
+    const { url, newTab } = args || {};
     if (!url) return { result: 'error', message: 'URL requise' };
-    return await window.ipcRenderer?.invoke('browser-navigate', url);
+    return await window.ipcRenderer?.invoke('browser-navigate', { url, newTab });
   }
 
   if (name === 'browser_click') {

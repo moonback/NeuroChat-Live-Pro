@@ -4,63 +4,96 @@ export class BrowserService {
     private browser: Browser | null = null;
     private context: BrowserContext | null = null;
     private page: Page | null = null;
+    private initPromise: Promise<Page> | null = null;
 
-    async init(): Promise<Page> {
-        // Si le browser a été fermé manuellement, on réinitialise tout
-        if (this.browser && !this.browser.isConnected()) {
-            this.browser = null;
-            this.context = null;
-            this.page = null;
+    async init(newTab: boolean = false): Promise<Page> {
+        // S'il y a déjà une initialisation en cours, on l'attend
+        if (this.initPromise) {
+            const page = await this.initPromise;
+            if (newTab && this.context) {
+                const newPage = await this.context.newPage();
+                newPage.on('close', () => {
+                    if (this.page === newPage) this.page = null;
+                });
+                return newPage;
+            }
+            return page;
         }
 
-        if (!this.browser) {
-            this.browser = await chromium.launch({
-                headless: false,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+        this.initPromise = (async () => {
+            try {
+                // Si le browser a été fermé manuellement, on réinitialise tout
+                if (this.browser && !this.browser.isConnected()) {
+                    this.browser = null;
+                    this.context = null;
+                    this.page = null;
+                }
 
-            // Gérer la fermeture inattendue
-            this.browser.on('disconnected', () => {
-                this.browser = null;
-                this.context = null;
-                this.page = null;
-            });
+                if (!this.browser) {
+                    this.browser = await chromium.launch({
+                        headless: false,
+                        args: ['--no-sandbox', '--disable-setuid-sandbox']
+                    });
 
-            this.context = await this.browser.newContext({
-                viewport: { width: 1280, height: 720 },
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            });
+                    // Gérer la fermeture inattendue
+                    this.browser.on('disconnected', () => {
+                        this.browser = null;
+                        this.context = null;
+                        this.page = null;
+                        this.initPromise = null;
+                    });
 
-            this.page = await this.context.newPage();
+                    this.context = await this.browser.newContext({
+                        viewport: { width: 1280, height: 720 },
+                        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    });
 
-            // Gérer la fermeture de la page
-            this.page.on('close', () => {
-                this.page = null;
-            });
-        }
+                    this.page = await this.context.newPage();
 
-        // Si la page a été fermée mais pas le browser, on en ouvre une nouvelle
-        if (!this.page && this.context) {
-            this.page = await this.context.newPage();
-            this.page.on('close', () => {
-                this.page = null;
-            });
-        }
+                    // Gérer la fermeture de la page
+                    this.page.on('close', () => {
+                        this.page = null;
+                    });
+                }
 
-        if (!this.page) {
-            throw new Error('Impossible d\'initialiser la page du navigateur');
-        }
+                // Si la page principale a été fermée mais pas le browser, on en ouvre une nouvelle
+                if (!this.page && this.context) {
+                    this.page = await this.context.newPage();
+                    this.page.on('close', () => {
+                        this.page = null;
+                    });
+                }
 
-        return this.page;
+                if (!this.page) {
+                    throw new Error('Impossible d\'initialiser la page du navigateur');
+                }
+
+                // Si on a demandé un nouvel onglet spécifiquement
+                if (newTab && this.context) {
+                    const newPage = await this.context.newPage();
+                    newPage.on('close', () => {
+                        if (this.page === newPage) this.page = null;
+                    });
+                    return newPage;
+                }
+
+                return this.page;
+            } finally {
+                this.initPromise = null;
+            }
+        })();
+
+        return this.initPromise;
     }
 
-    async navigate(url: string) {
-        const page = await this.init();
+    async navigate(url: string, newTab: boolean = false) {
+        const page = await this.init(newTab);
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
         return {
             url: page.url(),
             title: await page.title(),
-            status: 'success'
+            status: 'success',
+            tabOpened: newTab
         };
     }
 
