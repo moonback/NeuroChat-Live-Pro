@@ -167,16 +167,16 @@ export class BrowserService {
 
             // Temporary removal of scripts, styles and invisible elements for cleaner text
             const scripts = document.querySelectorAll('script, style, noscript, svg, iframe');
-            const hidden = [];
+            const hidden: any[] = [];
             scripts.forEach(s => {
                 hidden.push({ parent: s.parentNode, next: s.nextSibling, node: s });
                 s.remove();
             });
 
-            const content = main.innerText;
+            const content = (main as HTMLElement).innerText;
 
             // Restore removed elements (optional but safer)
-            hidden.reverse().forEach(h => {
+            hidden.reverse().forEach((h: any) => {
                 if (h.parent) h.parent.insertBefore(h.node, h.next);
             });
 
