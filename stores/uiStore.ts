@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { SavedConclusion } from '../utils/tools';
 
 interface UIState {
 
@@ -7,6 +8,7 @@ interface UIState {
     isSystemStatusModalOpen: boolean;
     isConclusionsModalOpen: boolean;
     isHistoryModalOpen: boolean;
+    activeDocument: SavedConclusion | null;
 
 
     // Actions
@@ -16,6 +18,7 @@ interface UIState {
     setSystemStatusModalOpen: (open: boolean) => void;
     setConclusionsModalOpen: (open: boolean) => void;
     setHistoryModalOpen: (open: boolean) => void;
+    setActiveDocument: (doc: SavedConclusion | null) => void;
 
 
     // Convenience togglers
@@ -38,6 +41,7 @@ export const useUIStore = create<UIState>((set) => ({
     isSystemStatusModalOpen: false,
     isConclusionsModalOpen: false,
     isHistoryModalOpen: false,
+    activeDocument: null,
 
 
 
@@ -46,6 +50,7 @@ export const useUIStore = create<UIState>((set) => ({
     setSystemStatusModalOpen: (open) => set({ isSystemStatusModalOpen: open }),
     setConclusionsModalOpen: (open) => set({ isConclusionsModalOpen: open }),
     setHistoryModalOpen: (open) => set({ isHistoryModalOpen: open }),
+    setActiveDocument: (doc) => set({ activeDocument: doc, isConclusionsModalOpen: doc !== null }),
 
 
 
@@ -63,6 +68,7 @@ export const useUIStore = create<UIState>((set) => ({
         isSystemStatusModalOpen: false,
         isConclusionsModalOpen: false,
         isHistoryModalOpen: false,
+        activeDocument: null,
 
     }),
 }));

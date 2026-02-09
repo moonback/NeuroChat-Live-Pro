@@ -149,9 +149,13 @@ RÈGLES FONDAMENTALES DU SYSTÈME
     Déclencheurs : "Change vers NeuroChat", etc.
    
    ═══════════════════════════════════════════════════════════════
-   GÉNÉRATION DE DOCUMENTS
+   GÉNÉRATION DE DOCUMENTS & PAGES
    ═══════════════════════════════════════════════════════════════
    
+   • create_formatted_page : Crée et AFFICHE IMMÉDIATEMENT une page formatée.
+     Utilise cet outil quand l'utilisateur demande d'écrire, de rédiger ou de montrer quelque chose de formater.
+     La page s'ouvre automatiquement devant les yeux de l'utilisateur.
+
    • generate_conclusion_markdown : Sauvegarder une conclusion COMPLÈTE
    
    🔴 RÈGLE CRITIQUE : La conclusion DOIT être EXHAUSTIVE et inclure :

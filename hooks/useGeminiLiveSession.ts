@@ -18,6 +18,7 @@ import {
   showConnectionFailure,
 } from '../utils/toastHelpers';
 import { useAppStore } from '../stores/appStore';
+import { useUIStore } from '../stores/uiStore';
 
 interface UseGeminiLiveSessionProps {
   connectionState: ConnectionState;
@@ -270,9 +271,14 @@ export const useGeminiLiveSession = ({
 
             // Tool execution
             if (message.toolCall?.functionCalls) {
+              const { setActiveDocument } = useUIStore.getState();
               const functionResponses = await Promise.all(message.toolCall.functionCalls.map(async (fc) => {
                 try {
-                  const result = await executeFunction(fc, { onPersonalityChange, onToggleScreenShare });
+                  const result = await executeFunction(fc, {
+                    onPersonalityChange,
+                    onToggleScreenShare,
+                    onOpenDocument: (doc) => setActiveDocument(doc)
+                  });
                   showFunctionExecuted(addToast, fc.name);
                   return { id: fc.id, name: fc.name, response: result };
                 } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Personality } from '../types';
 import { getSavedConclusions, deleteSavedConclusion, clearAllSavedConclusions, SavedConclusion } from '../utils/tools';
+import { useUIStore } from '../stores/uiStore';
 
 interface ConclusionsModalProps {
   isOpen: boolean;
@@ -64,13 +65,13 @@ function downloadMarkdown(content: string, filename: string) {
 }
 
 // Composant pour afficher une conclusion
-const ConclusionCard = memo(({ 
-  conclusion, 
-  onDelete, 
+const ConclusionCard = memo(({
+  conclusion,
+  onDelete,
   onView,
-  themeColor 
-}: { 
-  conclusion: SavedConclusion; 
+  themeColor
+}: {
+  conclusion: SavedConclusion;
   onDelete: (id: string) => void;
   onView: (conclusion: SavedConclusion) => void;
   themeColor: string;
@@ -99,7 +100,7 @@ const ConclusionCard = memo(({
   }, [conclusion]);
 
   return (
-    <div 
+    <div
       className={`
         group relative p-4 rounded-xl border transition-all duration-300
         ${isDeleting ? 'opacity-50 scale-95' : 'hover:scale-[1.02]'}
@@ -185,18 +186,18 @@ const ConclusionDetailModal = memo(({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
     >
-      <div 
-        className="absolute inset-0 bg-black/90 backdrop-blur-md" 
+      <div
+        className="absolute inset-0 bg-black/90 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
-      
-      <div 
+
+      <div
         className="relative w-full max-w-4xl max-h-[90vh] bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 zoom-in-95 duration-500"
         style={{
           boxShadow: `0 0 100px -20px ${themeColor}20, 0 0 40px -10px rgba(0,0,0,0.5)`
@@ -256,14 +257,21 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { activeDocument, setActiveDocument } = useUIStore();
 
   // Charger les conclusions
   useEffect(() => {
     if (isOpen) {
       const saved = getSavedConclusions();
       setConclusions(saved);
+
+      // Si un document actif est défini dans le store, l'afficher
+      if (activeDocument) {
+        setSelectedConclusion(activeDocument);
+        setIsDetailOpen(true);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, activeDocument]);
 
   // Fermer avec Escape
   useEffect(() => {
@@ -308,7 +316,7 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
     if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les conclusions ? Cette action est irréversible.')) {
       return;
     }
-    
+
     setIsClearing(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     clearAllSavedConclusions();
@@ -322,21 +330,21 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300"
         role="dialog"
         aria-modal="true"
         aria-labelledby="conclusions-modal-title"
       >
         {/* Backdrop */}
-        <div 
-          className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+        <div
+          className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
-        
+
         {/* Modal Container */}
-        <div 
+        <div
           ref={modalRef}
           onClick={handleContentClick}
           className="relative w-full max-w-4xl bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 flex flex-col max-h-[85vh]"
@@ -347,7 +355,7 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-white/[0.02]">
             <div className="flex items-center gap-4">
-              <div 
+              <div
                 className="p-3 rounded-xl border transition-all duration-300"
                 style={{
                   backgroundColor: `${currentPersonality.themeColor}20`,
@@ -391,7 +399,7 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {conclusions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div 
+                <div
                   className="p-6 rounded-full mb-4"
                   style={{
                     backgroundColor: `${currentPersonality.themeColor}10`
@@ -430,6 +438,7 @@ const ConclusionsModal: React.FC<ConclusionsModalProps> = ({
         onClose={() => {
           setIsDetailOpen(false);
           setSelectedConclusion(null);
+          if (activeDocument) setActiveDocument(null);
         }}
         themeColor={currentPersonality.themeColor}
       />

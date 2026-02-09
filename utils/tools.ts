@@ -101,6 +101,24 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       required: ['conclusion']
     }
   },
+  create_formatted_page: {
+    name: 'create_formatted_page',
+    description: 'Crée et affiche immédiatement une nouvelle page formatée avec du contenu markdown. Utilisez cet outil quand l\'utilisateur demande d\'écrire quelque chose, de créer un rapport, une note, ou de formaliser des informations. La page s\'ouvrira automatiquement pour l\'utilisateur.',
+    parameters: {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: 'Le contenu markdown complet et formaté de la page.'
+        },
+        title: {
+          type: 'string',
+          description: 'Le titre de la page (ex: "Rapport d\'analyse", "Note de service")'
+        }
+      },
+      required: ['content', 'title']
+    }
+  },
   run_terminal_command: {
     name: 'run_terminal_command',
     description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système ou gérer des fichiers locaux. NOTE: Pour naviguer sur le web ou ouvrir des sites, utilisez PRIORITAIREMENT les outils "browser_*" qui sont intégrés. Évitez d\'utiliser "start chrome" sauf si le navigateur autonome échoue.',
@@ -266,6 +284,7 @@ export async function executeFunction(
   options?: {
     onPersonalityChange?: PersonalityChangeCallback;
     onToggleScreenShare?: (enabled: boolean) => void;
+    onOpenDocument?: (document: SavedConclusion) => void;
   }
 ): Promise<any> {
   const { name, args } = functionCall;
@@ -408,6 +427,11 @@ ${conclusion}
       // Sauvegarder dans localStorage
       localStorage.setItem(CONCLUSIONS_STORAGE_KEY, JSON.stringify(existingConclusions));
 
+      // Appeler le callback pour ouvrir le document si disponible
+      if (options?.onOpenDocument) {
+        options.onOpenDocument(savedConclusion);
+      }
+
       return {
         result: 'success',
         message: `Conclusion "${documentTitle}" sauvegardée avec succès dans le localStorage`,
@@ -429,6 +453,83 @@ ${conclusion}
       return {
         result: 'error',
         message: `Erreur lors de la sauvegarde: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+      };
+    }
+  }
+
+  // Gestion de la création et affichage d'une page formatée
+  if (name === 'create_formatted_page') {
+    const { content, title } = args || {};
+
+    if (!content || !title) {
+      return {
+        result: 'error',
+        message: 'Le titre et le contenu sont requis'
+      };
+    }
+
+    try {
+      const date = new Date();
+      const documentTitle = title.trim();
+
+      const formattedDate = date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const markdownContent = `# ${documentTitle}
+ 
+**Date:** ${formattedDate}
+**Source:** NeuroChat Assistant
+
+---
+
+${content}
+
+---
+*Document généré par NeuroChat Live Pro*
+`;
+
+      const savedDocument: SavedConclusion = {
+        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: documentTitle,
+        content: content,
+        createdAt: date.toISOString(),
+        markdown: markdownContent
+      };
+
+      // Sauvegarder dans localStorage
+      const existingJson = localStorage.getItem(CONCLUSIONS_STORAGE_KEY);
+      let existing: SavedConclusion[] = [];
+      if (existingJson) {
+        try {
+          existing = JSON.parse(existingJson);
+          if (!Array.isArray(existing)) existing = [];
+        } catch (e) { existing = []; }
+      }
+
+      existing.unshift(savedDocument);
+      if (existing.length > 100) existing = existing.slice(0, 100);
+      localStorage.setItem(CONCLUSIONS_STORAGE_KEY, JSON.stringify(existing));
+
+      // Ouvrir immédiatement le document
+      if (options?.onOpenDocument) {
+        options.onOpenDocument(savedDocument);
+      }
+
+      return {
+        result: 'success',
+        message: `La page "${documentTitle}" a été créée et ouverte pour l'utilisateur.`,
+        id: savedDocument.id
+      };
+    } catch (error) {
+      return {
+        result: 'error',
+        message: `Erreur lors de la création de la page: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
