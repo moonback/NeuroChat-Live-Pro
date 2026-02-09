@@ -33,6 +33,7 @@ interface UseGeminiLiveSessionProps {
   selectedVoice: string;
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
+  isEvolutionEnabled: boolean;
   isVideoActive: boolean;
   startFrameTransmission: () => void;
   resetVisionState: () => void;
@@ -54,6 +55,7 @@ export const useGeminiLiveSession = ({
   selectedVoice,
   isFunctionCallingEnabled,
   isGoogleSearchEnabled,
+  isEvolutionEnabled,
   isVideoActive,
   startFrameTransmission,
   resetVisionState,
@@ -99,6 +101,7 @@ export const useGeminiLiveSession = ({
     selectedVoice,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
+    isEvolutionEnabled,
     isVideoActive
   });
 
@@ -110,9 +113,10 @@ export const useGeminiLiveSession = ({
       selectedVoice,
       isFunctionCallingEnabled,
       isGoogleSearchEnabled,
+      isEvolutionEnabled,
       isVideoActive
     };
-  }, [personality, documentsContext, personalityFilesContext, selectedVoice, isFunctionCallingEnabled, isGoogleSearchEnabled, isVideoActive]);
+  }, [personality, documentsContext, personalityFilesContext, selectedVoice, isFunctionCallingEnabled, isGoogleSearchEnabled, isEvolutionEnabled, isVideoActive]);
 
   const cleanupAudioResources = useCallback(() => {
     audioSourcesRef.current.forEach(src => {
@@ -344,7 +348,8 @@ export const useGeminiLiveSession = ({
           systemInstruction: buildSystemInstruction(
             refs.current.personality.systemInstruction,
             refs.current.documentsContext,
-            refs.current.personalityFilesContext
+            refs.current.personalityFilesContext,
+            refs.current.isEvolutionEnabled
           ),
           tools: buildToolsConfig(refs.current.isFunctionCallingEnabled, refs.current.isGoogleSearchEnabled),
           // @ts-ignore

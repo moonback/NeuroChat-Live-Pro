@@ -63,12 +63,14 @@ const App: React.FC = () => {
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
     isEyeTrackingEnabled,
+    isEvolutionEnabled,
     setConnectionState: setStoreConnectionState,
     setPersonality,
     setUploadedDocuments,
     setIsFunctionCallingEnabled,
     setIsGoogleSearchEnabled,
     setIsEyeTrackingEnabled,
+    setIsEvolutionEnabled,
   } = useAppStore();
 
   // Sync useStatusManager with store state
@@ -148,6 +150,7 @@ const App: React.FC = () => {
     selectedVoice,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
+    isEvolutionEnabled,
     isVideoActive,
     startFrameTransmission,
     resetVisionState,
@@ -209,6 +212,17 @@ const App: React.FC = () => {
       showGoogleSearchToggle(addToast, enabled);
     });
   }, [setIsGoogleSearchEnabled, addToast, withAutoReconnect]);
+
+  const handleEvolutionToggle = useCallback((enabled: boolean) => {
+    withAutoReconnect(() => {
+      setIsEvolutionEnabled(enabled);
+      addToast(
+        enabled ? 'success' : 'info',
+        enabled ? 'Évolution Activée' : 'Évolution Désactivée',
+        enabled ? 'L\'assistant a désormais accès à son propre code source.' : 'L\'accès au code source a été révoqué.'
+      );
+    });
+  }, [setIsEvolutionEnabled, addToast, withAutoReconnect]);
 
   const handleDocumentsChange = useCallback((documents: ProcessedDocument[]) => {
     withAutoReconnect(() => {
@@ -360,6 +374,8 @@ const App: React.FC = () => {
           onToggleFunctionCalling={handleFunctionCallingToggle}
           isGoogleSearchEnabled={isGoogleSearchEnabled}
           onToggleGoogleSearch={handleGoogleSearchToggle}
+          isEvolutionEnabled={isEvolutionEnabled}
+          onToggleEvolution={handleEvolutionToggle}
 
 
           onOpenToolsList={() => ui.setToolsListOpen(true)}

@@ -19,6 +19,8 @@ interface HeaderProps {
   onToggleFunctionCalling: (enabled: boolean) => void;
   isGoogleSearchEnabled: boolean;
   onToggleGoogleSearch: (enabled: boolean) => void;
+  isEvolutionEnabled: boolean;
+  onToggleEvolution: (enabled: boolean) => void;
   onOpenToolsList: () => void;
 
   onOpenSystemStatus?: () => void;
@@ -57,6 +59,11 @@ const Icons = {
   History: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  Code: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
     </svg>
   )
 };
@@ -169,6 +176,8 @@ const Header: React.FC<HeaderProps> = ({
   onToggleFunctionCalling,
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
+  isEvolutionEnabled,
+  onToggleEvolution,
   onOpenSystemStatus,
   onOpenConclusions,
   onOpenHistory,
@@ -240,6 +249,15 @@ const Header: React.FC<HeaderProps> = ({
               icon={<Icons.Function />}
               label="Intelligence"
               themeColor={currentPersonality.themeColor}
+              disabled={isConnected}
+              disabledReason={disabledReason}
+            />
+            <ControlButton
+              active={isEvolutionEnabled}
+              onClick={() => onToggleEvolution(!isEvolutionEnabled)}
+              icon={<Icons.Code />}
+              label="Auto-Évolution"
+              themeColor="#f43f5e"
               disabled={isConnected}
               disabledReason={disabledReason}
             />

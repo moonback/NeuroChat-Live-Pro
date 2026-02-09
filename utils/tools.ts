@@ -152,13 +152,13 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   run_terminal_command: {
     name: 'run_terminal_command',
-    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système ou gérer des fichiers locaux. NOTE: Pour naviguer sur le web ou ouvrir des sites, utilisez PRIORITAIREMENT les outils "browser_*" qui sont intégrés. Évitez d\'utiliser "start chrome" sauf si le navigateur autonome échoue.',
+    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), gérer des fichiers locaux ou MODIFIER VOTRE PROPRE CODE SOURCE (si le mode Auto-Évolution est activé). NOTE: Pour naviguer sur le web, utilisez PRIORITAIREMENT les outils "browser_*".',
     parameters: {
       type: 'object',
       properties: {
         command: {
           type: 'string',
-          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami", "start notepad")'
+          description: 'La commande terminal complète à exécuter (ex: "Get-Content path/to/file", "dir", "mkdir", "whoami")'
         }
       },
       required: ['command']

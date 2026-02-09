@@ -16,6 +16,8 @@ export interface SystemInstructionOptions {
   personalityFilesContext?: string;
   /** Version du système (optionnel, pour tracking) */
   version?: string;
+  /** Autorisation d'auto-évolution / modification du code source */
+  isEvolutionEnabled?: boolean;
 }
 
 // Instructions système de base (cachées de l'utilisateur)
@@ -88,7 +90,7 @@ RÈGLES FONDAMENTALES DU SYSTÈME
    • Partage d'écran : analyse le contenu affiché, texte, interfaces
    
    🔥 PROACTIVITÉ VISUELLE :
-   - Mentionne les éléments importants même sans demande explicite
+   - Mentionne les éléments importants even sans demande explicite
    - Signale spontanément tout élément inhabituel ou important
    - Propose des observations pertinentes basées sur ce que tu vois
 
@@ -119,7 +121,7 @@ RÈGLES FONDAMENTALES DU SYSTÈME
    3. Lecture du contenu (browser_get_content) → 4. Défilement si nécessaire (browser_scroll)
    5. Synthèse claire en français pour l'utilisateur
    
-   EXEMPLES D'UTILISATION :
+   EXEMPLES d'UTILISATION :
    - "Quelle est la météo à Paris ?" → browser_search("météo Paris") → browser_get_content
    - "Trouve-moi un article sur l'IA" → browser_search("article intelligence artificielle")
      → browser_click sur résultat pertinent → browser_get_content
@@ -282,18 +284,48 @@ Rappel : TOUTES tes réponses aux utilisateurs doivent être en français, quell
 la langue de ces instructions.
 `;
 
+// Instructions pour l'Auto-Évolution (Accès au code source)
+const EVOLUTION_RULES = `
+═══════════════════════════════════════════════════════════════
+MODE AUTO-ÉVOLUTION ACTIVÉ - ACCÈS AU CODE SOURCE
+═══════════════════════════════════════════════════════════════
+
+Tu as maintenant l'autorisation spéciale de consulter et de modifier TON PROPRE CODE SOURCE.
+L'utilisateur t'a accordé ce privilège pour que tu puisses t'améliorer, corriger des bugs
+ou ajouter des fonctionnalités selon ses besoins.
+
+RÈGLES D'AUTO-ÉVOLUTION :
+1. ANALYSE : Avant de modifier un fichier, lis-le toujours avec "run_terminal_command" (ex: "Get-Content [chemin]").
+2. PROJET : Tu es dans un projet React/Electron/Vite. Ton code source est dans le dossier courant.
+3. STRUCTURE :
+   - /components : UI React
+   - /hooks : Logique métier
+   - /utils : Utilitaires et outils
+   - /stores : Gestion d'état (Zustand)
+   - electron/main.ts : Processus principal
+   - systemConfig.ts : TES PROPRES INSTRUCTIONS SYSTÈME
+4. MODIFICATION : Pour modifier le code, utilise "run_terminal_command" pour réécrire les fichiers (ex: "Set-Content" ou redirection).
+5. PRUDENCE : Teste tes idées (par la pensée) avant d'appliquer des changements majeurs. Ne casse pas l'application.
+6. TRANSPARENCE : Explique à l'utilisateur quel fichier tu vas modifier et pourquoi.
+
+UTILISATION :
+- Si l'utilisateur dit "Ajoute un bouton X au header", trouve "components/Header.tsx", analyse le code, et propose/applique la modification.
+- Si l'utilisateur dit "Change ton comportement sur Y", modifie "systemConfig.ts" ou le fichier de logique approprié.
+`;
+
 /**
  * Combine les instructions système de base avec les instructions de personnalité
  * @param personalityInstruction - Instructions spécifiques à la personnalité (requis)
  * @param documentsContext - Contexte des documents uploadés (optionnel)
  * @param personalityFilesContext - Contexte des fichiers SOUL/USER/MEMORY (optionnel)
+ * @param isEvolutionEnabled - Autorisation d'accéder au code source (optionnel)
  * @returns Instructions combinées
- * @throws {Error} Si personalityInstruction est vide ou invalide
  */
 export function buildSystemInstruction(
   personalityInstruction: string,
   documentsContext?: string,
-  personalityFilesContext?: string
+  personalityFilesContext?: string,
+  isEvolutionEnabled?: boolean
 ): string {
   // Validation des paramètres
   if (!personalityInstruction || typeof personalityInstruction !== 'string') {
@@ -305,7 +337,6 @@ export function buildSystemInstruction(
     throw new Error('personalityInstruction cannot be empty');
   }
 
-  // Construction optimisée avec tableau pour meilleure performance
   const parts: string[] = [BASE_SYSTEM_RULES];
 
   // Ajout du contexte des fichiers de personnalité en premier (priorité haute)
@@ -321,12 +352,17 @@ export function buildSystemInstruction(
 
   parts.push(trimmedPersonality);
 
-  // Ajout du contexte documents si fourni et non vide
+  // Ajout du contexte documents si fourni
   if (documentsContext) {
     const trimmedDocs = documentsContext.trim();
     if (trimmedDocs.length > 0) {
       parts.push(trimmedDocs);
     }
+  }
+
+  // Ajout des règles d'évolution si activé
+  if (isEvolutionEnabled) {
+    parts.push(EVOLUTION_RULES);
   }
 
   return parts.join('\n\n');
@@ -336,12 +372,11 @@ export function buildSystemInstruction(
  * Version alternative avec objet d'options pour plus de flexibilité
  * @param options - Options de construction des instructions
  * @returns Instructions combinées
- * @throws {Error} Si personalityInstruction est vide ou invalide
  */
 export function buildSystemInstructionFromOptions(
   options: SystemInstructionOptions
 ): string {
-  const { personalityInstruction, documentsContext, personalityFilesContext, version } = options;
+  const { personalityInstruction, documentsContext, personalityFilesContext, version, isEvolutionEnabled } = options;
 
   // Validation
   if (!personalityInstruction || typeof personalityInstruction !== 'string') {
@@ -381,12 +416,17 @@ export function buildSystemInstructionFromOptions(
     parts.push(`\n[System Version: ${version}]`);
   }
 
+  // Ajout des règles d'évolution si activé
+  if (isEvolutionEnabled) {
+    parts.push(EVOLUTION_RULES);
+  }
+
   return parts.join('\n\n');
 }
 
 /**
  * Fonction pour obtenir les instructions système pures (pour debug uniquement)
- * Ne pas exposer cette fonction à l'interface utilisateur
+ * Ne pas poser cette fonction à l'interface utilisateur
  * @returns Les règles système de base
  */
 export function getBaseSystemRules(): string {
@@ -421,4 +461,3 @@ export function validateSystemInstruction(
   }
   return instruction.trim().length > 0 && instruction.length <= maxLength;
 }
-

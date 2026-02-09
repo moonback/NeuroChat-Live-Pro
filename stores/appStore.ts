@@ -22,6 +22,7 @@ interface AppState {
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
   isEyeTrackingEnabled: boolean;
+  isEvolutionEnabled: boolean;
 
   // Actions
   setConnectionState: (state: ConnectionState) => void;
@@ -30,6 +31,7 @@ interface AppState {
   setIsFunctionCallingEnabled: (enabled: boolean) => void;
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
+  setIsEvolutionEnabled: (enabled: boolean) => void;
 
   // Session Actions
   createNewSession: (personalityId: string) => string;
@@ -78,6 +80,7 @@ export const useAppStore = create<AppState>()(
       isFunctionCallingEnabled: true,
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: true,
+      isEvolutionEnabled: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -86,6 +89,7 @@ export const useAppStore = create<AppState>()(
       setIsFunctionCallingEnabled: (enabled) => set({ isFunctionCallingEnabled: enabled }),
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
+      setIsEvolutionEnabled: (enabled) => set({ isEvolutionEnabled: enabled }),
 
       setCurrentSessionId: (id) => set({ currentSessionId: id }),
 
@@ -180,6 +184,7 @@ export const useAppStore = create<AppState>()(
         isFunctionCallingEnabled: state.isFunctionCallingEnabled,
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
+        isEvolutionEnabled: state.isEvolutionEnabled,
       }),
       merge: (persistedState: any, currentState) => {
         const merged = { ...currentState };
@@ -217,6 +222,10 @@ export const useAppStore = create<AppState>()(
 
         if (typeof persistedState?.isEyeTrackingEnabled === 'boolean') {
           merged.isEyeTrackingEnabled = persistedState.isEyeTrackingEnabled;
+        }
+
+        if (typeof persistedState?.isEvolutionEnabled === 'boolean') {
+          merged.isEvolutionEnabled = persistedState.isEvolutionEnabled;
         }
 
         return merged;
