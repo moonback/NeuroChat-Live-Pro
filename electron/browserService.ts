@@ -6,20 +6,51 @@ export class BrowserService {
     private page: Page | null = null;
 
     async init(): Promise<Page> {
+        // Si le browser a été fermé manuellement, on réinitialise tout
+        if (this.browser && !this.browser.isConnected()) {
+            this.browser = null;
+            this.context = null;
+            this.page = null;
+        }
+
         if (!this.browser) {
             this.browser = await chromium.launch({
-                headless: false, // On windows, it's better to show it for the user to see what's happening
+                headless: false,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
+
+            // Gérer la fermeture inattendue
+            this.browser.on('disconnected', () => {
+                this.browser = null;
+                this.context = null;
+                this.page = null;
+            });
+
             this.context = await this.browser.newContext({
                 viewport: { width: 1280, height: 720 },
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             });
+
             this.page = await this.context.newPage();
+
+            // Gérer la fermeture de la page
+            this.page.on('close', () => {
+                this.page = null;
+            });
         }
+
+        // Si la page a été fermée mais pas le browser, on en ouvre une nouvelle
+        if (!this.page && this.context) {
+            this.page = await this.context.newPage();
+            this.page.on('close', () => {
+                this.page = null;
+            });
+        }
+
         if (!this.page) {
-            throw new Error('Failed to initialize browser page');
+            throw new Error('Impossible d\'initialiser la page du navigateur');
         }
+
         return this.page;
     }
 
