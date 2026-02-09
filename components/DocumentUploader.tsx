@@ -37,7 +37,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           continue;
         }
 
-        if (!isValidFileSize(file, 10)) {
+        if (!isValidFileSize(file, 20)) {
           alert(`Le fichier "${file.name}" est trop volumineux. Taille maximale: 10MB.`);
           continue;
         }

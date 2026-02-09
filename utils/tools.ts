@@ -100,6 +100,20 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       },
       required: ['conclusion']
     }
+  },
+  run_terminal_command: {
+    name: 'run_terminal_command',
+    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système, gérer des fichiers locaux ou automatiser des tâches.',
+    parameters: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami")'
+        }
+      },
+      required: ['command']
+    }
   }
 };
 
@@ -111,36 +125,36 @@ export async function executeFunction(
   }
 ): Promise<any> {
   const { name, args } = functionCall;
-  
+
   console.log(`[Tools] Exécution de la fonction: ${name}`, args);
-  
+
   // Gestion du changement de personnalité
   if (name === 'change_personality') {
     const { personalityId, personalityName } = args || {};
-    
+
     if (!personalityId && !personalityName) {
       return {
         result: 'error',
         message: 'Veuillez spécifier soit personalityId soit personalityName'
       };
     }
-    
+
     // Rechercher la personnalité par ID ou nom
     let targetPersonality: Personality | undefined;
-    
+
     if (personalityId) {
       targetPersonality = AVAILABLE_PERSONALITIES.find(
         p => p.id.toLowerCase() === personalityId.toLowerCase()
       );
     }
-    
+
     if (!targetPersonality && personalityName) {
       targetPersonality = AVAILABLE_PERSONALITIES.find(
         p => p.name.toLowerCase().includes(personalityName.toLowerCase()) ||
-             personalityName.toLowerCase().includes(p.name.toLowerCase())
+          personalityName.toLowerCase().includes(p.name.toLowerCase())
       );
     }
-    
+
     if (!targetPersonality) {
       const availableNames = AVAILABLE_PERSONALITIES.map(p => `- ${p.name} (${p.id})`).join('\n');
       return {
@@ -148,7 +162,7 @@ export async function executeFunction(
         message: `Personnalité non trouvée. Personnalités disponibles:\n${availableNames}`
       };
     }
-    
+
     // Appeler le callback si disponible
     if (options?.onPersonalityChange) {
       options.onPersonalityChange(targetPersonality);
@@ -168,32 +182,32 @@ export async function executeFunction(
       };
     }
   }
-  
+
   // Gestion de la sauvegarde de conclusion dans localStorage
   if (name === 'generate_conclusion_markdown') {
     const { conclusion, title } = args || {};
-    
+
     if (!conclusion || typeof conclusion !== 'string' || conclusion.trim().length === 0) {
       return {
         result: 'error',
         message: 'Le contenu de la conclusion est requis et ne peut pas être vide'
       };
     }
-    
+
     try {
       const date = new Date();
       const documentTitle = title && title.trim() ? title.trim() : 'Conclusion';
-      
+
       // Créer le contenu markdown formaté avec structure complète
-      const formattedDate = date.toLocaleDateString('fr-FR', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
+      const formattedDate = date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
-      
+
       const markdownContent = `# ${documentTitle}
 
 ## 📅 Informations
@@ -221,11 +235,11 @@ ${conclusion}
         createdAt: date.toISOString(),
         markdown: markdownContent
       };
-      
+
       // Récupérer les conclusions existantes
       const existingConclusionsJson = localStorage.getItem(CONCLUSIONS_STORAGE_KEY);
       let existingConclusions: SavedConclusion[] = [];
-      
+
       if (existingConclusionsJson) {
         try {
           existingConclusions = JSON.parse(existingConclusionsJson);
@@ -238,18 +252,18 @@ ${conclusion}
           existingConclusions = [];
         }
       }
-      
+
       // Ajouter la nouvelle conclusion au début du tableau
       existingConclusions.unshift(savedConclusion);
-      
+
       // Limiter à 100 conclusions pour éviter de saturer le localStorage
       if (existingConclusions.length > 100) {
         existingConclusions = existingConclusions.slice(0, 100);
       }
-      
+
       // Sauvegarder dans localStorage
       localStorage.setItem(CONCLUSIONS_STORAGE_KEY, JSON.stringify(existingConclusions));
-      
+
       return {
         result: 'success',
         message: `Conclusion "${documentTitle}" sauvegardée avec succès dans le localStorage`,
@@ -259,7 +273,7 @@ ${conclusion}
       };
     } catch (error) {
       console.error('[Tools] Erreur lors de la sauvegarde de la conclusion:', error);
-      
+
       // Gérer le cas où localStorage est plein
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         return {
@@ -267,18 +281,50 @@ ${conclusion}
           message: 'Le localStorage est plein. Veuillez supprimer d\'anciennes conclusions pour libérer de l\'espace.'
         };
       }
-      
+
       return {
         result: 'error',
         message: `Erreur lors de la sauvegarde: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
       };
     }
   }
-  
+
+  // Gestion de l'exécution d'une commande terminal
+  if (name === 'run_terminal_command') {
+    const { command } = args || {};
+
+    if (!command) {
+      return {
+        result: 'error',
+        message: 'La commande est requise'
+      };
+    }
+
+    // Vérifier si nous sommes dans un environnement Electron
+    if (typeof window !== 'undefined' && window.ipcRenderer) {
+      try {
+        console.log(`[Tools] Appel IPC pour exécuter la commande: ${command}`);
+        const response = await window.ipcRenderer.invoke('execute-command', command);
+        return response;
+      } catch (error) {
+        console.error('[Tools] Erreur lors de l\'invocation IPC:', error);
+        return {
+          result: 'error',
+          message: `Erreur d'exécution via Electron: ${error instanceof Error ? error.message : String(error)}`
+        };
+      }
+    } else {
+      return {
+        result: 'error',
+        message: 'L\'exécution de commandes terminal nécessite que l\'application soit lancée via la version Desktop (Electron). Cette fonctionnalité n\'est pas disponible dans le navigateur standard pour des raisons de sécurité.'
+      };
+    }
+  }
+
   console.warn(`[Tools] ⚠️ Fonction inconnue: ${name}`);
-  return { 
-    result: 'error', 
-    message: `Fonction ${name} non implémentée` 
+  return {
+    result: 'error',
+    message: `Fonction ${name} non implémentée`
   };
 }
 
@@ -300,20 +346,20 @@ export function buildToolsConfig(
   enableGoogleSearch: boolean = false
 ): any[] {
   const tools: any[] = [];
-  
+
   if (enableFunctionCalling) {
     const functionDeclarations = Object.values(AVAILABLE_FUNCTIONS);
     tools.push({
       functionDeclarations: functionDeclarations
     });
   }
-  
+
   if (enableGoogleSearch) {
     tools.push({
       googleSearch: {}
     });
   }
-  
+
   return tools;
 }
 

@@ -3,6 +3,7 @@ import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 import PersonalityEditor from './components/PersonalityEditor';
+import PersonalityFilesEditor from './components/PersonalityFilesEditor';
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
 import ConclusionsModal from './components/ConclusionsModal';
@@ -16,6 +17,7 @@ import { useStatusManager } from './hooks/useStatusManager';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useVisionManager } from './hooks/useVisionManager';
 import { useGeminiLiveSession } from './hooks/useGeminiLiveSession';
+import { usePersonalityFiles } from './hooks/usePersonalityFiles';
 import VideoOverlay from './components/VideoOverlay';
 import { useAppStore } from './stores/appStore';
 import {
@@ -26,35 +28,35 @@ import {
 } from './utils/toastHelpers';
 
 // --- Background Layer Component ---
-const BackgroundLayers: React.FC<{ 
-  themeColor: string; 
-  isTalking: boolean; 
+const BackgroundLayers: React.FC<{
+  themeColor: string;
+  isTalking: boolean;
   isConnected: boolean;
 }> = React.memo(({ themeColor, isTalking, isConnected }) => (
   <>
     {/* Base Layer - Deep Black with Subtle Noise */}
-    <div 
-      className="absolute inset-0 bg-[#000000] z-0" 
+    <div
+      className="absolute inset-0 bg-[#000000] z-0"
       style={{
         backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.015) 1px, transparent 0)',
         backgroundSize: '40px 40px'
-      }} 
+      }}
     />
-    
+
     {/* Primary Ambient Glow - Center */}
-    <div 
+    <div
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vh] h-[90vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0 animate-float"
-      style={{ 
+      style={{
         background: `radial-gradient(circle, ${themeColor}25, ${themeColor}10 40%, transparent 70%)`,
         filter: 'blur(80px)',
         animation: 'pulse-glow 8s ease-in-out infinite'
       }}
     />
-    
+
     {/* Secondary Glow - Top Right for Depth */}
-    <div 
+    <div
       className="absolute top-[15%] right-[15%] w-[60vh] h-[60vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
-      style={{ 
+      style={{
         background: `radial-gradient(circle, ${themeColor}15, transparent 60%)`,
         filter: 'blur(100px)',
         animation: 'pulse-glow 10s ease-in-out infinite reverse, float 12s ease-in-out infinite'
@@ -62,9 +64,9 @@ const BackgroundLayers: React.FC<{
     />
 
     {/* Tertiary Glow - Bottom Left */}
-    <div 
+    <div
       className="absolute bottom-[10%] left-[20%] w-[50vh] h-[50vh] rounded-full transition-all duration-[2000ms] ease-out pointer-events-none z-0"
-      style={{ 
+      style={{
         background: `radial-gradient(circle, ${themeColor}12, transparent 60%)`,
         filter: 'blur(90px)',
         animation: 'pulse-glow 12s ease-in-out infinite, float 10s ease-in-out infinite reverse'
@@ -73,9 +75,9 @@ const BackgroundLayers: React.FC<{
 
     {/* Additional Dynamic Glow - Responsive to connection state */}
     {(isTalking || isConnected) && (
-      <div 
+      <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vh] rounded-full pointer-events-none z-0 transition-opacity duration-1000"
-        style={{ 
+        style={{
           background: `radial-gradient(circle, ${themeColor}20, transparent 50%)`,
           filter: 'blur(120px)',
           animation: 'pulse-glow 6s ease-in-out infinite',
@@ -87,9 +89,9 @@ const BackgroundLayers: React.FC<{
     {/* Sophisticated Gradient Overlays */}
     <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0 pointer-events-none transition-opacity duration-1000" />
     <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent z-0 pointer-events-none transition-opacity duration-1000" />
-    
+
     {/* Animated mesh gradient overlay for depth */}
-    <div 
+    <div
       className="absolute inset-0 z-0 pointer-events-none opacity-30"
       style={{
         backgroundImage: `linear-gradient(135deg, ${themeColor}05 0%, transparent 50%, ${themeColor}05 100%)`,
@@ -105,7 +107,7 @@ BackgroundLayers.displayName = 'BackgroundLayers';
 // --- Screen Share Overlay Component ---
 const ScreenShareOverlay: React.FC<{ isActive: boolean }> = React.memo(({ isActive }) => {
   if (!isActive) return null;
-  
+
   return (
     <div className="absolute inset-0 pointer-events-none z-30 border-[6px] border-indigo-500/50 shadow-[inset_0_0_100px_rgba(99,102,241,0.2)] animate-pulse" />
   );
@@ -162,10 +164,14 @@ const App: React.FC = () => {
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
   const [isConclusionsModalOpen, setIsConclusionsModalOpen] = useState(false);
+  const [isPersonalityFilesEditorOpen, setIsPersonalityFilesEditorOpen] = useState(false);
 
   // Documents Context
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
-  
+
+  // Personality Files Context
+  const { systemContext: personalityFilesContext, isLoading: isLoadingPersonalityFiles } = usePersonalityFiles();
+
   useEffect(() => {
     const updateContext = async () => {
       if (uploadedDocuments.length === 0) {
@@ -223,6 +229,7 @@ const App: React.FC = () => {
     addToast,
     personality: currentPersonality,
     documentsContext,
+    personalityFilesContext,
     selectedVoice,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
@@ -335,6 +342,8 @@ const App: React.FC = () => {
   const closeSystemStatus = useCallback(() => setIsSystemStatusModalOpen(false), []);
   const openConclusions = useCallback(() => setIsConclusionsModalOpen(true), []);
   const closeConclusions = useCallback(() => setIsConclusionsModalOpen(false), []);
+  const openPersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(true), []);
+  const closePersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(false), []);
 
   // Audio context activation on first interaction
   useEffect(() => {
@@ -364,33 +373,33 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
-      
+
       {/* Premium Multi-Layer Background System */}
-      <BackgroundLayers 
+      <BackgroundLayers
         themeColor={currentPersonality.themeColor}
         isTalking={isTalking}
         isConnected={isConnected}
       />
-      
+
       {/* Screen Share Overlay Border */}
       <ScreenShareOverlay isActive={isScreenShareActive} />
 
       {/* Premium Visualizer */}
-      <Visualizer 
-        analyserRef={analyserRef} 
-        color={currentPersonality.themeColor} 
+      <Visualizer
+        analyserRef={analyserRef}
+        color={currentPersonality.themeColor}
         isActive={isTalking || isConnected}
         isEyeTrackingEnabled={isEyeTrackingEnabled}
       />
-      
+
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      
+
       {/* PWA Install Prompt */}
       <InstallPWA />
-      
+
       {/* Modals */}
-      <PersonalityEditor 
+      <PersonalityEditor
         isOpen={isPersonalityEditorOpen}
         onClose={closePersonalityEditor}
         currentPersonality={currentPersonality}
@@ -420,6 +429,11 @@ const App: React.FC = () => {
         isOpen={isConclusionsModalOpen}
         onClose={closeConclusions}
         currentPersonality={currentPersonality}
+      />
+
+      <PersonalityFilesEditor
+        isOpen={isPersonalityFilesEditorOpen}
+        onClose={closePersonalityFilesEditor}
       />
 
       <MobileActionsDrawer
@@ -452,9 +466,9 @@ const App: React.FC = () => {
 
       {/* Main Layout */}
       <div className="relative z-10 w-full h-full flex flex-col lg:flex-row">
-        
+
         {/* Header */}
-        <Header 
+        <Header
           connectionState={storeConnectionState}
           currentPersonality={currentPersonality}
           selectedVoice={selectedVoice}
@@ -468,6 +482,7 @@ const App: React.FC = () => {
           isGoogleSearchEnabled={isGoogleSearchEnabled}
           onToggleGoogleSearch={handleGoogleSearchToggle}
           onEditPersonality={openPersonalityEditor}
+          onOpenPersonalityFilesEditor={openPersonalityFilesEditor}
           onOpenToolsList={openToolsList}
           onOpenSystemStatus={openSystemStatus}
           onOpenConclusions={openConclusions}
@@ -476,7 +491,7 @@ const App: React.FC = () => {
         {/* Main Content Area */}
         <div className="relative flex-grow flex flex-col lg:pt-0 xl:pt-0">
           <main className="flex-grow flex flex-col justify-end pb-0 sm:pb-2 md:pb-4 lg:pb-6 xl:pb-8 safe-area-bottom lg:px-8 xl:px-12">
-            <ControlPanel 
+            <ControlPanel
               connectionState={storeConnectionState}
               currentPersonality={currentPersonality}
               isVideoActive={isVideoActive}

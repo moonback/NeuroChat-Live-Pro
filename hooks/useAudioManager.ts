@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 interface UseAudioManagerResult {
   activateAudioContext: () => void;
@@ -17,12 +17,12 @@ export const useAudioManager = (): UseAudioManagerResult => {
     try {
       const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
       const ctx = new Ctx();
-      
+
       // Résoudre l'AudioContext s'il est suspendu (nécessaire après un geste utilisateur)
       if (ctx.state === 'suspended') {
         await ctx.resume();
       }
-      
+
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
 

@@ -12,6 +12,8 @@ export interface SystemInstructionOptions {
   personalityInstruction: string;
   /** Contexte des documents uploadés (optionnel) */
   documentsContext?: string;
+  /** Contexte des fichiers de personnalité (SOUL, USER, MEMORY) */
+  personalityFilesContext?: string;
   /** Version du système (optionnel, pour tracking) */
   version?: string;
 }
@@ -178,12 +180,14 @@ Now, act according to your personality while strictly respecting these fundament
  * Combine les instructions système de base avec les instructions de personnalité
  * @param personalityInstruction - Instructions spécifiques à la personnalité (requis)
  * @param documentsContext - Contexte des documents uploadés (optionnel)
+ * @param personalityFilesContext - Contexte des fichiers SOUL/USER/MEMORY (optionnel)
  * @returns Instructions combinées
  * @throws {Error} Si personalityInstruction est vide ou invalide
  */
 export function buildSystemInstruction(
   personalityInstruction: string,
-  documentsContext?: string
+  documentsContext?: string,
+  personalityFilesContext?: string
 ): string {
   // Validation des paramètres
   if (!personalityInstruction || typeof personalityInstruction !== 'string') {
@@ -196,7 +200,20 @@ export function buildSystemInstruction(
   }
 
   // Construction optimisée avec tableau pour meilleure performance
-  const parts: string[] = [BASE_SYSTEM_RULES, trimmedPersonality];
+  const parts: string[] = [BASE_SYSTEM_RULES];
+
+  // Ajout du contexte des fichiers de personnalité en premier (priorité haute)
+  if (personalityFilesContext) {
+    const trimmedPersonalityFiles = personalityFilesContext.trim();
+    if (trimmedPersonalityFiles.length > 0) {
+      parts.push('═══════════════════════════════════════════════════════════════');
+      parts.push('CONTEXTE DE PERSONNALITÉ (SOUL, USER, MEMORY)');
+      parts.push('═══════════════════════════════════════════════════════════════');
+      parts.push(trimmedPersonalityFiles);
+    }
+  }
+
+  parts.push(trimmedPersonality);
 
   // Ajout du contexte documents si fourni et non vide
   if (documentsContext) {
@@ -218,7 +235,7 @@ export function buildSystemInstruction(
 export function buildSystemInstructionFromOptions(
   options: SystemInstructionOptions
 ): string {
-  const { personalityInstruction, documentsContext, version } = options;
+  const { personalityInstruction, documentsContext, personalityFilesContext, version } = options;
 
   // Validation
   if (!personalityInstruction || typeof personalityInstruction !== 'string') {
@@ -230,7 +247,20 @@ export function buildSystemInstructionFromOptions(
     throw new Error('personalityInstruction cannot be empty');
   }
 
-  const parts: string[] = [BASE_SYSTEM_RULES, trimmedPersonality];
+  const parts: string[] = [BASE_SYSTEM_RULES];
+
+  // Ajout du contexte des fichiers de personnalité en premier (priorité haute)
+  if (personalityFilesContext) {
+    const trimmedPersonalityFiles = personalityFilesContext.trim();
+    if (trimmedPersonalityFiles.length > 0) {
+      parts.push('═══════════════════════════════════════════════════════════════');
+      parts.push('CONTEXTE DE PERSONNALITÉ (SOUL, USER, MEMORY)');
+      parts.push('═══════════════════════════════════════════════════════════════');
+      parts.push(trimmedPersonalityFiles);
+    }
+  }
+
+  parts.push(trimmedPersonality);
 
   // Ajout du contexte documents si fourni
   if (documentsContext) {

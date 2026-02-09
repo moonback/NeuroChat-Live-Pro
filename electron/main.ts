@@ -1,5 +1,11 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import path from 'node:path'
+import fs from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execPromise = promisify(exec)
 
 // The built directory structure
 //
@@ -59,7 +65,7 @@ function createTray() {
   const iconPath = path.join(VITE_PUBLIC, 'logo.png')
   // On s'assure que l'image est redimensionnée pour la barre des tâches
   const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
-  
+
   tray = new Tray(icon)
   tray.setToolTip('NeuroChat Live Pro')
 
@@ -99,7 +105,7 @@ function createTray() {
         }
       }
     ])
-    
+
     tray?.setContextMenu(contextMenu)
   }
 
@@ -145,4 +151,92 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   createWindow()
   createTray()
+
+  // --- Handlers IPC pour le système de fichiers ---
+
+  // Obtenir le chemin vers le dossier public (ou ressource en prod)
+  // En dev, on veut écrire dans le dossier source pour que les changements soient permanents
+  const getBasePath = () => {
+    if (app.isPackaged) {
+      return path.join(process.resourcesPath, 'public')
+    } else {
+      // En dev, on remonte depuis dist-electron/main.js vers public
+      return path.join(__dirname, '../public')
+    }
+  }
+
+  // Lire un fichier
+  ipcMain.handle('read-file', async (_, filePath: string) => {
+    try {
+      // Sécurité basique : empêcher de remonter trop haut
+      if (filePath.includes('..')) {
+        throw new Error('Access denied: relative paths not allowed')
+      }
+
+      const fullPath = path.join(getBasePath(), filePath)
+
+      // Si le fichier n'existe pas, essayer dans userData (pour l'historique par exemple)
+      if (!existsSync(fullPath) && !filePath.endsWith('.md')) { // .md sont dans public
+        const userDataPath = path.join(app.getPath('userData'), filePath)
+        if (existsSync(userDataPath)) {
+          return await fs.readFile(userDataPath, 'utf-8')
+        }
+        // Si c'est un fichier json qui n'existe pas dans userData, retourner null ou vide
+        if (filePath.endsWith('.json')) return null;
+      }
+
+      return await fs.readFile(fullPath, 'utf-8')
+    } catch (error) {
+      console.error(`Error reading file ${filePath}:`, error)
+      throw error
+    }
+  })
+
+  // Écrire un fichier
+  ipcMain.handle('write-file', async (_, { path: filePath, content }: { path: string, content: string }) => {
+    try {
+      if (filePath.includes('..')) {
+        throw new Error('Access denied: relative paths not allowed')
+      }
+
+      let fullPath = path.join(getBasePath(), filePath)
+
+      // Pour les fichiers qui ne sont pas dans public (comme history.json), utiliser userData
+      if (!filePath.endsWith('.md')) {
+        const userDataDir = app.getPath('userData')
+        fullPath = path.join(userDataDir, filePath)
+
+        // S'assurer que le dossier existe
+        const dir = path.dirname(fullPath)
+        if (!existsSync(dir)) {
+          await fs.mkdir(dir, { recursive: true })
+        }
+      }
+
+      await fs.writeFile(fullPath, content, 'utf-8')
+      return true
+    } catch (error) {
+      console.error(`Error writing file ${filePath}:`, error)
+      return false
+    }
+  })
+
+  // Exécuter une commande terminal
+  ipcMain.handle('execute-command', async (_, command: string) => {
+    try {
+      if (!command || command.trim() === '') {
+        throw new Error('Commande vide')
+      }
+
+      console.log(`[Main] Exécution de la commande: ${command}`)
+      const { stdout, stderr } = await execPromise(command)
+      return { stdout, stderr, result: 'success' }
+    } catch (error) {
+      console.error(`Error executing command ${command}:`, error)
+      return {
+        error: error instanceof Error ? error.message : String(error),
+        result: 'error'
+      }
+    }
+  })
 })

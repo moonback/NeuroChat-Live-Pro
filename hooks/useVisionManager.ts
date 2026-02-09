@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ConnectionState } from '../types';
 import { VideoContextAnalyzer } from '../utils/videoContextAnalyzer';
 import {

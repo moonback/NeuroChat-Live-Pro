@@ -5,6 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const node_path_1 = __importDefault(require("node:path"));
+const promises_1 = __importDefault(require("node:fs/promises"));
+const node_fs_1 = require("node:fs");
+const node_child_process_1 = require("node:child_process");
+const node_util_1 = require("node:util");
+const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -135,5 +140,85 @@ electron_1.app.on('activate', () => {
 electron_1.app.whenReady().then(() => {
     createWindow();
     createTray();
+    // --- Handlers IPC pour le système de fichiers ---
+    // Obtenir le chemin vers le dossier public (ou ressource en prod)
+    // En dev, on veut écrire dans le dossier source pour que les changements soient permanents
+    const getBasePath = () => {
+        if (electron_1.app.isPackaged) {
+            return node_path_1.default.join(process.resourcesPath, 'public');
+        }
+        else {
+            // En dev, on remonte depuis dist-electron/main.js vers public
+            return node_path_1.default.join(__dirname, '../public');
+        }
+    };
+    // Lire un fichier
+    electron_1.ipcMain.handle('read-file', async (_, filePath) => {
+        try {
+            // Sécurité basique : empêcher de remonter trop haut
+            if (filePath.includes('..')) {
+                throw new Error('Access denied: relative paths not allowed');
+            }
+            const fullPath = node_path_1.default.join(getBasePath(), filePath);
+            // Si le fichier n'existe pas, essayer dans userData (pour l'historique par exemple)
+            if (!(0, node_fs_1.existsSync)(fullPath) && !filePath.endsWith('.md')) { // .md sont dans public
+                const userDataPath = node_path_1.default.join(electron_1.app.getPath('userData'), filePath);
+                if ((0, node_fs_1.existsSync)(userDataPath)) {
+                    return await promises_1.default.readFile(userDataPath, 'utf-8');
+                }
+                // Si c'est un fichier json qui n'existe pas dans userData, retourner null ou vide
+                if (filePath.endsWith('.json'))
+                    return null;
+            }
+            return await promises_1.default.readFile(fullPath, 'utf-8');
+        }
+        catch (error) {
+            console.error(`Error reading file ${filePath}:`, error);
+            throw error;
+        }
+    });
+    // Écrire un fichier
+    electron_1.ipcMain.handle('write-file', async (_, { path: filePath, content }) => {
+        try {
+            if (filePath.includes('..')) {
+                throw new Error('Access denied: relative paths not allowed');
+            }
+            let fullPath = node_path_1.default.join(getBasePath(), filePath);
+            // Pour les fichiers qui ne sont pas dans public (comme history.json), utiliser userData
+            if (!filePath.endsWith('.md')) {
+                const userDataDir = electron_1.app.getPath('userData');
+                fullPath = node_path_1.default.join(userDataDir, filePath);
+                // S'assurer que le dossier existe
+                const dir = node_path_1.default.dirname(fullPath);
+                if (!(0, node_fs_1.existsSync)(dir)) {
+                    await promises_1.default.mkdir(dir, { recursive: true });
+                }
+            }
+            await promises_1.default.writeFile(fullPath, content, 'utf-8');
+            return true;
+        }
+        catch (error) {
+            console.error(`Error writing file ${filePath}:`, error);
+            return false;
+        }
+    });
+    // Exécuter une commande terminal
+    electron_1.ipcMain.handle('execute-command', async (_, command) => {
+        try {
+            if (!command || command.trim() === '') {
+                throw new Error('Commande vide');
+            }
+            console.log(`[Main] Exécution de la commande: ${command}`);
+            const { stdout, stderr } = await execPromise(command);
+            return { stdout, stderr, result: 'success' };
+        }
+        catch (error) {
+            console.error(`Error executing command ${command}:`, error);
+            return {
+                error: error instanceof Error ? error.message : String(error),
+                result: 'error'
+            };
+        }
+    });
 });
 //# sourceMappingURL=main.js.map
