@@ -1,53 +1,61 @@
-# API & Tools Documentation - NeuroChat Live Pro
+# 🔌 Documentation API & Outils - NeuroChat Live Pro
 
-NeuroChat Live Pro operates on two internal API layers: **Electron IPCs** (System access) and **Assistant Tools** (AI-driven actions).
-
-## 💻 Electron IPC Channels
-
-These channels bridge the React frontend (Renderer) and the Electron Main process.
-
-### File System
-- `read-file(path: string)`: Reads a file from the `public` or `userData` folder.
-- `write-file({ path: string, content: string })`: Writes content to the local filesystem.
-
-### System Control
-- `execute-command(command: string)`: Executes a terminal command (Windows). Used for opening apps or checking system info.
-
-### Autonomous Browser (Playwright)
-- `browser-navigate(url: string)`: Navigates to a specific URL.
-- `browser-get-content()`: Scrapes the text content of the current page.
-- `browser-click(selector: string)`: Clicks an element.
-- `browser-type({ selector, text })`: Types text into an input field.
-- `browser-press(key: string)`: Simulates a keypress (e.g., 'Enter').
-- `browser-screenshot()`: Takes a base64 JPEG screenshot.
-- `browser-close()`: Closes the autonomous browser instance.
+L'application utilise deux types d'APIs internes : les **Canaux IPC Electron** (accès système) et les **Outils Assistant** (Function Calling IA).
 
 ---
 
-## 🤖 Assistant Tools (Function Calling)
+## 🤖 Outils de l'Assistant (Function Calling)
 
-These tools are exposed to the Gemini Live API. The AI decides when to call them.
+Ces fonctions sont directement accessibles par l'IA via le SDK Gemini Live.
 
-### System & Local
-- `run_terminal_command(command)`: AI can execute shell commands. *Note: Clarified for opening apps like "start notepad".*
-- `set_screen_share(enabled)`: Toggles screen sharing visibility for the assistant.
+### 🌐 Navigation Web & Recherche
+- `google_search(query)` : Effectue une recherche Google en temps réel.
+- `browser_navigate(url)` : Dirige l'assistant vers une page web spécifique.
+- `browser_get_content()` : Extrait le texte de la page web actuellement ouverte.
+- `browser_click(selector)` : Interagit avec un élément de la page (bouton, lien).
+- `browser_type(selector, text)` : Remplit un formulaire ou un champ de recherche.
+- `browser_screenshot()` : Prend une capture d'écran du navigateur autonome.
 
-### Web Autonomy
-- `browser_navigate(url)`: Assistant visits a website.
-- `browser_get_content()`: Assistant reads the page it's currently on.
-- `browser_click(selector)`: Assistant interacts with page elements.
-- `browser_type(selector, text)`: Assistant fills out web forms.
-- `browser_screenshot()`: Assistant takes a snapshot of the current web view.
+### 💻 Contrôle Système & Local
+- `run_terminal_command(command)` : Exécute une commande PowerShell/CMD sur la machine.
+- `set_screen_share(enabled)` : Active ou désactive la visibilité de l'écran pour l'IA.
+- `generate_conclusion_markdown(conclusion, title)` : Sauvegarde un résumé de la session au format Markdown.
 
-### Utilities
-- `generate_conclusion_markdown(conclusion, title)`: Generates a summary of the session and saves it locally.
-- `change_personality(personalityId)`: Voice-commanded personality switching.
+### 🛠️ Utilitaires & Gestion
+- `manage_notes(action, content, id)` : Crée, lit ou supprime des notes locales.
+- `manage_timer(action, duration)` : Gère des compte à rebours.
+- `calculate(expression)` : Effectue des calculs mathématiques complexes.
+- `change_personality(personalityId)` : Permet de réinitialiser le contexte vers la personnalité par défaut (NeuroChat Pro).
 
 ---
 
-## 🔄 Data Request Flow
-1. **Trigger**: AI receives a user prompt and identifies a tool requirement.
-2. **Tool Call**: Gemini sends a `ToolCall` message over WebSocket.
-3. **Execution**: Frontend calls `executeFunction` in `utils/tools.ts`.
-4. **IPC**: If system access is needed, frontend calls `window.ipcRenderer.invoke`.
-5. **Response**: Result is sent back to Gemini via `sendToolResponse`.
+## 💻 Canaux IPC Electron (Inter-Process Communication)
+
+Ces canaux permettent au Renderer (React) de demander des actions au Main Process (Node.js).
+
+### Gestion de Fichiers (`ipcMain.handle`)
+- `file:read` : Lit le contenu d'un fichier local.
+- `file:write` : Écrit des données dans un fichier (ex: stockage des personnalités).
+- `file:delete` : Supprime un fichier spécifique.
+
+### Automatisation (`ipcMain.handle`)
+- `browser:navigate` : Pilotage de Playwright pour charger une URL.
+- `browser:action` : Clic, Type, ou Scroll via Playwright.
+- `system:exec` : Exécution de commandes shell via `child_process`.
+
+---
+
+## 🔄 Flux de Requête (Data Flow)
+
+1. **Gemini** identifie un besoin d'outil dans le flux audio/texte.
+2. Un message `tool_call` est envoyé via WebSocket.
+3. Le hook `useGeminiLiveSession` intercepte l'appel et appelle `executeFunction` (`utils/tools.ts`).
+4. Si l'outil nécessite un accès système, `window.electron.invoke` est appelé.
+5. Le résultat est retourné à Gemini via `tool_response`.
+
+---
+
+## 🔒 Sécurité & Limitations
+- **Whitelisting** : Seules les commandes terminal jugées sûres sont autorisées (configuré dans `electron/main.ts`).
+- **Sandboxing** : Le navigateur autonome (Playwright) tourne dans un processus séparé.
+- **Isolation** : La clé API Gemini ne transite jamais dans les logs utilisateur.

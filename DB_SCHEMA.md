@@ -1,54 +1,49 @@
-# Database & Storage Schema - NeuroChat Live Pro
+# 💾 Schéma de Stockage & Données - NeuroChat Live Pro
 
-The application follows a **Local-First** approach. There is no centralized backend; all data is stored on the user's machine using **LocalStorage** (for user preferences and lightweight state) and the **Local File System** (for personality files and history).
+L'application suit une philosophie **Local-First**. Vos données personnelles, historiques et documents ne quittent pas votre machine, sauf lors des échanges chiffrés avec les APIs de Google (Gemini).
 
-## 💾 LocalStorage Schema
+---
 
-The application uses `zustand/middleware/persist` for most of the state.
+## 💻 Stockage LocalStorage (Navigateur)
 
-### 1. `neurochat-settings`
-Stores the global app settings.
-| Key | Type | Description |
+Utilisé pour les préférences de l'interface et l'état volatil à travers les sessions.
+
+### 1. Store UI / App (`app-storage`)
+Géré via **Zustand Persistence**.
+
+| Clé | Type | Description |
 |-----|------|-------------|
-| `currentPersonalityId` | `string` | ID of the active assistant personality. |
-| `isFunctionCallingEnabled` | `boolean` | Whether the assistant can call tools. |
-| `isGoogleSearchEnabled` | `boolean` | Whether real-time web search is enabled. |
-| `preferredVoice` | `string` | Selected TTS voice (e.g., 'Kore'). |
-| `themeColor` | `string` | Accent color for the UI. |
+| `selectedVoice` | `string` | ID de la voix TTS préférée (ex: 'Kore'). |
+| `functionCallingEnabled` | `boolean` | État d'activation des outils. |
+| `googleSearchEnabled` | `boolean` | État d'activation de la recherche Google. |
+| `uploadedDocuments` | `Array` | Métadonnées et contenu texte des fichiers uploadés. |
+| `conclusions` | `Array` | Historique des résumés de sessions sauvegardés. |
 
-### 2. `neurochat-documents`
-Stores metadata and content of processed documents.
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | `string` | Unique identifier (UUID). |
-| `name` | `string` | Filename. |
-| `content` | `string` | Extracted text content. |
-| `type` | `string` | MIME type (pdf, txt, md). |
-| `size` | `number` | File size in bytes. |
+---
 
-### 3. `neurochat-conclusions` (Zustand: `SavedConclusion[]`)
-Stores the history of generated conclusions.
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | `string` | Unique identifier. |
-| `title` | `string` | Conclusion title. |
-| `content` | `string` | Raw conclusion text. |
-| `markdown` | `string` | Formatted markdown document. |
-| `createdAt` | `string` | ISO timestamp. |
+## 📁 Stockage Fichiers (Système de fichiers local)
 
-## 📁 File System Schema (Electron `userData`)
+Accessible via Electron dans le dossier `userData`.
 
-Files are stored in the application's private data folder (e.g., `%APPDATA%/NeuroChat-Live-Pro`).
+### 1. Dossier `personnalite/`
+Fichiers Markdown éditables qui définissent la "conscience" de l'IA.
+- **SOUL.md** : Instructions système fondamentales (règles de comportement).
+- **USER.md** : Faits et préférences que l'IA a appris sur vous.
+- **MEMORY.md** : Contexte persistant des interactions passées (mémoire long terme).
 
-### 1. `personality-files/`
-Editable markdown files that define the AI's memory and knowledge.
-- `SOUL.md`: Core personality and directives.
-- `USER.md`: Information the AI knows about the user.
-- `MEMORY.md`: Long-term memory and past context.
+### 2. Dossier `conclusions/`
+- Résumés de sessions générés automatiquement par l'IA et sauvegardés en `.md`.
 
-### 2. `history.json`
-Stores the recent chat history (not yet fully implemented in MVP but reserved).
+---
 
-## 🔒 Security Note
-- **No Encryption**: Data in LocalStorage and the file system is currently not encrypted.
-- **Privacy**: No data leaves the local machine except for requests to the Google Gemini API.
+## 🤖 Mémoire Session (Volatile)
+
+- **Chat History** : Conservé dans la RAM pendant la durée de la session WebSocket avec Gemini.
+- **Audio Context** : Buffers audio PCM gérés par la Web Audio API, détruits à la fermeture de l'onglet/app.
+
+---
+
+## 🔒 Confidentialité & Sécurité
+- **Pas de Cloud Intermédiaire** : NeuroChat ne possède pas de serveur de base de données tiers.
+- **Chiffrement** : Les fichiers locaux ne sont pas chiffrés par défaut ; il est recommandé d'utiliser le chiffrement de disque natif de l'OS (FileVault, BitLocker).
+- **Nettoyage** : Un bouton "Vider la mémoire" est disponible pour effacer instantanément le LocalStorage.

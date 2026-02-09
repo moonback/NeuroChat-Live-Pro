@@ -1,58 +1,63 @@
-# Contributing to NeuroChat Live Pro
+# 🤝 Contribuer à NeuroChat Live Pro
 
-First off, thank you for considering contributing to NeuroChat Live Pro! It's people like you who make this tool better for everyone.
+Merci de vouloir participer au développement de **NeuroChat Live Pro** ! Ce projet est un effort communautaire pour créer l'assistant IA le plus puissant et le plus libre possible.
 
-## 🚀 Getting Started
+---
 
-1. **Fork the repository** to your own GitHub account.
-2. **Clone the project** locally:
+## 🚀 Démarrage Rapide
+
+1. **Fork** le repo.
+2. **Clone** ton fork :
    ```bash
-   git clone https://github.com/YOUR_USERNAME/NeuroChat-Live-Pro.git
+   git clone https://github.com/votre-user/NeuroChat-Live-Pro.git
    cd NeuroChat-Live-Pro
    ```
-3. **Install dependencies**:
+3. **Installation** :
    ```bash
    npm install
    ```
-4. **Set up your environment**: Create a `.env.local` file with your Gemini API Key:
+4. **Configuration** : Ajoute ta clé Gemini dans `.env.local`.
    ```env
-   VITE_GEMINI_API_KEY=your_api_key_here
+   VITE_GEMINI_API_KEY=votre_cle
    ```
-5. **Install Playwright Browsers**:
+5. **Browsers** : Installe les navigateurs pour les outils d'autonomie web :
    ```bash
    npx playwright install chromium
    ```
 
-## 🛠 Development Workflow
+---
 
-- **Dev Mode**: Starts both the Vite dev server and Electron.
-  ```bash
-  npm run electron:dev
-  ```
-- **Tests**: Run unit tests and E2E tests before submitting changes.
-  ```bash
-  npm run test:all
-  ```
-- **Linting**: Ensure your code follows the project's styling (handled by `.cursorrules` if using Cursor).
+## 🛠 Workflow de Développement
 
-## 🌿 Branching Strategy
+- **Lancer en Dev** : `npm run electron:dev` (Lance Vite + Electron).
+- **Tests** : `npm run test:all` (Unitaires + E2E).
+- **Lint** : Respectez les conventions définies dans `.cursorrules`.
 
-- `main`: Stable production-ready code.
-- `feat/your-feature`: For new features.
-- `fix/your-bug`: For bug fixes.
+---
 
-## 📝 Pull Request Guidelines
+## 🌿 Règles de Branchement & Commits
 
-1. **Keep it focused**: Each PR should address a single issue or feature.
-2. **Document your changes**: Update `ARCHITECTURE.md` or `API_DOCS.md` if you add new system logic or tools.
-3. **Include tests**: Add Vitest or Playwright tests for your new logic.
-4. **Be descriptive**: Explain *why* the change is needed and *how* it works.
+- **Branche** : `feat/nom-fonctionnalite` ou `fix/nom-bug`.
+- **Commits** : Suivre la convention [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) (ex: `feat: add web scraping tool`).
 
-## 🎨 Code Of Conduct
+---
 
-- Be respectful to other contributors.
-- Focus on constructive feedback.
-- Help make NeuroChat a safe and welcoming space for everyone.
+## 📝 Directives pour les Pull Requests
 
-## ⚖️ License
-By contributing, you agree that your contributions will be licensed under the project's **MIT License**.
+1. **Focus** : Une PR par fonctionnalité ou correction.
+2. **Tests** : Toute nouvelle logique doit être accompagnée d'un test (Vitest ou Playwright).
+3. **Documentation** : Si vous modifiez un outil ou un canal IPC, mettez à jour `API_DOCS.md`.
+4. **Screenshots** : Pour les changements d'UI, incluez des captures d'écran avant/après.
+
+---
+
+## 📜 Code de Conduite
+
+- Soyez bienveillant et professionnel.
+- Privilégiez l'accessibilité et la simplicité dans le code.
+- La sécurité des données utilisateur est une priorité absolue.
+
+---
+
+## ⚖️ Licence
+En contribuant, vous acceptez que votre code soit placé sous licence **MIT**.

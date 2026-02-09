@@ -1,65 +1,64 @@
-# Cursor Rules - NeuroChat Live Pro
+# .cursorrules - NeuroChat Live Pro AI Development Rules
 
-Project context: An advanced AI assistant (NeuroChat) built with Electron, React, and Gemini Live API, capable of real-time voice/vision interactions and autonomous browser control.
+## 🎯 Project Context
+NeuroChat Live Pro is a high-performance Desktop AI assistant built with Electron and React. It leverages the Gemini Live API for real-time multimodal (voice/vision) interactions. The app acts as an autonomous agent capable of web navigation (Playwright) and system control (Shell commands).
 
-## 🛠 Tech Stack
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
-- **State Management**: Zustand 5 (with persistence)
-- **Electron**: Main/Preload process architecture, IPC communication
-- **AI**: Google Gemini Live API (@google/genai), Custom Function Calling
-- **Automation**: Playwright (for autonomous browser control)
-- **Testing**: Vitest (Unit), Playwright (E2E)
+## 🚀 Tech Stack
+- **Frameworks**: React 19 (Frontend), Electron 39 (Desktop Layer).
+- **IA**: @google/genai (Gemini Live), Playwright (Browser Automation).
+- **Styling**: Tailwind CSS 3 (Vanilla CSS where needed for custom animations).
+- **State**: Zustand (Local persistence via LocalStorage).
+- **Build**: Vite 6, TypeScript 5.8.
+- **Testing**: Vitest (Unit), Playwright (E2E).
 
 ## 🎨 Code Style & Conventions
 - **Naming**: 
-  - Components: `PascalCase` (e.g., `ControlPanel.tsx`)
-  - Hooks: `camelCase` starting with `use` (e.g., `useVisionManager.ts`)
-  - Utils/Types: `camelCase` (e.g., `audioUtils.ts`)
-  - CSS Classes: Tailwind utility classes favored over raw CSS
-- **Structure**: 
-  - Use Functional Components with Hooks.
-  - Separate business logic into custom hooks.
-  - Use `types.ts` for shared interfaces.
+  - Components: `PascalCase` (e.g., `ControlPanel.tsx`).
+  - Functions/Variables: `camelCase`.
+  - Constants: `UPPER_SNAKE_CASE`.
+  - CSS Classes: Tailwind utility classes favored.
 - **Organization**:
-  - `components/`: UI components
-  - `hooks/`: Business logic and state orchestration
-  - `electron/`: Main process and IPC handlers
-  - `utils/`: Helper functions (audio, document processing, tools)
-  - `stores/`: Zustand store definitions
+  - Components in `components/`, one file per component.
+  - Business logic in Custom Hooks (`hooks/`).
+  - Pure utilities and constants in `utils/` and root `constants.ts`.
+- **Structure**: Always use Functional Components with TypeScript interfaces for props.
 
-## 🏗 Architecture Patterns
-- **IPC Communication**: All system-level actions (FS, Shell, Browser) MUST go through `ipcMain.handle` in `main.ts` and `ipcRenderer.invoke` in the frontend.
-- **Function Calling**: New tools for the assistant should be defined in `AVAILABLE_FUNCTIONS` in `utils/tools.ts` and implemented in `executeFunction`.
-- **Persistence**: Use `localStorage` via Zustand's `persist` middleware or the `useLocalStorageState` hook for client-side data.
-- **Vision/Audio**: High-frequency data (audio blobs, video frames) should be handled via refs (`useRef`) and optimized callbacks to avoid React re-render bottlenecks.
+## 🏗️ Architecture Patterns
+- **Frontend**: Component-Driven (Atomic/Molecules). Logic extracted to specialized hooks (`useGeminiLiveSession`, `useVisionManager`).
+- **Electron**: Main process handles IPC, FileSystem access, and the Playwright Browser service.
+- **Function Calling**: Centralized registry in `utils/tools.ts`. Tools must be documented in both the AI system prompt and `API_DOCS.md`.
 
 ## ✅ Best Practices
-- **Error Handling**: Use `try/catch` in IPC handlers and tool execution. Return structured error objects `{ result: 'error', message: '...' }`.
-- **Type Safety**: Avoid `any`. Define strict types for IPC payloads and tool arguments.
-- **Performance**: 
-  - Throttle video frame capture (max 2 FPS).
-  - Use `requestAnimationFrame` for visualizers.
-  - Optimize tailwind builds by avoiding dynamic class names.
-- **Security**: 
-  - Sanitize file paths in Electron handlers.
-  - Never hardcode API keys (use `.env`).
+- **Error Handling**: Use established toast system (`addToast`) for user feedback. Wrap tool executions in try/catch blocks.
+- **Type Safety**: Avoid `any`. Define strict interfaces for API responses and tool parameters.
+- **Audio/Video**: Efficiently manage `AudioContext` and `MediaStream` cleanup to prevent memory leaks.
+- **Security**: Never expose the Google API Key in client logs. Use Electron IPC for sensitive operations.
 
-## 🔄 Common Workflows
-### Adding a New Tool
-1. Define the tool schema in `AVAILABLE_FUNCTIONS` inside `utils/tools.ts`.
-2. Add the execution logic in the `executeFunction` switch/if block.
-3. If it requires system access, add an IPC handler in `electron/main.ts`.
+## 🔄 Common Tasks & Workflows
+- **Adding a Tool**:
+  1. Define function declaration in `utils/tools.ts`.
+  2. Implement logic in `executeFunction`.
+  3. Register the function in `AVAILABLE_FUNCTIONS`.
+  4. Update `systemConfig.ts` to inform the AI of the new capability.
+- **New UI Component**:
+  - Use Tailwind for styling.
+  - Implement responsive design (mobile-first for PWA compatibility).
+  - Add ARIA labels for accessibility.
 
-### Creating a Component
-1. Create a `.tsx` file in `components/`.
-2. Use Tailwind for styling.
-3. If it has complex state, create a companion hook in `hooks/`.
+## 📦 Dependencies to Favor
+- **Icons**: `lucide-react`.
+- **State**: Zustand (with persist middleware).
+- **Animations**: CSS Transitions or Framer Motion (only if complex).
+- **Dates**: Native `Intl.DateTimeFormat`.
 
-## 🚫 Things to Avoid
-- **Direct FS Access**: Never use `fs` or `child_process` directly in the renderer process.
-- **Prop Drilling**: Use Zustand or Context for deeply nested state.
-- **Heavy Re-renders**: Avoid putting high-frequency data (like audio levels) in the main React state.
+## ❌ Things to Avoid
+- **No Global Backend**: Do not attempt to connect to external DBs (keep it local-first).
+- **No inline styles**: Use Tailwind classes or CSS modules if necessary.
+- **No direct DOM manipulation**: Stick to React Refs and state.
+- **No massive components**: Split components logic into hooks if they exceed 250 lines.
 
-## 📚 Documentation
-- Document complex logic in `ARCHITECTURE.md`.
-- Keep `tools.ts` comments up to date with new function descriptions.
+## 📝 Documentation Requirements
+- Document every new Tool in `API_DOCS.md`.
+- Update `ROADMAP.md` when a major feature is finished.
+- Add JSDoc comments for complex utility functions in `utils/`.
+- Ensure `ARCHITECTURE.md` diagrams are updated for structural changes.
