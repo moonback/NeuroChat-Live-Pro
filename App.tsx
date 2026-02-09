@@ -7,6 +7,7 @@ import PersonalityFilesEditor from './components/PersonalityFilesEditor';
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
 import ConclusionsModal from './components/ConclusionsModal';
+import HistoryModal from './components/HistoryModal';
 import { ToastContainer } from './components/Toast';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
@@ -164,6 +165,7 @@ const App: React.FC = () => {
   const [isMobileActionsDrawerOpen, setIsMobileActionsDrawerOpen] = useState(false);
   const [isSystemStatusModalOpen, setIsSystemStatusModalOpen] = useState(false);
   const [isConclusionsModalOpen, setIsConclusionsModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isPersonalityFilesEditorOpen, setIsPersonalityFilesEditorOpen] = useState(false);
 
   // Documents Context
@@ -353,6 +355,8 @@ const App: React.FC = () => {
   const closeConclusions = useCallback(() => setIsConclusionsModalOpen(false), []);
   const openPersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(true), []);
   const closePersonalityFilesEditor = useCallback(() => setIsPersonalityFilesEditorOpen(false), []);
+  const openHistory = useCallback(() => setIsHistoryModalOpen(true), []);
+  const closeHistory = useCallback(() => setIsHistoryModalOpen(false), []);
 
   // Audio context activation on first interaction
   useEffect(() => {
@@ -440,6 +444,11 @@ const App: React.FC = () => {
         currentPersonality={currentPersonality}
       />
 
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={closeHistory}
+      />
+
       <PersonalityFilesEditor
         isOpen={isPersonalityFilesEditorOpen}
         onClose={closePersonalityFilesEditor}
@@ -457,6 +466,7 @@ const App: React.FC = () => {
         onToggleEyeTracking={handleEyeTrackingToggle}
         onEditPersonality={openPersonalityEditor}
         onOpenToolsList={openToolsList}
+        onOpenHistory={openHistory}
       />
 
       {/* Video Overlay */}
@@ -495,6 +505,7 @@ const App: React.FC = () => {
           onOpenToolsList={openToolsList}
           onOpenSystemStatus={openSystemStatus}
           onOpenConclusions={openConclusions}
+          onOpenHistory={openHistory}
         />
 
         {/* Main Content Area */}

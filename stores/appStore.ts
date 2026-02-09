@@ -115,26 +115,43 @@ export const useAppStore = create<AppState>()(
           targetId = get().createNewSession(get().currentPersonality.id);
         }
 
-        const message: ChatMessage = {
-          ...msg,
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-        };
-
         set((state) => ({
           sessions: state.sessions.map((s) => {
             if (s.id === targetId) {
-              const messages = [...s.messages, message];
-              // Utiliser le premier message de l'utilisateur comme titre si c'est encore le titre par défaut
+              const lastMessage = s.messages[s.messages.length - 1];
+              let messages = [...s.messages];
+
+              // Si le dernier message est du même rôle, on concatène (sauf si c'est trop vieux, p.ex. > 1 min)
+              const now = new Date();
+              const isRecent = lastMessage && (now.getTime() - new Date(lastMessage.timestamp).getTime() < 30000);
+
+              if (lastMessage && lastMessage.role === msg.role && isRecent) {
+                const updatedMessage = {
+                  ...lastMessage,
+                  content: lastMessage.content + (msg.content.startsWith(' ') || lastMessage.content.endsWith(' ') ? '' : ' ') + msg.content,
+                  timestamp: now.toISOString(),
+                };
+                messages[messages.length - 1] = updatedMessage;
+              } else {
+                const newMessage: ChatMessage = {
+                  ...msg,
+                  id: crypto.randomUUID(),
+                  timestamp: now.toISOString(),
+                };
+                messages.push(newMessage);
+              }
+
+              // Titre automatique basé sur le premier message utilisateur
               let title = s.title;
               if (s.title === 'Nouvelle conversation' && msg.role === 'user' && msg.content) {
                 title = msg.content.substring(0, 40) + (msg.content.length > 40 ? '...' : '');
               }
+
               return {
                 ...s,
                 messages,
                 title,
-                updatedAt: new Date().toISOString(),
+                updatedAt: now.toISOString(),
               };
             }
             return s;

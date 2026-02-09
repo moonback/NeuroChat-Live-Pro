@@ -13,6 +13,7 @@ interface MobileActionsDrawerProps {
   onToggleEyeTracking: (enabled: boolean) => void;
   onEditPersonality: () => void;
   onOpenToolsList: () => void;
+  onOpenHistory: () => void;
 }
 
 // --- Icons ---
@@ -57,21 +58,26 @@ const Icons = {
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
+  )),
+  History: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   ))
 };
 
 // --- Action Button Component ---
-const ActionButton = memo(({ 
-  onClick, 
-  icon, 
-  label, 
+const ActionButton = memo(({
+  onClick,
+  icon,
+  label,
   isToggle = false,
   isEnabled = false,
   colorScheme = 'default',
   showChevron = false,
   showBadge = false
-}: { 
-  onClick: () => void; 
+}: {
+  onClick: () => void;
   icon: React.ReactNode;
   label: string;
   isToggle?: boolean;
@@ -100,39 +106,39 @@ const ActionButton = memo(({
       iconColor: 'text-pink-300'
     },
     blue: {
-      base: isEnabled 
-        ? 'from-blue-500/20 to-blue-600/10 border-blue-500/50 text-blue-200' 
+      base: isEnabled
+        ? 'from-blue-500/20 to-blue-600/10 border-blue-500/50 text-blue-200'
         : 'from-white/5 to-white/0 border-white/10 text-slate-200',
-      hover: isEnabled 
+      hover: isEnabled
         ? 'hover:border-blue-400/70 hover:from-blue-500/25 hover:shadow-blue-500/20'
         : 'hover:border-blue-500/40 hover:from-blue-500/10 hover:to-blue-500/5 hover:text-white hover:shadow-blue-500/10',
-      icon: isEnabled 
+      icon: isEnabled
         ? 'from-blue-500/30 to-blue-600/20 border-blue-400/50'
         : 'from-white/5 to-white/0 border-white/10 group-hover:border-blue-500/40 group-hover:from-blue-500/20',
       iconHover: '',
       iconColor: isEnabled ? 'text-blue-200' : 'text-slate-300 group-hover:text-blue-300'
     },
     emerald: {
-      base: isEnabled 
+      base: isEnabled
         ? 'from-emerald-500/20 to-green-600/10 border-emerald-500/50 text-emerald-200'
         : 'from-white/5 to-white/0 border-white/10 text-slate-200',
-      hover: isEnabled 
+      hover: isEnabled
         ? 'hover:border-emerald-400/70 hover:from-emerald-500/25 hover:shadow-emerald-500/20'
         : 'hover:border-emerald-500/40 hover:from-emerald-500/10 hover:to-emerald-500/5 hover:text-white hover:shadow-emerald-500/10',
-      icon: isEnabled 
+      icon: isEnabled
         ? 'from-emerald-500/30 to-green-600/20 border-emerald-400/50'
         : 'from-white/5 to-white/0 border-white/10 group-hover:border-emerald-500/40 group-hover:from-emerald-500/20',
       iconHover: '',
       iconColor: isEnabled ? 'text-emerald-200' : 'text-slate-300 group-hover:text-emerald-300'
     },
     purple: {
-      base: isEnabled 
+      base: isEnabled
         ? 'from-purple-500/20 to-fuchsia-600/10 border-purple-500/50 text-purple-200'
         : 'from-white/5 to-white/0 border-white/10 text-slate-200',
-      hover: isEnabled 
+      hover: isEnabled
         ? 'hover:border-purple-400/70 hover:from-purple-500/25 hover:shadow-purple-500/20'
         : 'hover:border-purple-500/40 hover:from-purple-500/10 hover:to-purple-500/5 hover:text-white hover:shadow-purple-500/10',
-      icon: isEnabled 
+      icon: isEnabled
         ? 'from-purple-500/30 to-fuchsia-600/20 border-purple-400/50'
         : 'from-white/5 to-white/0 border-white/10 group-hover:border-purple-500/40 group-hover:from-purple-500/20',
       iconHover: '',
@@ -149,7 +155,7 @@ const ActionButton = memo(({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const id = Date.now();
-      
+
       setRipples(prev => [...prev, { x, y, id }]);
       setTimeout(() => {
         setRipples(prev => prev.filter(r => r.id !== id));
@@ -202,10 +208,10 @@ const ActionButton = memo(({
           {icon}
         </div>
       </div>
-      
+
       {/* Label */}
       <span className="flex-1 font-semibold">{label}</span>
-      
+
       {/* Chevron for navigation actions */}
       {showChevron && (
         <div className={`transition-colors ${colorScheme === 'pink' ? 'text-slate-400 group-hover:text-pink-300' : 'text-slate-400 group-hover:text-white'}`}>
@@ -257,6 +263,7 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
   onToggleEyeTracking,
   onEditPersonality,
   onOpenToolsList,
+  onOpenHistory,
 }) => {
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -283,21 +290,21 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 lg:hidden"
       role="dialog"
       aria-modal="true"
       aria-label="Actions rapides"
     >
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Drawer */}
-      <div 
+      <div
         ref={drawerRef}
         className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto bg-gradient-to-b from-slate-900/98 via-slate-900/95 to-slate-900 rounded-t-3xl border-t border-white/20 animate-in slide-in-from-bottom-5 duration-300 safe-area-bottom"
         style={{
@@ -312,7 +319,7 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 pb-3 pt-1 border-b border-white/10 bg-gradient-to-b from-slate-900/98 to-transparent backdrop-blur-xl">
           <div className="flex items-center gap-2.5">
-            <div 
+            <div
               className="p-2 rounded-xl bg-gradient-to-br border"
               style={{
                 borderColor: `${currentPersonality.themeColor}40`,
@@ -359,7 +366,7 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
             colorScheme="blue"
             showBadge
           />
-          
+
           {/* Google Search Toggle */}
           <ActionButton
             onClick={() => handleActionWithClose(() => onToggleGoogleSearch(!isGoogleSearchEnabled))}
@@ -383,12 +390,23 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
           />
 
           <Separator />
-          
+
           {/* Tools List */}
           <ActionButton
             onClick={() => handleActionWithClose(onOpenToolsList)}
             icon={<Icons.Tools />}
             label="Voir les fonctions disponibles"
+            colorScheme="default"
+            showChevron
+          />
+
+          <Separator />
+
+          {/* Chat History */}
+          <ActionButton
+            onClick={() => handleActionWithClose(onOpenHistory)}
+            icon={<Icons.History />}
+            label="Historique des conversations"
             colorScheme="default"
             showChevron
           />

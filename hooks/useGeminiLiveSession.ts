@@ -17,6 +17,7 @@ import {
   showSessionCreationError,
   showConnectionFailure,
 } from '../utils/toastHelpers';
+import { useAppStore } from '../stores/appStore';
 
 interface UseGeminiLiveSessionProps {
   connectionState: ConnectionState;
@@ -71,7 +72,6 @@ export const useGeminiLiveSession = ({
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const activeSourceInputRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const lastUserAudioTimeRef = useRef<number>(0);
-  const chatbotSpeechRecognitionRef = useRef<any>(null);
   const connectRef = useRef<(() => Promise<void>) | null>(null);
 
   // Hook de reconnexion simplifié
@@ -222,15 +222,6 @@ export const useGeminiLiveSession = ({
 
   const disconnect = useCallback((shouldReload: boolean = false) => {
     setIsIntentionalDisconnectWithRef(true);
-
-    if (chatbotSpeechRecognitionRef.current) {
-      try {
-        chatbotSpeechRecognitionRef.current.stop();
-        chatbotSpeechRecognitionRef.current = null;
-      } catch (e) {
-        console.warn('[UseGemini] Erreur lors de l\'arrêt de la reconnaissance vocale:', e);
-      }
-    }
 
     if (sessionRef.current) {
       try {
@@ -445,6 +436,45 @@ export const useGeminiLiveSession = ({
             }
           },
           onmessage: async (message: LiveServerMessage) => {
+            const addMessageToStore = useAppStore.getState().addMessageToCurrentSession;
+
+            // Capture User Text Content (from transcription)
+            const serverContent = message.serverContent as any;
+            if (serverContent?.userTurn) {
+              const parts = serverContent.userTurn.parts || [];
+              let userText = '';
+              for (const part of parts) {
+                if (part.text) {
+                  userText += part.text;
+                }
+              }
+              if (userText.trim()) {
+                console.log('[UseGemini] User transcript from Gemini:', userText.trim());
+                addMessageToStore({
+                  role: 'user',
+                  content: userText.trim()
+                });
+              }
+            }
+
+            // Capture Model Text Content if available
+            if (serverContent?.modelTurn) {
+              const parts = serverContent.modelTurn.parts || [];
+              let modelText = '';
+              for (const part of parts) {
+                if (part.text) {
+                  modelText += part.text;
+                }
+              }
+              if (modelText.trim()) {
+                console.log('[UseGemini] Model transcript from Gemini:', modelText.trim());
+                addMessageToStore({
+                  role: 'model',
+                  content: modelText.trim()
+                });
+              }
+            }
+
             // Function Calls
             if (message.toolCall && message.toolCall.functionCalls) {
               console.log('[UseGemini] 🔧 Appel d\'outil détecté:', message.toolCall);
@@ -539,13 +569,6 @@ export const useGeminiLiveSession = ({
                     showSessionEnd(addToast);
                     setIsIntentionalDisconnectWithRef(true);
 
-                    if (chatbotSpeechRecognitionRef.current) {
-                      try {
-                        chatbotSpeechRecognitionRef.current.stop();
-                        chatbotSpeechRecognitionRef.current = null;
-                      } catch (e) { }
-                    }
-
                     disconnect(true);
                     return;
                   }
@@ -582,127 +605,9 @@ export const useGeminiLiveSession = ({
               source.buffer = audioBuffer;
               source.connect(gainNodeRef.current);
 
-              source.addEventListener('ended', () => {
-                audioSourcesRef.current.delete(source);
-                if (audioSourcesRef.current.size === 0) {
-                  setIsTalking(false);
-                  setTimeout(() => {
-                    if (chatbotSpeechRecognitionRef.current && audioSourcesRef.current.size === 0) {
-                      try {
-                        chatbotSpeechRecognitionRef.current.stop();
-                        chatbotSpeechRecognitionRef.current = null;
-                        console.log('[UseGemini] Reconnaissance vocale arrêtée après fin de réponse');
-                      } catch (e) { }
-                    }
-                  }, 2000);
-                }
-              });
-
               source.start(nextStartTimeRef.current);
               nextStartTimeRef.current += audioBuffer.duration;
               audioSourcesRef.current.add(source);
-
-              if (!chatbotSpeechRecognitionRef.current && audioSourcesRef.current.size === 1) {
-                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (SpeechRecognition) {
-                  const recognition = new SpeechRecognition();
-                  recognition.continuous = true;
-                  recognition.interimResults = true;
-                  recognition.lang = 'fr-FR';
-
-                  recognition.onresult = (event: any) => {
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                      const result = event.results[i];
-                      const transcript = result[0].transcript.toLowerCase().trim();
-                      const isFinal = result.isFinal;
-
-                      if (transcript.length > 0) {
-                        console.log(`[UseGemini] Transcription (${isFinal ? 'FINAL' : 'intermédiaire'}):`, transcript);
-                      }
-
-                      if (isFinal && transcript.length > 0) {
-                        const endSessionKeywords = [
-                          'terminer', 'redémarrer', 'relancer', 'arrêter', 'fermer', 'fin', 'stop'
-                        ];
-
-                        const endSessionPhrases = [
-                          'terminer la session', 'la session se termine', 'session se termine', 'se termine',
-                          'se termine ici', 'terminer ici', 'fin de session', 'terminer session',
-                          'redémarrer l\'application', 'redémarrer application', 'redémarrer app', 'redémarrer l app',
-                          'relancer l\'application', 'relancer application', 'relancer app', 'relancer l app',
-                          'arrêter la session', 'arrêter session', 'fermer la session', 'fermer session',
-                          'session terminée', 'session est terminée'
-                        ];
-
-                        let shouldEndSession = endSessionPhrases.some(phrase => {
-                          const found = transcript.includes(phrase);
-                          if (found) {
-                            console.log('[UseGemini] ✅ Phrase complète détectée:', phrase, 'dans:', transcript);
-                          }
-                          return found;
-                        });
-
-                        if (!shouldEndSession) {
-                          shouldEndSession = endSessionKeywords.some(keyword => {
-                            const keywordIndex = transcript.indexOf(keyword);
-                            if (keywordIndex !== -1) {
-                              const contextStart = Math.max(0, keywordIndex - 20);
-                              const contextEnd = Math.min(transcript.length, keywordIndex + keyword.length + 20);
-                              const context = transcript.substring(contextStart, contextEnd);
-
-                              const contextIndicators = ['session', 'app', 'application', 'ici', 'maintenant', 'tout de suite'];
-                              const hasContext = contextIndicators.some(indicator => context.includes(indicator));
-
-                              if (hasContext || keyword === 'redémarrer' || keyword === 'relancer') {
-                                console.log('[UseGemini] ✅ Mot-clé avec contexte détecté:', keyword, 'dans:', transcript);
-                                return true;
-                              }
-                            }
-                            return false;
-                          });
-                        }
-
-                        if (shouldEndSession) {
-                          console.log('[UseGemini] ✅✅✅ DEMANDE DE TERMINER LA SESSION DÉTECTÉE:', transcript);
-                          console.log('[UseGemini] 🔄 Redémarrage complet de l\'application...');
-                          showSessionEnd(addToast);
-                          setIsIntentionalDisconnectWithRef(true);
-
-                          try {
-                            recognition.stop();
-                            chatbotSpeechRecognitionRef.current = null;
-                          } catch (e) {
-                            console.warn('[UseGemini] Erreur lors de l\'arrêt de la reconnaissance:', e);
-                          }
-
-                          console.log('[UseGemini] 🔄 Appel de disconnect(true) pour redémarrer complètement...');
-                          disconnect(true);
-                          return;
-                        }
-                      }
-                    }
-                  };
-
-                  recognition.onerror = (event: any) => {
-                    const ignorableErrors = ['no-speech', 'aborted'];
-                    if (!ignorableErrors.includes(event.error)) {
-                      console.warn('[UseGemini] Erreur reconnaissance chatbot:', event.error);
-                    }
-                  };
-
-                  recognition.onend = () => {
-                    chatbotSpeechRecognitionRef.current = null;
-                  };
-
-                  try {
-                    recognition.start();
-                    chatbotSpeechRecognitionRef.current = recognition;
-                    console.log('[UseGemini] 🎤 Reconnaissance vocale démarrée pour écouter le chatbot');
-                  } catch (e) {
-                    console.warn('[UseGemini] Impossible de démarrer la reconnaissance:', e);
-                  }
-                }
-              }
             }
 
             if (message.serverContent?.interrupted) {
@@ -774,6 +679,8 @@ export const useGeminiLiveSession = ({
             personalityFilesContextRef.current
           ),
           tools: buildToolsConfig(isFunctionCallingEnabledRef.current, isGoogleSearchEnabledRef.current),
+          // @ts-ignore
+          transcription: { enabled: true },
         }
       });
 

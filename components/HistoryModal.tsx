@@ -9,7 +9,7 @@ interface HistoryModalProps {
 }
 
 const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) => {
-    const { sessions, deleteSession, renameSession, setCurrentSessionId, currentSessionId } = useAppStore();
+    const { sessions, deleteSession, renameSession, setCurrentSessionId, currentSessionId, clearHistory } = useAppStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
@@ -89,8 +89,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) => {
                             <div
                                 key={session.id}
                                 className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${currentSessionId === session.id
-                                        ? 'bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20'
-                                        : 'bg-white/5 border-white/5 hover:bg-white/[0.08] hover:border-white/10'
+                                    ? 'bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20'
+                                    : 'bg-white/5 border-white/5 hover:bg-white/[0.08] hover:border-white/10'
                                     }`}
                             >
                                 <div
@@ -191,7 +191,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) => {
                         className="w-full py-4 text-center text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
                         onClick={() => {
                             if (confirm('Voulez-vous vraiment effacer tout l\'historique ?')) {
-                                useAppStore.getState().clearHistory();
+                                clearHistory();
                             }
                         }}
                     >
