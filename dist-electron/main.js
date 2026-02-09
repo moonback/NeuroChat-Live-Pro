@@ -7,6 +7,9 @@ const electron_1 = require("electron");
 const node_path_1 = __importDefault(require("node:path"));
 const promises_1 = __importDefault(require("node:fs/promises"));
 const node_fs_1 = require("node:fs");
+const node_child_process_1 = require("node:child_process");
+const node_util_1 = require("node:util");
+const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -197,6 +200,24 @@ electron_1.app.whenReady().then(() => {
         catch (error) {
             console.error(`Error writing file ${filePath}:`, error);
             return false;
+        }
+    });
+    // Exécuter une commande terminal
+    electron_1.ipcMain.handle('execute-command', async (_, command) => {
+        try {
+            if (!command || command.trim() === '') {
+                throw new Error('Commande vide');
+            }
+            console.log(`[Main] Exécution de la commande: ${command}`);
+            const { stdout, stderr } = await execPromise(command);
+            return { stdout, stderr, result: 'success' };
+        }
+        catch (error) {
+            console.error(`Error executing command ${command}:`, error);
+            return {
+                error: error instanceof Error ? error.message : String(error),
+                result: 'error'
+            };
         }
     });
 });

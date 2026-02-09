@@ -2,6 +2,10 @@ import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execPromise = promisify(exec)
 
 // The built directory structure
 //
@@ -214,6 +218,25 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error(`Error writing file ${filePath}:`, error)
       return false
+    }
+  })
+
+  // Exécuter une commande terminal
+  ipcMain.handle('execute-command', async (_, command: string) => {
+    try {
+      if (!command || command.trim() === '') {
+        throw new Error('Commande vide')
+      }
+
+      console.log(`[Main] Exécution de la commande: ${command}`)
+      const { stdout, stderr } = await execPromise(command)
+      return { stdout, stderr, result: 'success' }
+    } catch (error) {
+      console.error(`Error executing command ${command}:`, error)
+      return {
+        error: error instanceof Error ? error.message : String(error),
+        result: 'error'
+      }
     }
   })
 })
