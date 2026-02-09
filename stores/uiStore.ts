@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 interface UIState {
-    isPersonalityEditorOpen: boolean;
+
     isToolsListOpen: boolean;
     isMobileActionsDrawerOpen: boolean;
     isSystemStatusModalOpen: boolean;
@@ -10,7 +10,7 @@ interface UIState {
     isPersonalityFilesEditorOpen: boolean;
 
     // Actions
-    setPersonalityEditorOpen: (open: boolean) => void;
+
     setToolsListOpen: (open: boolean) => void;
     setMobileActionsDrawerOpen: (open: boolean) => void;
     setSystemStatusModalOpen: (open: boolean) => void;
@@ -19,7 +19,7 @@ interface UIState {
     setPersonalityFilesEditorOpen: (open: boolean) => void;
 
     // Convenience togglers
-    togglePersonalityEditor: () => void;
+
     toggleToolsList: () => void;
     toggleMobileActionsDrawer: () => void;
     toggleSystemStatusModal: () => void;
@@ -32,7 +32,7 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-    isPersonalityEditorOpen: false,
+
     isToolsListOpen: false,
     isMobileActionsDrawerOpen: false,
     isSystemStatusModalOpen: false,
@@ -40,7 +40,7 @@ export const useUIStore = create<UIState>((set) => ({
     isHistoryModalOpen: false,
     isPersonalityFilesEditorOpen: false,
 
-    setPersonalityEditorOpen: (open) => set({ isPersonalityEditorOpen: open }),
+
     setToolsListOpen: (open) => set({ isToolsListOpen: open }),
     setMobileActionsDrawerOpen: (open) => set({ isMobileActionsDrawerOpen: open }),
     setSystemStatusModalOpen: (open) => set({ isSystemStatusModalOpen: open }),
@@ -48,7 +48,7 @@ export const useUIStore = create<UIState>((set) => ({
     setHistoryModalOpen: (open) => set({ isHistoryModalOpen: open }),
     setPersonalityFilesEditorOpen: (open) => set({ isPersonalityFilesEditorOpen: open }),
 
-    togglePersonalityEditor: () => set((state) => ({ isPersonalityEditorOpen: !state.isPersonalityEditorOpen })),
+
     toggleToolsList: () => set((state) => ({ isToolsListOpen: !state.isToolsListOpen })),
     toggleMobileActionsDrawer: () => set((state) => ({ isMobileActionsDrawerOpen: !state.isMobileActionsDrawerOpen })),
     toggleSystemStatusModal: () => set((state) => ({ isSystemStatusModalOpen: !state.isSystemStatusModalOpen })),
@@ -57,7 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
     togglePersonalityFilesEditor: () => set((state) => ({ isPersonalityFilesEditorOpen: !state.isPersonalityFilesEditorOpen })),
 
     closeAllModals: () => set({
-        isPersonalityEditorOpen: false,
+
         isToolsListOpen: false,
         isMobileActionsDrawerOpen: false,
         isSystemStatusModalOpen: false,

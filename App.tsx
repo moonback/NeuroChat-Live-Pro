@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Visualizer from './components/Visualizer';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
-import PersonalityEditor from './components/PersonalityEditor';
+
 import PersonalityFilesEditor from './components/PersonalityFilesEditor';
 import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
@@ -283,12 +283,7 @@ const App: React.FC = () => {
       <InstallPWA />
 
       {/* Overlays & Modals */}
-      <PersonalityEditor
-        isOpen={ui.isPersonalityEditorOpen}
-        onClose={() => ui.setPersonalityEditorOpen(false)}
-        currentPersonality={currentPersonality}
-        onSave={handlePersonalityChange}
-      />
+
 
       <ToolsList
         isOpen={ui.isToolsListOpen}
@@ -335,7 +330,6 @@ const App: React.FC = () => {
         onToggleFunctionCalling={handleFunctionCallingToggle}
         onToggleGoogleSearch={handleGoogleSearchToggle}
         onToggleEyeTracking={setIsEyeTrackingEnabled}
-        onEditPersonality={() => ui.setPersonalityEditorOpen(true)}
         onOpenToolsList={() => ui.setToolsListOpen(true)}
         onOpenHistory={() => ui.setHistoryModalOpen(true)}
       />
@@ -369,7 +363,7 @@ const App: React.FC = () => {
           onToggleFunctionCalling={handleFunctionCallingToggle}
           isGoogleSearchEnabled={isGoogleSearchEnabled}
           onToggleGoogleSearch={handleGoogleSearchToggle}
-          onEditPersonality={() => ui.setPersonalityEditorOpen(true)}
+
           onOpenPersonalityFilesEditor={() => ui.setPersonalityFilesEditorOpen(true)}
           onOpenToolsList={() => ui.setToolsListOpen(true)}
           onOpenSystemStatus={() => ui.setSystemStatusModalOpen(true)}
@@ -395,7 +389,7 @@ const App: React.FC = () => {
               onToggleScreenShare={toggleScreenShare}
               onToggleMic={handleToggleMic}
               onCameraChange={changeCamera}
-              onEditPersonality={() => ui.setPersonalityEditorOpen(true)}
+
               onSelectPersonality={handlePersonalityChange}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}

@@ -20,7 +20,7 @@ interface HeaderProps {
   isGoogleSearchEnabled: boolean;
   onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
-  onEditPersonality?: () => void;
+
   onOpenPersonalityFilesEditor?: () => void; // Nouveau bouton
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
@@ -388,7 +388,7 @@ const Header: React.FC<HeaderProps> = ({
   onToggleFunctionCalling,
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
-  onEditPersonality,
+
   onOpenPersonalityFilesEditor,
   onOpenSystemStatus,
   onOpenConclusions,
@@ -519,20 +519,7 @@ const Header: React.FC<HeaderProps> = ({
                 disabled={isConnected}
                 disabledReason={disabledReason}
               />
-              {onEditPersonality && (
-                <>
-                  <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                  <ControlButton
-                    active={false}
-                    onClick={onEditPersonality}
-                    icon={<Icons.Edit />}
-                    label="Modifier Personnalité"
-                    themeColor={currentPersonality.themeColor}
-                    disabled={isConnected}
-                    disabledReason={disabledReason}
-                  />
-                </>
-              )}
+
               {onOpenPersonalityFilesEditor && (
                 <>
                   <div className="w-[1px] h-6 bg-white/10 mx-1" />

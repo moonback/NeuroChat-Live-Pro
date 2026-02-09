@@ -67,17 +67,17 @@ export function clearAllSavedConclusions(): void {
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   change_personality: {
     name: 'change_personality',
-    description: 'Change la personnalité de l\'assistant. L\'utilisateur peut demander à changer de personnalité en mentionnant le nom ou l\'ID de la personnalité souhaitée. Les personnalités disponibles sont: NeuroChat, Coach Neuro, Coach Scolaire, Analyste, Vision, Traducteur.',
+    description: 'Change la personnalité de l\'assistant. L\'utilisateur peut demander à changer de personnalité en mentionnant le nom ou l\'ID de la personnalité souhaitée. Les personnalités disponibles sont: NeuroChat Pro.',
     parameters: {
       type: 'object',
       properties: {
         personalityId: {
           type: 'string',
-          description: 'L\'ID de la personnalité (ex: "neurochat-pro", "general", "learning-buddy", "intelligence-analyst", "omnivision", "parrot-translator")'
+          description: 'L\'ID de la personnalité (ex: "neurochat-pro")'
         },
         personalityName: {
           type: 'string',
-          description: 'Le nom de la personnalité (ex: "NeuroChat Pro", "Assistant TDAH/HPI", "Copain d\'Apprentissage", "Analyste Renseignement", "OmniVision", "Perroquet Polyglotte")'
+          description: 'Le nom de la personnalité (ex: "NeuroChat Pro")'
         }
       },
       required: []

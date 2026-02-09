@@ -24,7 +24,7 @@ interface ControlPanelProps {
   onToggleScreenShare?: () => void;
   onToggleMic?: () => void;
   onCameraChange?: (cameraId: string) => void;
-  onEditPersonality?: () => void;
+
   onSelectPersonality?: (personality: Personality) => void;
   onToggleFunctionCalling?: (enabled: boolean) => void;
   onToggleGoogleSearch?: (enabled: boolean) => void;
@@ -88,21 +88,21 @@ const Icons = {
 // --- Sub-Components ---
 
 // Enhanced Round Button with ripple effect
-const RoundButton = memo(({ 
-  onClick, 
-  active, 
-  activeColor = 'bg-white/10', 
-  icon, 
+const RoundButton = memo(({
+  onClick,
+  active,
+  activeColor = 'bg-white/10',
+  icon,
   tooltip,
   indicator,
   themeColor,
   disabled = false,
   size = 'md'
-}: { 
-  onClick: () => void; 
-  active: boolean; 
-  activeColor?: string; 
-  icon: React.ReactNode; 
+}: {
+  onClick: () => void;
+  active: boolean;
+  activeColor?: string;
+  icon: React.ReactNode;
   tooltip: string;
   indicator?: React.ReactNode;
   themeColor?: string;
@@ -121,20 +121,20 @@ const RoundButton = memo(({
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
-    
+
     const button = buttonRef.current;
     if (button) {
       const rect = button.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const id = Date.now();
-      
+
       setRipples(prev => [...prev, { x, y, id }]);
       setTimeout(() => {
         setRipples(prev => prev.filter(r => r.id !== id));
       }, 600);
     }
-    
+
     onClick();
   }, [onClick, disabled]);
 
@@ -155,8 +155,8 @@ const RoundButton = memo(({
           border overflow-hidden
           touch-manipulation
           ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
-          ${active 
-            ? `${activeColor} text-white border-white/10 shadow-[0_0_25px_rgba(255,255,255,0.15)]` 
+          ${active
+            ? `${activeColor} text-white border-white/10 shadow-[0_0_25px_rgba(255,255,255,0.15)]`
             : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:text-white hover:border-white/20'
           }
           ${!disabled && !active ? 'hover:scale-105 active:scale-90' : ''}
@@ -183,10 +183,10 @@ const RoundButton = memo(({
 
         {/* Hover glow */}
         {!disabled && (
-          <div 
+          <div
             className="absolute inset-0 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300"
             style={{
-              background: themeColor 
+              background: themeColor
                 ? `radial-gradient(circle at center, ${themeColor}20 0%, transparent 70%)`
                 : 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%)'
             }}
@@ -200,9 +200,9 @@ const RoundButton = memo(({
 
         {/* Active indicator dot */}
         {active && (
-          <span 
+          <span
             className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
-            style={{ 
+            style={{
               backgroundColor: themeColor || '#fff',
               boxShadow: themeColor ? `0 0 6px ${themeColor}` : '0 0 6px rgba(255,255,255,0.5)'
             }}
@@ -216,18 +216,18 @@ const RoundButton = memo(({
 RoundButton.displayName = 'RoundButton';
 
 // Status Island Component
-const StatusIsland = memo(({ 
-  isConnected, 
-  inputAnalyser, 
+const StatusIsland = memo(({
+  isConnected,
+  inputAnalyser,
   latencyMs,
-  themeColor 
-}: { 
-  isConnected: boolean; 
-  inputAnalyser: AnalyserNode | null; 
+  themeColor
+}: {
+  isConnected: boolean;
+  inputAnalyser: AnalyserNode | null;
   latencyMs: number;
   themeColor: string;
 }) => (
-  <div 
+  <div
     className={`
       fixed bottom-10 left-6 z-50 pointer-events-auto 
       transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left
@@ -237,7 +237,7 @@ const StatusIsland = memo(({
     aria-live="polite"
     aria-label="État de la session"
   >
-    <div 
+    <div
       className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#050508]/70 backdrop-blur-xl border border-white/10 shadow-2xl"
       style={{
         boxShadow: `0 0 40px ${themeColor}15, 0 4px 20px rgba(0,0,0,0.4)`
@@ -249,7 +249,7 @@ const StatusIsland = memo(({
           <div className="relative">
             <span className="absolute inset-0 rounded-full bg-emerald-500/50 animate-ping" />
             <span className="absolute inset-0 rounded-full bg-emerald-400/30 animate-pulse" />
-            <div 
+            <div
               className="relative w-2 h-2 rounded-full bg-emerald-500"
               style={{ boxShadow: '0 0 10px rgba(16,185,129,0.8), 0 0 20px rgba(16,185,129,0.4)' }}
             />
@@ -258,9 +258,9 @@ const StatusIsland = memo(({
             Live
           </span>
         </div>
-        
+
         <div className="w-[1px] h-4 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-        
+
         {/* Audio Visualizer */}
         <div className="w-14 h-4 flex items-center opacity-90">
           <AudioInputVisualizer analyser={inputAnalyser} isActive={isConnected} />
@@ -268,7 +268,7 @@ const StatusIsland = memo(({
       </div>
 
       <div className="w-[1px] h-4 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-      
+
       {/* Latency */}
       <div className="scale-90 origin-left">
         <LatencyIndicator latencyMs={latencyMs} />
@@ -280,14 +280,14 @@ const StatusIsland = memo(({
 StatusIsland.displayName = 'StatusIsland';
 
 // Personality Card Component
-const PersonalityCard = memo(({ 
-  personality, 
-  isSelected, 
+const PersonalityCard = memo(({
+  personality,
+  isSelected,
   onClick,
   isPreview = false
-}: { 
-  personality: Personality; 
-  isSelected: boolean; 
+}: {
+  personality: Personality;
+  isSelected: boolean;
   onClick: () => void;
   isPreview?: boolean;
 }) => (
@@ -295,8 +295,8 @@ const PersonalityCard = memo(({
     onClick={onClick}
     className={`
       w-full flex items-start gap-3 p-4 transition-all duration-300
-      ${isSelected 
-        ? 'bg-white/[0.08] border-l-2' 
+      ${isSelected
+        ? 'bg-white/[0.08] border-l-2'
         : 'hover:bg-white/[0.05] border-l-2 border-transparent hover:border-white/10'
       }
       ${isPreview ? 'scale-[1.02] bg-white/[0.06]' : ''}
@@ -306,16 +306,16 @@ const PersonalityCard = memo(({
     aria-selected={isSelected}
   >
     {/* Color Indicator with glow */}
-    <div 
+    <div
       className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mt-0.5 transition-all duration-300 group-hover:scale-110"
       style={{ color: personality.themeColor }}
     >
-      <div 
+      <div
         className="w-3 h-3 rounded-full transition-all duration-300"
-        style={{ 
+        style={{
           backgroundColor: personality.themeColor,
           boxShadow: `0 0 12px ${personality.themeColor}, 0 0 24px ${personality.themeColor}40`
-        }} 
+        }}
       />
     </div>
 
@@ -326,7 +326,7 @@ const PersonalityCard = memo(({
           {personality.name}
         </h3>
         {isSelected && (
-          <div 
+          <div
             className="flex-shrink-0 animate-in zoom-in duration-200"
             style={{ color: personality.themeColor }}
           >
@@ -344,13 +344,13 @@ const PersonalityCard = memo(({
 PersonalityCard.displayName = 'PersonalityCard';
 
 // Personality Selector Component
-const PersonalitySelector = memo(({ 
-  currentPersonality, 
+const PersonalitySelector = memo(({
+  currentPersonality,
   onSelectPersonality,
   isOpen,
   onToggle
-}: { 
-  currentPersonality: Personality; 
+}: {
+  currentPersonality: Personality;
   onSelectPersonality: (personality: Personality) => void;
   isOpen: boolean;
   onToggle: () => void;
@@ -376,7 +376,7 @@ const PersonalitySelector = memo(({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      
+
       if (e.key === 'Escape') {
         onToggle();
       }
@@ -387,7 +387,7 @@ const PersonalitySelector = memo(({
   }, [isOpen, onToggle]);
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
       className="fixed top-1/2 right-6 -translate-y-1/2 pointer-events-auto z-20"
     >
@@ -400,7 +400,7 @@ const PersonalitySelector = memo(({
         aria-haspopup="listbox"
       >
         {/* Ambient glow */}
-        <div 
+        <div
           className="absolute inset-0 opacity-20 transition-opacity duration-500 group-hover:opacity-30"
           style={{
             background: `radial-gradient(ellipse at center, ${currentPersonality.themeColor}30 0%, transparent 70%)`
@@ -409,16 +409,16 @@ const PersonalitySelector = memo(({
 
         <div className="relative z-10 flex items-center justify-between p-4">
           {/* Left Icon */}
-          <div 
+          <div
             className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/10 shadow-inner transition-all duration-300 group-hover:scale-110 group-hover:bg-white/10"
             style={{ color: currentPersonality.themeColor }}
           >
-            <div 
+            <div
               className="w-3.5 h-3.5 rounded-full transition-all duration-300"
-              style={{ 
+              style={{
                 backgroundColor: currentPersonality.themeColor,
                 boxShadow: `0 0 15px ${currentPersonality.themeColor}, 0 0 30px ${currentPersonality.themeColor}50`
-              }} 
+              }}
             />
           </div>
 
@@ -434,7 +434,7 @@ const PersonalitySelector = memo(({
               {currentPersonality.description}
             </p>
           </div>
-          
+
           {/* Chevron with rotation */}
           <div className={`
             flex items-center justify-center w-8 h-8 text-zinc-400 
@@ -446,17 +446,17 @@ const PersonalitySelector = memo(({
         </div>
 
         {/* Bottom accent line */}
-        <div 
+        <div
           className="absolute bottom-0 left-0 h-[2px] w-full opacity-60 transition-all duration-500 group-hover:opacity-100"
-          style={{ 
-            background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)` 
+          style={{
+            background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)`
           }}
         />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div 
+        <div
           className="mt-3 w-80 max-w-sm rounded-2xl border border-white/10 bg-[#050508]/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-300"
           role="listbox"
           aria-label="Liste des personnalités"
@@ -465,7 +465,7 @@ const PersonalitySelector = memo(({
             {AVAILABLE_PERSONALITIES.map((personality) => {
               const isSelected = personality.id === currentPersonality.id;
               const isHovered = hoveredId === personality.id;
-              
+
               return (
                 <div
                   key={personality.id}
@@ -496,12 +496,12 @@ const PersonalitySelector = memo(({
 PersonalitySelector.displayName = 'PersonalitySelector';
 
 // Main Connect Button Component
-const ConnectButton = memo(({ 
-  isConnecting, 
+const ConnectButton = memo(({
+  isConnecting,
   onClick,
   themeColor
-}: { 
-  isConnecting: boolean; 
+}: {
+  isConnecting: boolean;
   onClick: () => void;
   themeColor: string;
 }) => {
@@ -515,29 +515,29 @@ const ConnectButton = memo(({
       onMouseLeave={() => setIsHovered(false)}
       className="group relative flex items-center gap-3 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
       style={{
-        boxShadow: isHovered 
+        boxShadow: isHovered
           ? `0 0 40px rgba(255,255,255,0.3), 0 0 60px ${themeColor}30`
           : '0 0 20px rgba(255,255,255,0.1)'
       }}
       aria-label={isConnecting ? "Connexion en cours" : "Démarrer la session"}
     >
       {/* Animated gradient sweep */}
-      <div 
+      <div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
           transform: isHovered ? 'translateX(100%)' : 'translateX(-100%)',
           transition: 'transform 0.7s ease-out'
         }}
       />
-      
+
       {/* Themed glow on hover */}
-      <div 
+      <div
         className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-full"
         style={{
           background: `linear-gradient(135deg, ${themeColor} 0%, transparent 50%)`
         }}
       />
-      
+
       {isConnecting ? (
         <>
           <Loader size="sm" color="#000000" />
@@ -624,20 +624,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   // Memoized dock style
   const dockStyle = useMemo(() => ({
-    boxShadow: isConnected 
-      ? `0 0 80px -20px ${currentPersonality.themeColor}40, 0 0 40px rgba(0,0,0,0.5)` 
+    boxShadow: isConnected
+      ? `0 0 80px -20px ${currentPersonality.themeColor}40, 0 0 40px rgba(0,0,0,0.5)`
       : '0 0 50px rgba(0,0,0,0.5)'
   }), [isConnected, currentPersonality.themeColor]);
 
   return (
-    <div 
+    <div
       className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 md:pb-10 w-full pointer-events-none safe-area-bottom"
       role="region"
       aria-label="Panneau de contrôle"
     >
-      
+
       {/* 1. STATUS ISLAND */}
-      <StatusIsland 
+      <StatusIsland
         isConnected={isConnected}
         inputAnalyser={inputAnalyser}
         latencyMs={latencyMs}
@@ -656,15 +656,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* 3. MAIN DOCK */}
       <div className="pointer-events-auto">
-        <div 
+        <div
           className="flex items-center gap-3 md:gap-4 p-2.5 pl-4 pr-3 rounded-full border border-white/10 bg-[#08080a]/95 backdrop-blur-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 duration-700"
           style={dockStyle}
           role="toolbar"
           aria-label="Contrôles de session"
         >
-          
+
           {/* Media Controls Group */}
-          <div 
+          <div
             className="flex items-center gap-2"
             role="group"
             aria-label="Contrôles média"
@@ -710,7 +710,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           {/* Main Action Button */}
           {!isConnected ? (
-            <ConnectButton 
+            <ConnectButton
               isConnecting={isConnecting}
               onClick={onConnect}
               themeColor={currentPersonality.themeColor}
