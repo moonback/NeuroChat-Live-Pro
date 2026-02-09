@@ -203,6 +203,19 @@ electron_1.app.whenReady().then(() => {
             return false;
         }
     });
+    // Sauvegarder dans le dossier Téléchargements
+    electron_1.ipcMain.handle('save-to-downloads', async (_, { filename, content }) => {
+        try {
+            const downloadsPath = electron_1.app.getPath('downloads');
+            const fullPath = node_path_1.default.join(downloadsPath, filename);
+            await promises_1.default.writeFile(fullPath, content, 'utf-8');
+            return { result: 'success', path: fullPath };
+        }
+        catch (error) {
+            console.error('Error saving to downloads:', error);
+            return { result: 'error', message: String(error) };
+        }
+    });
     // Exécuter une commande terminal
     electron_1.ipcMain.handle('execute-command', async (_, command) => {
         try {

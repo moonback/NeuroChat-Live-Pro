@@ -1,10 +1,11 @@
-# User
+```markdown
+# Profil Utilisateur
 
-Information about the user goes here.
+Informations détaillées concernant l'utilisateur.
 
-## Preferences
+## Préférences
 
-- Communication style: Professional and detailed
-- Timezone: Europe/Paris (UTC+1)
-- Language: Français
-
+- **Style de communication :** Professionnel et détaillé
+- **Fuseau horaire :** Europe/Paris (UTC+1)
+- **Langue :** Français
+```
