@@ -252,11 +252,47 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('browser-search', async (_, query: string) => {
+    try {
+      return await browserService.search(query)
+    } catch (error) {
+      console.error('[Browser] Search error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
   ipcMain.handle('browser-click', async (_, selector: string) => {
     try {
       return await browserService.click(selector)
     } catch (error) {
       console.error('[Browser] Click error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-scroll', async (_, direction: 'up' | 'down' | 'top' | 'bottom') => {
+    try {
+      return await browserService.scroll(direction)
+    } catch (error) {
+      console.error('[Browser] Scroll error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-back', async () => {
+    try {
+      return await browserService.goBack()
+    } catch (error) {
+      console.error('[Browser] Back error:', error)
+      return { error: String(error), result: 'error' }
+    }
+  })
+
+  ipcMain.handle('browser-forward', async () => {
+    try {
+      return await browserService.goForward()
+    } catch (error) {
+      console.error('[Browser] Forward error:', error)
       return { error: String(error), result: 'error' }
     }
   })
