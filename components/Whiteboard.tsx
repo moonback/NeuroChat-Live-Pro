@@ -27,7 +27,7 @@ export const Whiteboard: React.FC = () => {
         const element = document.createElement("a");
         const file = new Blob([whiteboardContent], { type: 'text/plain' });
         element.href = URL.createObjectURL(file);
-        element.download = `whiteboard-${new Date().toISOString().slice(0, 10)}.txt`;
+        element.download = `whiteboard - ${new Date().toISOString().slice(0, 10)}.txt`;
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
@@ -42,9 +42,9 @@ export const Whiteboard: React.FC = () => {
             />
 
             <div className={`
-                relative w-full h-full max-w-7xl flex flex-col glass-premium rounded-[3rem] border border-white/20 shadow-[0_64px_256px_-32px_rgba(0,0,0,0.9)] 
-                pointer-events-auto animate-scale-in overflow-hidden transition-all duration-700
-            `}>
+                relative w - full h - full max - w - 7xl flex flex - col glass - premium rounded - [3rem] border border - white / 20 shadow - [0_64px_256px_ - 32px_rgba(0, 0, 0, 0.9)]
+pointer - events - auto animate - scale -in overflow - hidden transition - all duration - 700
+    `}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-white/[0.02]">
                     <div className="flex items-center gap-4">
