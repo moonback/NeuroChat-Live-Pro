@@ -19,7 +19,7 @@ Feuille de route pour l'évolution de NeuroChat Pro d'un assistant conversationn
 - [ ] **Persistance de Session** : Sauvegarde automatique de l'historique complet.
 - [ ] **Vector Memory (RAG)** : Utilisation d'un vector store local pour une mémoire à long terme (recherche dans les documents passés).
 - [ ] **Éditeur de Fichiers Personnalité** : Interface pour éditer directement `SOUL.md`, `USER.md` et `MEMORY.md`.
-- [ ] **OCR Avancé** : Meilleure extraction de texte pour les captures d'écran et PDF complexes.
+- [x] **OCR Avancé** : Meilleure extraction de texte pour les captures d'écran (browser) et PDF complexes.
 - [ ] **Multi-Format** : Support des fichiers Word (.docx) et Excel (.xlsx).
 
 ---
@@ -33,8 +33,8 @@ Feuille de route pour l'évolution de NeuroChat Pro d'un assistant conversationn
 ---
 
 ## 🔮 Phase 4 : Agent de Système Total (Vision 2026)
-- [ ] **Deep OS Integration** : Contrôle natif des fenêtres et des fichiers sans passer par le terminal.
-- [ ] **Self-Correction** : Capacité de l'IA à déboguer ses propres appels d'outils.
+- [x] **Deep OS Integration** : Contrôle natif des fenêtres et des fichiers sans passer par le terminal.
+- [x] **Self-Correction** : Capacité de l'IA à déboguer ses propres appels d'outils.
 - [ ] **Mobile Companion** : Application mobile connectée à l'instance Desktop pour un usage en mobilité.
 - [ ] **Compétenes Spécialisées** : Modules de compétences téléchargeables (Codeur Expert, Analyste Financier, Coach Santé).
 

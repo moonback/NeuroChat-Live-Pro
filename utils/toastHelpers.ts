@@ -60,6 +60,10 @@ export const showFunctionError = (addToast: AddToastFn, functionName: string) =>
   addToast('error', 'Erreur', `Erreur lors de l'exécution de ${functionName}`);
 };
 
+export const showSelfCorrection = (addToast: AddToastFn, functionName: string) => {
+  addToast('warning', 'Auto-Correction', `Analyse de l'échec de ${functionName} et tentative de correction en cours...`);
+};
+
 // ============================================
 // Helpers de documents
 // ============================================
@@ -140,6 +144,7 @@ export const useToastNotifications = () => {
     notifyGoogleSearchToggle: (enabled: boolean) => showGoogleSearchToggle(addToast, enabled),
     notifyFunctionExecuted: (functionName: string) => showFunctionExecuted(addToast, functionName),
     notifyFunctionError: (functionName: string) => showFunctionError(addToast, functionName),
+    notifySelfCorrection: (functionName: string) => showSelfCorrection(addToast, functionName),
 
     // Documents
     notifyDocumentsUpdated: () => showDocumentsUpdated(addToast),

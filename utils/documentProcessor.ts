@@ -25,6 +25,11 @@ export async function extractTextFromFile(file: File): Promise<string> {
       return await file.text();
     }
 
+    // Images
+    if (fileType.startsWith('image/')) {
+      return await extractTextFromImage(file);
+    }
+
     // PDF
     if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
       return await extractTextFromPDF(file);
@@ -77,21 +82,66 @@ export async function extractTextFromFile(file: File): Promise<string> {
 }
 
 /**
- * Extrait le texte d'un PDF en utilisant l'API PDF.js via CDN
+ * Charge Tesseract.js depuis CDN
+ */
+async function loadTesseract(): Promise<any> {
+  return new Promise<void>((resolve, reject) => {
+    if ((window as any).Tesseract) {
+      resolve((window as any).Tesseract);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.onload = () => resolve((window as any).Tesseract);
+    script.onerror = () => reject(new Error('Impossible de charger Tesseract.js'));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Extrait le texte d'une image avec OCR
+ */
+async function extractTextFromImage(file: File | string | HTMLCanvasElement): Promise<string> {
+  try {
+    const Tesseract = await loadTesseract();
+    const worker = await Tesseract.createWorker('fra+eng'); // Français et Anglais
+
+    let source = file;
+    if (file instanceof File) {
+      source = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const { data: { text } } = await worker.recognize(source);
+    await worker.terminate();
+
+    return text;
+  } catch (error) {
+    console.error('Erreur OCR Image:', error);
+    return '[Erreur OCR : Impossible de lire le texte de l\'image]';
+  }
+}
+
+/**
+ * Extrait le texte d'un PDF en utilisant l'API PDF.js avec fallback OCR
  */
 async function extractTextFromPDF(file: File): Promise<string> {
   try {
     // Charger PDF.js depuis CDN
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    
+
     // Attendre que PDF.js soit chargé
     await new Promise<void>((resolve, reject) => {
       if ((window as any).pdfjsLib) {
         resolve();
         return;
       }
-      
+
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Impossible de charger PDF.js'));
       document.head.appendChild(script);
@@ -102,22 +152,48 @@ async function extractTextFromPDF(file: File): Promise<string> {
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    
+
     let fullText = '';
-    
+    let totalTextLength = 0;
+
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
         .map((item: any) => item.str)
         .join(' ');
+
+      totalTextLength += pageText.trim().length;
       fullText += `\n\n--- Page ${i} ---\n\n${pageText}`;
+    }
+
+    // SI le texte extrait est très court (ex: < 50 caractères par page en moyenne), 
+    // c'est probablement un PDF scanné. On tente l'OCR.
+    const averageCharPerPage = totalTextLength / pdf.numPages;
+    if (averageCharPerPage < 50) {
+      console.log(`[OCR] PDF scanné détecté (moyenne ${averageCharPerPage.toFixed(1)} chars/page). Lancement de l'OCR...`);
+      fullText = ''; // On recommence avec l'OCR
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 }); // Upscale pour meilleure précision OCR
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        if (context) {
+          await page.render({ canvasContext: context, viewport }).promise;
+          const ocrText = await extractTextFromImage(canvas);
+          fullText += `\n\n--- Page ${i} (OCR) ---\n\n${ocrText}`;
+        }
+      }
     }
 
     return fullText.trim();
   } catch (error) {
     console.error('Erreur lors de l\'extraction du PDF:', error);
-    // Fallback: retourner un message d'erreur
     throw new Error('Impossible d\'extraire le texte du PDF. Assurez-vous que le fichier n\'est pas corrompu et que vous avez une connexion internet.');
   }
 }
@@ -173,12 +249,16 @@ export function isValidFileType(file: File): boolean {
     'text/javascript',
     'application/xml',
     'text/xml',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
   ];
 
   const validExtensions = [
     '.txt', '.md', '.pdf', '.json', '.csv',
     '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.cpp', '.c',
-    '.html', '.css', '.xml', '.yml', '.yaml'
+    '.html', '.css', '.xml', '.yml', '.yaml',
+    '.jpg', '.jpeg', '.png', '.webp'
   ];
 
   if (validTypes.includes(file.type)) {

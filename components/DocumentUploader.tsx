@@ -33,7 +33,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 
         // Validation
         if (!isValidFileType(file)) {
-          alert(`Le fichier "${file.name}" n'est pas dans un format supporté. Formats acceptés: TXT, PDF, MD, JSON, CSV, et fichiers de code.`);
+          alert(`Le fichier "${file.name}" n'est pas dans un format supporté. Formats acceptés: TXT, PDF, Images (JPG, PNG), MD, JSON, CSV, et fichiers de code.`);
           continue;
         }
 
@@ -44,7 +44,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 
         try {
           const content = await extractTextFromFile(file);
-          
+
           const processedDoc = {
             id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
             name: file.name,
@@ -111,42 +111,42 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
     <div className="relative">
       {/* Bouton d'ouverture */}
       {/* <Tooltip content={documents.length > 0 ? `${documents.length} document(s) chargé(s)` : "Uploader un document pour que l'IA puisse répondre à vos questions"}> */}
-        <button
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          disabled={disabled}
-          className="group relative flex items-center gap-1 md:gap-1.5 sm:gap-2 px-1.5 md:px-2.5 sm:px-3 md:px-4 py-1.5 md:py-2 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[36px] md:min-h-[44px]"
-          style={{
-            boxShadow: documents.length > 0 
-              ? '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-              : '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-          }}
-          aria-label="Gérer les documents"
-        >
-          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          {documents.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-4 h-4 md:w-5 md:h-5 bg-indigo-500 rounded-full flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white">
-              {documents.length}
-            </span>
-          )}
-          <span className="hidden sm:inline font-display text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">
-            Documents
+      <button
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="group relative flex items-center gap-1 md:gap-1.5 sm:gap-2 px-1.5 md:px-2.5 sm:px-3 md:px-4 py-1.5 md:py-2 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl glass-intense border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/20 touch-manipulation min-h-[36px] md:min-h-[44px]"
+        style={{
+          boxShadow: documents.length > 0
+            ? '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            : '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        }}
+        aria-label="Gérer les documents"
+      >
+        <svg className="w-3.5 h-3.5 md:w-4 md:h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        {documents.length > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-4 h-4 md:w-5 md:h-5 bg-indigo-500 rounded-full flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white">
+            {documents.length}
           </span>
-        </button>
+        )}
+        <span className="hidden sm:inline font-display text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">
+          Documents
+        </span>
+      </button>
       {/* </Tooltip> */}
 
       {/* Panel de gestion des documents */}
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Panel */}
-          <div 
+          <div
             className="absolute top-full mt-2 right-0 w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] sm:max-w-none glass-intense rounded-2xl border border-white/10 overflow-hidden z-50 animate-scale-in"
             style={{
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2)'
@@ -160,7 +160,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 </svg>
                 Documents ({documents.length})
               </h3>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 rounded-full hover:bg-white/10 transition-colors text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                 aria-label="Fermer"
@@ -177,11 +177,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`m-4 p-6 border-2 border-dashed rounded-xl transition-all duration-300 cursor-pointer ${
-                isDragging 
-                  ? 'border-indigo-500 bg-indigo-500/10' 
+              className={`m-4 p-6 border-2 border-dashed rounded-xl transition-all duration-300 cursor-pointer ${isDragging
+                  ? 'border-indigo-500 bg-indigo-500/10'
                   : 'border-white/20 hover:border-white/30 hover:bg-white/5'
-              }`}
+                }`}
               onClick={() => !disabled && fileInputRef.current?.click()}
             >
               <input
@@ -190,10 +189,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 multiple
                 onChange={handleFileInputChange}
                 className="hidden"
-                accept=".txt,.pdf,.md,.json,.csv,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.html,.css,.xml,.yml,.yaml"
+                accept=".txt,.pdf,.md,.json,.csv,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.html,.css,.xml,.yml,.yaml,.jpg,.jpeg,.png,.webp"
                 disabled={disabled || isUploading}
               />
-              
+
               <div className="text-center">
                 {isUploading ? (
                   <>
@@ -209,7 +208,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                       Glissez-déposez ou cliquez pour uploader
                     </p>
                     <p className="text-[10px] text-slate-500">
-                      TXT, PDF, MD, JSON, CSV, Code (max 10MB)
+                      TXT, PDF, Images (OCR), MD, JSON, Code (max 20MB)
                     </p>
                   </>
                 )}

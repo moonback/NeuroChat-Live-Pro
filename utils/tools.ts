@@ -67,83 +67,56 @@ export function clearAllSavedConclusions(): void {
 export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   change_personality: {
     name: 'change_personality',
-    description: 'Change la personnalité de l\'assistant. L\'utilisateur peut demander à changer de personnalité en mentionnant le nom ou l\'ID de la personnalité souhaitée. Les personnalités disponibles sont: NeuroChat Pro.',
+    description: 'Change la personnalité de l\'assistant. Les personnalités disponibles sont: NeuroChat Pro.',
     parameters: {
       type: 'object',
       properties: {
-        personalityId: {
-          type: 'string',
-          description: 'L\'ID de la personnalité (ex: "neurochat-pro")'
-        },
-        personalityName: {
-          type: 'string',
-          description: 'Le nom de la personnalité (ex: "NeuroChat Pro")'
-        }
+        personalityId: { type: 'string' },
+        personalityName: { type: 'string' }
       },
       required: []
     }
   },
   generate_conclusion_markdown: {
     name: 'generate_conclusion_markdown',
-    description: 'Sauvegarde une conclusion complète dans le localStorage. Utilise cette fonction quand l\'utilisateur demande à sauvegarder une conclusion, un résumé, ou un document de synthèse de la conversation. La conclusion doit être COMPLÈTE et inclure tous les détails importants de la conversation.',
+    description: 'Sauvegarde une conclusion complète de la conversation.',
     parameters: {
       type: 'object',
       properties: {
-        conclusion: {
-          type: 'string',
-          description: 'Le contenu COMPLET de la conclusion à sauvegarder. Doit inclure : 1) Le contexte et la demande initiale de l\'utilisateur, 2) Tous les points importants discutés, 3) Les solutions, réponses ou informations fournies, 4) Les conclusions et recommandations, 5) Tous les détails pertinents de la conversation. La conclusion doit être exhaustive et bien structurée avec des sections claires.'
-        },
-        title: {
-          type: 'string',
-          description: 'Le titre du document (optionnel, par défaut: "Conclusion")'
-        }
+        conclusion: { type: 'string' },
+        title: { type: 'string' }
       },
       required: ['conclusion']
     }
   },
   create_formatted_page: {
     name: 'create_formatted_page',
-    description: 'Crée et affiche immédiatement une nouvelle page formatée avec du contenu markdown. Utilisez cet outil quand l\'utilisateur demande d\'écrire quelque chose, de créer un rapport, une note, ou de formaliser des informations. La page s\'ouvrira automatiquement pour l\'utilisateur.',
+    description: 'Crée et affiche immédiatement une nouvelle page formatée avec du contenu markdown.',
     parameters: {
       type: 'object',
       properties: {
-        content: {
-          type: 'string',
-          description: 'Le contenu markdown complet et formaté de la page.'
-        },
-        title: {
-          type: 'string',
-          description: 'Le titre de la page (ex: "Rapport d\'analyse", "Note de service")'
-        }
+        content: { type: 'string' },
+        title: { type: 'string' }
       },
       required: ['content', 'title']
     }
   },
   download_document: {
     name: 'download_document',
-    description: 'Télécharge un document sauvegardé ou du contenu markdown directement sur l\'ordinateur de l\'utilisateur (dossier Téléchargements). Utilisez cet outil quand l\'utilisateur demande de télécharger un écrit.',
+    description: 'Télécharge un document ou du contenu markdown sur l\'ordinateur de l\'utilisateur.',
     parameters: {
       type: 'object',
       properties: {
-        documentId: {
-          type: 'string',
-          description: 'L\'ID du document à télécharger (optionnel si content est fourni)'
-        },
-        content: {
-          type: 'string',
-          description: 'Le contenu markdown à télécharger (si documentId n\'est pas fourni)'
-        },
-        filename: {
-          type: 'string',
-          description: 'Le nom du fichier (ex: "mon_rapport.md")'
-        }
+        documentId: { type: 'string' },
+        content: { type: 'string' },
+        filename: { type: 'string' }
       },
       required: ['filename']
     }
   },
   get_saved_documents: {
     name: 'get_saved_documents',
-    description: 'Récupère la liste de tous les documents, écrits et conclusions sauvegardés en mémoire. Utile pour savoir ce qui est disponible avant de proposer un téléchargement ou une consultation.',
+    description: 'Récupère la liste de tous les documents sauvegardés.',
     parameters: {
       type: 'object',
       properties: {},
@@ -152,96 +125,74 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   run_terminal_command: {
     name: 'run_terminal_command',
-    description: 'Exécute une commande dans le terminal du PC local de l\'utilisateur. Utilisez cette fonction pour interagir avec le système d\'exploitation (Windows), lire des informations système ou gérer des fichiers locaux. NOTE: Pour naviguer sur le web ou ouvrir des sites, utilisez PRIORITAIREMENT les outils "browser_*" qui sont intégrés. Évitez d\'utiliser "start chrome" sauf si le navigateur autonome échoue.',
+    description: 'Exécute une commande dans le terminal Windows PowerShell.',
     parameters: {
       type: 'object',
       properties: {
-        command: {
-          type: 'string',
-          description: 'La commande terminal complète à exécuter (ex: "node -v", "dir", "whoami", "start notepad")'
-        }
+        command: { type: 'string' }
       },
       required: ['command']
     }
   },
   set_screen_share: {
     name: 'set_screen_share',
-    description: 'Active ou désactive le partage d\'écran sur le PC de l\'utilisateur. Cela permet à l\'assistant de voir ce qui se passe sur l\'écran pour aider l\'utilisateur.',
+    description: 'Active ou désactive le partage d\'écran.',
     parameters: {
       type: 'object',
       properties: {
-        enabled: {
-          type: 'boolean',
-          description: 'True pour activer le partage d\'écran, False pour l\'arrêter.'
-        }
+        enabled: { type: 'boolean' }
       },
       required: ['enabled']
     }
   },
   browser_search: {
     name: 'browser_search',
-    description: 'Effectue une recherche directe sur Google et attend les résultats. Plus rapide que de naviguer manuellement.',
+    description: 'Effectue une recherche Google.',
     parameters: {
       type: 'object',
       properties: {
-        query: {
-          type: 'string',
-          description: 'Les termes de recherche'
-        }
+        query: { type: 'string' }
       },
       required: ['query']
     }
   },
   browser_navigate: {
     name: 'browser_navigate',
-    description: 'Navigue vers une URL spécifique dans le navigateur autonome. Reutilise la fenêtre existante par défaut. Utilisez cela pour accéder à des sites web spécifiques.',
+    description: 'Navigue vers une URL spécifique.',
     parameters: {
       type: 'object',
       properties: {
-        url: {
-          type: 'string',
-          description: 'L\'URL complète vers laquelle naviguer (ex: "https://fr.wikipedia.org")'
-        },
-        newTab: {
-          type: 'boolean',
-          description: 'Si true, ouvre l\'URL dans un nouvel onglet de la même fenêtre.'
-        }
+        url: { type: 'string' },
+        newTab: { type: 'boolean' }
       },
       required: ['url']
     }
   },
   browser_click: {
     name: 'browser_click',
-    description: 'Clique sur un élément spécifique. L\'outil fera défiler la page automatiquement vers l\'élément si nécessaire.',
+    description: 'Clique sur un élément CSS.',
     parameters: {
       type: 'object',
       properties: {
-        selector: {
-          type: 'string',
-          description: 'Le sélecteur CSS (ex: "h3 a", "button.submit")'
-        }
+        selector: { type: 'string' }
       },
       required: ['selector']
     }
   },
   browser_scroll: {
     name: 'browser_scroll',
-    description: 'Fait défiler la page dans une direction spécifique.',
+    description: 'Fait défiler la page.',
     parameters: {
       type: 'object',
       properties: {
-        direction: {
-          type: 'string',
-          enum: ['up', 'down', 'top', 'bottom'],
-          description: 'La direction du défilement'
-        }
+        direction: { type: 'string', enum: ['up', 'down', 'top', 'bottom'] }
       },
       required: ['direction']
     }
   },
   browser_back: {
     name: 'browser_back',
-    description: 'Retourne à la page précédente dans l\'historique.',
+    description: 'Page précédente.',
     parameters: {
       type: 'object',
       properties: {},
@@ -250,7 +201,7 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_forward: {
     name: 'browser_forward',
-    description: 'Avance à la page suivante dans l\'historique.',
+    description: 'Page suivante.',
     parameters: {
       type: 'object',
       properties: {},
@@ -259,39 +210,30 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_type: {
     name: 'browser_type',
-    description: 'Saisit du texte dans un champ de formulaire.',
+    description: 'Saisit du texte.',
     parameters: {
       type: 'object',
       properties: {
-        selector: {
-          type: 'string',
-          description: 'Le sélecteur CSS du champ'
-        },
-        text: {
-          type: 'string',
-          description: 'Le texte à saisir'
-        }
+        selector: { type: 'string' },
+        text: { type: 'string' }
       },
       required: ['selector', 'text']
     }
   },
   browser_press: {
     name: 'browser_press',
-    description: 'Appuie sur une touche (ex: "Enter", "Tab").',
+    description: 'Appuie sur une touche.',
     parameters: {
       type: 'object',
       properties: {
-        key: {
-          type: 'string',
-          description: 'La touche à presser'
-        }
+        key: { type: 'string' }
       },
       required: ['key']
     }
   },
   browser_get_content: {
     name: 'browser_get_content',
-    description: 'Récupère le texte principal de la page. Les scripts et styles sont ignorés pour ne garder que l\'essentiel.',
+    description: 'Récupère le texte de la page.',
     parameters: {
       type: 'object',
       properties: {},
@@ -300,11 +242,48 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   },
   browser_screenshot: {
     name: 'browser_screenshot',
-    description: 'Prend une capture d\'écran de la zone visible.',
+    description: 'Prend une capture d\'écran.',
     parameters: {
       type: 'object',
       properties: {},
       required: []
+    }
+  },
+  browser_extract_text: {
+    name: 'browser_extract_text',
+    description: 'Extrait le texte visible d\'une page web via OCR.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  manage_window: {
+    name: 'manage_window',
+    description: 'Contrôle les fenêtres nativement (minimiser, etc.).',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['minimize', 'maximize', 'unmaximize', 'close', 'show', 'hide', 'center', 'focus'] },
+        alwaysOnTop: { type: 'boolean' },
+        getState: { type: 'boolean' }
+      },
+      required: []
+    }
+  },
+  os_file_operation: {
+    name: 'os_file_operation',
+    description: 'Opérations natives sur les fichiers (lire, écrire, etc.).',
+    parameters: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['read', 'write', 'delete', 'rename', 'list_dir', 'get_info', 'open_dialog', 'save_dialog'] },
+        path: { type: 'string' },
+        content: { type: 'string' },
+        newPath: { type: 'string' },
+        dialogOptions: { type: 'object' }
+      },
+      required: ['operation']
     }
   }
 };
@@ -724,12 +703,90 @@ ${content}
   }
 
   if (name === 'browser_screenshot') {
-    const base64 = await window.ipcRenderer?.invoke('browser-screenshot');
-    return {
-      status: 'success',
-      message: 'Capture d\'écran effectuée',
-      image: base64
-    };
+    return await window.ipcRenderer?.invoke('browser-screenshot');
+  }
+
+  if (name === 'browser_extract_text') {
+    try {
+      // 1. Prendre une capture d'écran
+      const screenshot = await window.ipcRenderer?.invoke('browser-screenshot');
+      if (screenshot.result === 'error') return screenshot;
+
+      // 2. Importer l'extracteur d'image (OCR)
+      const { extractTextFromFile } = await import('./documentProcessor');
+
+      // 3. Convertir base64 en File/Blob pour l'OCR
+      const base64Data = screenshot.data;
+      const res = await fetch(`data:image/jpeg;base64,${base64Data}`);
+      const blob = await res.blob();
+      const file = new File([blob], 'screenshot.jpg', { type: 'image/jpeg' });
+
+      // 4. Lancer l'OCR
+      const text = await extractTextFromFile(file);
+
+      return {
+        result: 'success',
+        text: text,
+        message: 'Texte extrait avec succès via OCR'
+      };
+    } catch (error) {
+      return { result: 'error', message: `Échec de l'OCR : ${String(error)}` };
+    }
+  }
+
+  // --- Deep OS Integration: Window Management Implementation ---
+
+  if (name === 'manage_window') {
+    const { action, alwaysOnTop, getState } = args || {};
+
+    try {
+      if (getState) {
+        return await window.ipcRenderer?.invoke('window-get-state');
+      }
+
+      if (alwaysOnTop !== undefined) {
+        return await window.ipcRenderer?.invoke('window-set-always-on-top', alwaysOnTop);
+      }
+
+      if (action) {
+        return await window.ipcRenderer?.invoke('window-control', action);
+      }
+
+      return { result: 'error', message: 'Aucune action spécifiée pour manage_window' };
+    } catch (error) {
+      return { result: 'error', message: String(error) };
+    }
+  }
+
+  // --- Deep OS Integration: File Operation Implementation ---
+
+  if (name === 'os_file_operation') {
+    const { operation, path: filePath, content, newPath, dialogOptions } = args || {};
+
+    try {
+      switch (operation) {
+        case 'read':
+          return await window.ipcRenderer?.invoke('read-file', filePath);
+        case 'write':
+          return await window.ipcRenderer?.invoke('write-file', { path: filePath, content });
+        case 'delete':
+          return await window.ipcRenderer?.invoke('file-delete', filePath);
+        case 'rename':
+          return await window.ipcRenderer?.invoke('file-rename', { oldPath: filePath, newPath });
+        case 'list_dir':
+          return await window.ipcRenderer?.invoke('file-list-dir', filePath);
+        case 'get_info':
+          return await window.ipcRenderer?.invoke('file-get-info', filePath);
+        case 'open_dialog':
+          return await window.ipcRenderer?.invoke('file-dialog-open', dialogOptions);
+        case 'save_dialog':
+          return await window.ipcRenderer?.invoke('file-dialog-save', dialogOptions);
+        default:
+          return { result: 'error', message: `Opération inconnue: ${operation}` };
+      }
+    } catch (error) {
+      return { result: 'error', message: String(error) };
+    }
   }
 
   console.warn(`[Tools] ⚠️ Fonction inconnue: ${name}`);
