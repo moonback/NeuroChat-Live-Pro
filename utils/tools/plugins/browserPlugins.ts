@@ -180,6 +180,22 @@ export const browserScreenshotPlugin: ToolPlugin = {
     }
 };
 
+export const browserClosePlugin: ToolPlugin = {
+    name: 'browser_close',
+    declaration: {
+        name: 'browser_close',
+        description: 'Ferme l\'instance du navigateur IA pour libérer des ressources.',
+        parameters: {
+            type: 'object',
+            properties: {},
+            required: []
+        }
+    },
+    execute: async () => {
+        return await window.ipcRenderer?.invoke('browser-close');
+    }
+};
+
 export const browserExtractTextPlugin: ToolPlugin = {
     name: 'browser_extract_text',
     declaration: {
@@ -231,5 +247,6 @@ export const browserPlugins = [
     browserPressPlugin,
     browserGetContentPlugin,
     browserScreenshotPlugin,
-    browserExtractTextPlugin
+    browserExtractTextPlugin,
+    browserClosePlugin
 ];

@@ -5,6 +5,7 @@ export class BrowserService {
     private context: BrowserContext | null = null;
     private page: Page | null = null;
     private initPromise: Promise<Page> | null = null;
+    private autoCloseTimeout: NodeJS.Timeout | null = null;
 
     async init(newTab: boolean = false): Promise<Page> {
         // S'il y a déjà une initialisation en cours, on l'attend
@@ -83,7 +84,27 @@ export class BrowserService {
             }
         })();
 
+        this.clearAutoClose();
         return this.initPromise;
+    }
+
+    private clearAutoClose() {
+        if (this.autoCloseTimeout) {
+            clearTimeout(this.autoCloseTimeout);
+            this.autoCloseTimeout = null;
+        }
+    }
+
+    private startAutoClose(delayMs: number = 300000) { // 5 minutes par défaut
+        this.clearAutoClose();
+        this.autoCloseTimeout = setTimeout(() => {
+            console.log('[BrowserService] Fermeture automatique du navigateur pour inactivité...');
+            this.close();
+        }, delayMs);
+    }
+
+    public isBrowserOpen(): boolean {
+        return this.browser !== null && this.browser.isConnected();
     }
 
     async navigate(url: string, newTab: boolean = false) {
@@ -111,6 +132,8 @@ export class BrowserService {
         } catch (error) {
             console.error('[BrowserService] Navigate failed:', error);
             return { status: 'error', message: String(error) };
+        } finally {
+            this.startAutoClose();
         }
     }
 
@@ -138,6 +161,8 @@ export class BrowserService {
         } catch (error) {
             console.error('[BrowserService] Search failed:', error);
             return { status: 'error', message: String(error) };
+        } finally {
+            this.startAutoClose();
         }
     }
 
@@ -227,16 +252,23 @@ export class BrowserService {
             quality: 70, // Reduced quality for faster transfer
             fullPage: false
         });
-        return buffer.toString('base64');
+        return {
+            result: 'success',
+            data: buffer.toString('base64'),
+            message: 'Capture d\'écran réussie'
+        };
     }
 
     async close() {
+        this.clearAutoClose();
         if (this.browser) {
             await this.browser.close();
             this.browser = null;
             this.context = null;
             this.page = null;
+            return { result: 'success', message: 'Navigateur autonome fermé avec succès' };
         }
+        return { result: 'success', message: 'Le navigateur était déjà fermé' };
     }
 }
 

@@ -1,5 +1,5 @@
-import React from 'react';
 import { AVAILABLE_FUNCTIONS } from '../utils/tools';
+import { useAppStore } from '../stores/appStore';
 
 interface ToolsListProps {
   isOpen: boolean;
@@ -7,58 +7,59 @@ interface ToolsListProps {
 }
 
 const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
+  const { compactMode } = useAppStore();
   if (!isOpen) return null;
 
   const functions = Object.values(AVAILABLE_FUNCTIONS);
 
   // Catégoriser les fonctions
   const categories: Record<string, typeof functions> = {
-    'Contrôle de l\'environnement': functions.filter(f => 
+    'Contrôle de l\'environnement': functions.filter(f =>
       f.name.includes('lights')
     ),
-    'Temps et dates': functions.filter(f => 
+    'Temps et dates': functions.filter(f =>
       f.name.includes('time') || f.name.includes('date')
     ),
-    'Rappels et timers': functions.filter(f => 
+    'Rappels et timers': functions.filter(f =>
       f.name.includes('reminder') || f.name.includes('timer')
     ),
-    'Calculatrice': functions.filter(f => 
+    'Calculatrice': functions.filter(f =>
       f.name === 'calculate'
     ),
-    'Conversion d\'unités': functions.filter(f => 
+    'Conversion d\'unités': functions.filter(f =>
       f.name === 'convert_units'
     ),
-    'Notes et mémos': functions.filter(f => 
+    'Notes et mémos': functions.filter(f =>
       f.name.includes('note')
     ),
-    'Gestion d\'agenda': functions.filter(f => 
+    'Gestion d\'agenda': functions.filter(f =>
       f.name.includes('event')
     ),
-    'Suivi des heures travaillées': functions.filter(f => 
+    'Suivi des heures travaillées': functions.filter(f =>
       f.name.includes('work_hours')
     ),
-    'Météo et informations': functions.filter(f => 
+    'Météo et informations': functions.filter(f =>
       f.name.includes('weather')
     ),
-    'Conversion de devises': functions.filter(f => 
+    'Conversion de devises': functions.filter(f =>
       f.name.includes('currency')
     ),
-    'Génération de contenu': functions.filter(f => 
+    'Génération de contenu': functions.filter(f =>
       f.name.includes('generate') && !f.name.includes('summary')
     ),
-    'Formatage de texte': functions.filter(f => 
+    'Formatage de texte': functions.filter(f =>
       f.name.includes('format') || f.name.includes('count_words')
     ),
-    'Calculs avancés': functions.filter(f => 
+    'Calculs avancés': functions.filter(f =>
       f.name.includes('percentage') || f.name.includes('tip')
     ),
-    'Utilitaires de date': functions.filter(f => 
+    'Utilitaires de date': functions.filter(f =>
       f.name.includes('age') || f.name.includes('days_until')
     ),
-    'Génération de texte': functions.filter(f => 
+    'Génération de texte': functions.filter(f =>
       f.name.includes('summary')
     ),
-    'Utilitaires': functions.filter(f => 
+    'Utilitaires': functions.filter(f =>
       ['generate_random_number', 'flip_coin', 'roll_dice'].includes(f.name)
     ),
   };
@@ -86,7 +87,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl animate-in safe-area-inset"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -94,7 +95,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         }
       }}
     >
-      <div className="relative w-full h-full max-w-5xl max-h-[90vh] m-4 flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden"
+      <div className={`relative w-full h-full ${compactMode ? 'max-w-3xl max-h-[80vh]' : 'max-w-5xl max-h-[90vh]'} m-4 flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden`}
         style={{
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.3)'
         }}
@@ -121,7 +122,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            className={`${compactMode ? 'p-1.5' : 'p-2'} rounded-lg glass border border-white/10 hover:border-white/30 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95`}
             aria-label="Fermer la modal"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,11 +132,11 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${compactMode ? 'p-4' : 'p-6'}`}>
           <div className="space-y-8">
             {Object.entries(categories).map(([category, categoryFunctions]) => {
               if (categoryFunctions.length === 0) return null;
-              
+
               return (
                 <div key={category} className="space-y-4">
                   <div className="flex items-center gap-3 pb-2 border-b border-white/10">
@@ -148,21 +149,21 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={`grid grid-cols-1 ${compactMode ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                     {categoryFunctions.map((func) => (
                       <div
                         key={func.name}
                         className="p-4 rounded-lg glass border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all duration-300 group cursor-default"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-white font-mono text-sm group-hover:text-blue-300 transition-colors">
+                          <h4 className={`font-semibold text-white font-mono ${compactMode ? 'text-[10px]' : 'text-sm'} group-hover:text-blue-300 transition-colors`}>
                             {func.name}
                           </h4>
                         </div>
-                        <p className="text-sm text-slate-300 mb-3 leading-relaxed">
+                        <p className={`${compactMode ? 'text-[11px]' : 'text-sm'} text-slate-300 mb-3 leading-relaxed`}>
                           {func.description}
                         </p>
-                        
+
                         {func.parameters && func.parameters.properties && Object.keys(func.parameters.properties).length > 0 && (
                           <div className="mt-3 pt-3 border-t border-white/5">
                             <p className="text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wide">

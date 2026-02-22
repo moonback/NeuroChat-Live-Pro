@@ -32,6 +32,8 @@ interface UseGeminiLiveSessionProps {
   documentsContext: string | undefined;
   personalityFilesContext: string | undefined;
   selectedVoice: string;
+  voiceRate: number;
+  voicePitch: number;
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
   isVideoActive: boolean;
@@ -53,6 +55,8 @@ export const useGeminiLiveSession = ({
   documentsContext,
   personalityFilesContext,
   selectedVoice,
+  voiceRate,
+  voicePitch,
   isFunctionCallingEnabled,
   isGoogleSearchEnabled,
   isVideoActive,
@@ -102,6 +106,8 @@ export const useGeminiLiveSession = ({
     documentsContext,
     personalityFilesContext,
     selectedVoice,
+    voiceRate,
+    voicePitch,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
     isVideoActive
@@ -113,11 +119,13 @@ export const useGeminiLiveSession = ({
       documentsContext,
       personalityFilesContext,
       selectedVoice,
+      voiceRate,
+      voicePitch,
       isFunctionCallingEnabled,
       isGoogleSearchEnabled,
       isVideoActive
     };
-  }, [personality, documentsContext, personalityFilesContext, selectedVoice, isFunctionCallingEnabled, isGoogleSearchEnabled, isVideoActive]);
+  }, [personality, documentsContext, personalityFilesContext, selectedVoice, voiceRate, voicePitch, isFunctionCallingEnabled, isGoogleSearchEnabled, isVideoActive]);
 
   const cleanupAudioResources = useCallback(() => {
     audioSourcesRef.current.forEach(src => {
@@ -330,9 +338,18 @@ export const useGeminiLiveSession = ({
               const audioBuffer = await decodeAudioData(base64ToArrayBuffer(base64Audio), ctx, DEFAULT_AUDIO_CONFIG.outputSampleRate);
               const source = ctx.createBufferSource();
               source.buffer = audioBuffer;
+
+              // Application de la vitesse et de la tonalité
+              source.playbackRate.value = refs.current.voiceRate;
+              if (source.detune) {
+                // detune est en cents. 1 semi-ton = 100 cents. 
+                // voicePitch est autour de 1.0. On peut mapper (pitch - 1.0) * 500
+                source.detune.value = (refs.current.voicePitch - 1.0) * 1200;
+              }
+
               source.connect(gainNodeRef.current);
               source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current += audioBuffer.duration;
+              nextStartTimeRef.current += (audioBuffer.duration / refs.current.voiceRate);
               audioSourcesRef.current.add(source);
               source.onended = () => audioSourcesRef.current.delete(source);
             }

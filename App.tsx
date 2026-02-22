@@ -77,6 +77,12 @@ const App: React.FC = () => {
     setIsGoogleSearchEnabled,
     setIsEyeTrackingEnabled,
     setIsAvatar3DEnabled,
+    selectedVoice,
+    setSelectedVoice,
+    voiceRate,
+    voicePitch,
+    themePreference,
+    compactMode,
   } = useAppStore();
 
   // Sync useStatusManager with store state
@@ -86,8 +92,8 @@ const App: React.FC = () => {
     }
   }, [storeConnectionState, connectionState, setConnectionState]);
 
-  // Voice State (Local UI state)
-  const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
+  // Voice State (Now in Store)
+  // const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
 
   // Documents Context Processing
   const [documentsContext, setDocumentsContext] = useState<string | undefined>(undefined);
@@ -154,6 +160,8 @@ const App: React.FC = () => {
     documentsContext,
     personalityFilesContext,
     selectedVoice,
+    voiceRate,
+    voicePitch,
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
     isVideoActive,
@@ -265,8 +273,18 @@ const App: React.FC = () => {
 
   const isConnected = storeConnectionState === ConnectionState.CONNECTED;
 
+  const themeClasses = themePreference === 'midnight'
+    ? 'bg-[#050510] text-[#E0E0E0]'
+    : themePreference === 'zinc'
+      ? 'bg-zinc-950 text-zinc-200'
+      : themePreference === 'cyberpunk'
+        ? 'bg-[#0a0a0f] text-[#00ffcc]'
+        : themePreference === 'forest'
+          ? 'bg-[#0a1a0a] text-[#a0d0a0]'
+          : 'bg-slate-950 text-slate-200'; // default slate
+
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
+    <div className={`relative w-full h-screen overflow-hidden font-body selection:bg-indigo-500/30 safe-area-inset theme-${themePreference} ${themeClasses}`}>
 
       {/* Visual Background Layers */}
       <BackgroundLayers

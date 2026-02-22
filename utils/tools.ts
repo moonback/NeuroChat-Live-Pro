@@ -144,35 +144,6 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       properties: {
         enabled: { type: 'boolean' }
       },
-      required: ['enabled']
-    }
-  },
-  manage_window: {
-    name: 'manage_window',
-    description: 'Contrôle les fenêtres nativement (minimiser, etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        action: { type: 'string', enum: ['minimize', 'maximize', 'unmaximize', 'close', 'show', 'hide', 'center', 'focus'] },
-        alwaysOnTop: { type: 'boolean' },
-        getState: { type: 'boolean' }
-      },
-      required: []
-    }
-  },
-  os_file_operation: {
-    name: 'os_file_operation',
-    description: 'Opérations natives sur les fichiers (lire, écrire, etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        operation: { type: 'string', enum: ['read', 'write', 'delete', 'rename', 'list_dir', 'get_info', 'open_dialog', 'save_dialog'] },
-        path: { type: 'string' },
-        content: { type: 'string' },
-        newPath: { type: 'string' },
-        dialogOptions: { type: 'object' }
-      },
-      required: ['operation']
     }
   },
 
@@ -550,61 +521,6 @@ ${content}
         result: 'error',
         message: 'Le contrôle du partage d\'écran n\'est pas disponible actuellement'
       };
-    }
-  }
-
-  // --- Deep OS Integration: Window Management Implementation ---
-
-  if (name === 'manage_window') {
-    const { action, alwaysOnTop, getState } = args || {};
-
-    try {
-      if (getState) {
-        return await window.ipcRenderer?.invoke('window-get-state');
-      }
-
-      if (alwaysOnTop !== undefined) {
-        return await window.ipcRenderer?.invoke('window-set-always-on-top', alwaysOnTop);
-      }
-
-      if (action) {
-        return await window.ipcRenderer?.invoke('window-control', action);
-      }
-
-      return { result: 'error', message: 'Aucune action spécifiée pour manage_window' };
-    } catch (error) {
-      return { result: 'error', message: String(error) };
-    }
-  }
-
-  // --- Deep OS Integration: File Operation Implementation ---
-
-  if (name === 'os_file_operation') {
-    const { operation, path: filePath, content, newPath, dialogOptions } = args || {};
-
-    try {
-      switch (operation) {
-        case 'read':
-          return await window.ipcRenderer?.invoke('read-file', filePath);
-        case 'write':
-          return await window.ipcRenderer?.invoke('write-file', { path: filePath, content });
-        case 'delete':
-          return await window.ipcRenderer?.invoke('file-delete', filePath);
-        case 'rename':
-          return await window.ipcRenderer?.invoke('file-rename', { oldPath: filePath, newPath });
-        case 'list_dir':
-          return await window.ipcRenderer?.invoke('file-list-dir', filePath);
-        case 'get_info':
-          return await window.ipcRenderer?.invoke('file-get-info', filePath);
-        case 'open_dialog':
-          return await window.ipcRenderer?.invoke('file-dialog-open', dialogOptions);
-        case 'save_dialog':
-          return await window.ipcRenderer?.invoke('file-dialog-save', dialogOptions);
-        default:
-          return { result: 'error', message: `Opération inconnue: ${operation}` };
-      }
-    } catch (error) {
-      return { result: 'error', message: String(error) };
     }
   }
 

@@ -1,12 +1,16 @@
 import { toolRegistry } from './ToolRegistry';
 import { weatherPlugin } from './plugins/weatherPlugin';
 import { browserPlugins } from './plugins/browserPlugins';
+import { manageWindowPlugin } from './plugins/manageWindowPlugin';
+import { osFilePlugin } from './plugins/osFilePlugin';
 
 // Liste de tous les plugins "Core" à injecter au démarrage de l'app.
 // Si un développeur veut ajouter son outil, il n'a qu'à l'ajouter dans ce tableau.
 const corePlugins = [
     weatherPlugin,
     ...browserPlugins,
+    manageWindowPlugin,
+    osFilePlugin,
 ];
 
 /**

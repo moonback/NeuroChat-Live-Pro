@@ -24,6 +24,13 @@ interface AppState {
   isEyeTrackingEnabled: boolean;
   isAvatar3DEnabled: boolean;
 
+  // UI / Customization
+  selectedVoice: string;
+  voiceRate: number;
+  voicePitch: number;
+  themePreference: string;
+  compactMode: boolean;
+
   // Logs des actions de l'IA
   actionLogs: ActionLog[];
   isLogsModalOpen: boolean;
@@ -36,6 +43,12 @@ interface AppState {
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
   setIsAvatar3DEnabled: (enabled: boolean) => void;
+
+  setSelectedVoice: (voice: string) => void;
+  setVoiceRate: (rate: number) => void;
+  setVoicePitch: (pitch: number) => void;
+  setThemePreference: (theme: string) => void;
+  setCompactMode: (compact: boolean) => void;
 
   // Session Actions
   createNewSession: (personalityId: string) => string;
@@ -91,6 +104,11 @@ export const useAppStore = create<AppState>()(
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: false,
       isAvatar3DEnabled: false,
+      selectedVoice: DEFAULT_PERSONALITY.voiceName,
+      voiceRate: 1.0,
+      voicePitch: 1.0,
+      themePreference: 'slate', // 'slate' | 'midnight' | 'zinc' | 'cyberpunk' | 'forest'
+      compactMode: false,
       actionLogs: [],
       isLogsModalOpen: false,
 
@@ -102,6 +120,12 @@ export const useAppStore = create<AppState>()(
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
       setIsAvatar3DEnabled: (enabled) => set({ isAvatar3DEnabled: enabled }),
+
+      setSelectedVoice: (voice) => set({ selectedVoice: voice }),
+      setVoiceRate: (rate) => set({ voiceRate: rate }),
+      setVoicePitch: (pitch) => set({ voicePitch: pitch }),
+      setThemePreference: (theme) => set({ themePreference: theme }),
+      setCompactMode: (compact) => set({ compactMode: compact }),
 
       setCurrentSessionId: (id) => set({ currentSessionId: id }),
 
@@ -214,6 +238,11 @@ export const useAppStore = create<AppState>()(
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
         isAvatar3DEnabled: state.isAvatar3DEnabled,
+        selectedVoice: state.selectedVoice,
+        voiceRate: state.voiceRate,
+        voicePitch: state.voicePitch,
+        themePreference: state.themePreference,
+        compactMode: state.compactMode,
       }),
       merge: (persistedState: any, currentState) => {
         const merged = { ...currentState };

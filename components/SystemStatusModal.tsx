@@ -25,6 +25,16 @@ interface SystemStatusModalProps {
 
 // --- Icons ---
 const Icons = {
+  Palette: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+    </svg>
+  )),
+  Layout: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  )),
   Close: memo(() => (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -79,6 +89,11 @@ const Icons = {
   Server: memo(() => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+    </svg>
+  )),
+  Globe: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
     </svg>
   )),
 };
@@ -230,6 +245,12 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   onVoiceChange,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const {
+    themePreference, setThemePreference,
+    compactMode, setCompactMode,
+    voiceRate, setVoiceRate,
+    voicePitch, setVoicePitch
+  } = useAppStore();
 
   // Keyboard handling
   useEffect(() => {
@@ -294,6 +315,27 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   const handleToggleAvatar3D = useCallback(() => {
     onToggleAvatar3D(!isAvatar3DEnabled);
   }, [isAvatar3DEnabled, onToggleAvatar3D]);
+
+  const [isBrowserActive, setIsBrowserActive] = useState(false);
+  const checkBrowserStatus = useCallback(async () => {
+    if (window.ipcRenderer) {
+      const status = await window.ipcRenderer.invoke('browser-is-open');
+      setIsBrowserActive(!!status?.isOpen);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkBrowserStatus();
+    const interval = setInterval(checkBrowserStatus, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, [checkBrowserStatus]);
+
+  const handleCloseBrowser = async () => {
+    if (window.ipcRenderer) {
+      await window.ipcRenderer.invoke('browser-close');
+      setIsBrowserActive(false);
+    }
+  };
 
   const [uptime, setUptime] = useState('00:00:00');
   const [cpuUsage, setCpuUsage] = useState(12);
@@ -521,6 +563,48 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
             </div>
           </div>
 
+          {/* UI Preferences & Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-1 flex items-center gap-2">
+              <span className="w-8 h-[1px] bg-slate-800"></span>
+              Personnalisation Interface
+              <span className="flex-grow h-[1px] bg-slate-800"></span>
+            </h3>
+
+            {/* Theme Selector */}
+            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3 w-1/2">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Icons.Palette />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Thème Visuel</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-tight">Couleurs de l'interface</p>
+                </div>
+              </div>
+              <select
+                value={themePreference}
+                onChange={(e) => void setThemePreference(e.target.value)}
+                className="bg-black/40 border border-white/10 text-slate-300 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-1/2 p-2 outline-none font-medium appearance-none"
+              >
+                <option value="slate">Slate (Défaut)</option>
+                <option value="midnight">Minuit Profond</option>
+                <option value="zinc">Zinc Contrasté</option>
+                <option value="cyberpunk">Cyberpunk Neon</option>
+                <option value="forest">Forêt Émeraude</option>
+              </select>
+            </div>
+
+            {/* Compact Mode Toggle */}
+            <ToggleItem
+              label="Mode Compact UI (Outils)"
+              isEnabled={compactMode}
+              onToggle={() => setCompactMode(!compactMode)}
+              activeColor="blue"
+              icon={<Icons.Layout />}
+            />
+          </div>
+
           {/* Voice Configuration */}
           <div className="space-y-4">
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-1 flex items-center gap-2">
@@ -546,6 +630,34 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
               />
             </div>
 
+            {/* Advanced TTS Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vitesse (Rate)</span>
+                  <span className="text-xs font-mono text-indigo-400">{voiceRate.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range" min="0.5" max="2.0" step="0.1"
+                  value={voiceRate}
+                  onChange={(e) => setVoiceRate(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tonalité (Pitch)</span>
+                  <span className="text-xs font-mono text-emerald-400">{voicePitch.toFixed(1)}</span>
+                </div>
+                <input
+                  type="range" min="0.5" max="1.5" step="0.1"
+                  value={voicePitch}
+                  onChange={(e) => setVoicePitch(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
+              </div>
+            </div>
+
             {/* Action Logs Button */}
             <div className="pt-4 flex justify-center mt-2">
               <button
@@ -559,6 +671,19 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
                 <span className="text-sm font-semibold tracking-wider">VOIR L'HISTORIQUE DES ACTIONS IA (LOGS)</span>
               </button>
             </div>
+
+            {/* Browser Cleanup Section (If Active) */}
+            {isBrowserActive && (
+              <div className="pt-2">
+                <button
+                  onClick={handleCloseBrowser}
+                  className="flex items-center gap-2 px-6 py-3 w-full justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/20 group"
+                >
+                  <Icons.Globe />
+                  <span className="text-sm font-semibold tracking-wider group-hover:tracking-widest transition-all">FERMER LE NAVIGATEUR AUTONOME ACTIVÉ</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Personality Footer */}

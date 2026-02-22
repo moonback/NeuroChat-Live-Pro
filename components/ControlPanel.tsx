@@ -4,6 +4,7 @@ import Loader from './Loader';
 import Tooltip from './Tooltip';
 import LatencyIndicator from './LatencyIndicator';
 import AudioInputVisualizer from './AudioInputVisualizer';
+import { useAppStore } from '../stores/appStore';
 
 interface ControlPanelProps {
   connectionState: ConnectionState;
@@ -296,7 +297,7 @@ const ConnectButton = memo(({
       disabled={isConnecting}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative flex items-center gap-3 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
+      className="group relative flex items-center justify-center gap-2 md:gap-3 px-5 py-2.5 md:px-7 md:py-3.5 min-w-[140px] md:min-w-[170px] rounded-full bg-white text-black font-bold text-sm md:text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
       style={{
         boxShadow: isHovered
           ? `0 0 40px rgba(255,255,255,0.3), 0 0 60px ${themeColor}30`
@@ -353,7 +354,7 @@ const DisconnectButton = memo(({ onClick }: { onClick: () => void }) => {
       onMouseUp={() => setIsPressed(false)}
       onMouseLeave={() => setIsPressed(false)}
       className={`
-        group flex items-center justify-center w-14 h-14 rounded-full 
+        group flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full 
         bg-red-500/10 border border-red-500/20 text-red-500 
         transition-all duration-300 
         hover:bg-red-500 hover:text-white hover:border-red-500 
@@ -398,6 +399,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
+  const { compactMode } = useAppStore();
 
   // Memoized dock style
   const dockStyle = useMemo(() => ({
@@ -425,7 +427,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* 3. MAIN DOCK */}
       <div className="pointer-events-auto">
         <div
-          className="flex items-center gap-3 md:gap-4 p-2.5 pl-4 pr-3 rounded-full border border-white/10 bg-[#08080a]/95 backdrop-blur-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 duration-700"
+          className={`
+            flex items-center gap-2 md:gap-3 rounded-full border border-white/10 bg-[#08080a]/95 backdrop-blur-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4
+            ${compactMode ? 'p-1.5 pl-3 pr-1.5' : 'p-2.5 pl-4 pr-3'}
+          `}
           style={dockStyle}
           role="toolbar"
           aria-label="Contrôles de session"
@@ -440,6 +445,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Microphone */}
             {isConnected && onToggleMic && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleMic}
                 active={!isMicMuted}
                 activeColor="bg-white/10"
@@ -452,6 +458,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Camera */}
             {isConnected && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleVideo}
                 active={isVideoActive}
                 activeColor="bg-white/10"
@@ -464,6 +471,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Screen Share */}
             {isConnected && onToggleScreenShare && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleScreenShare}
                 active={isScreenShareActive}
                 activeColor="bg-indigo-500/30"

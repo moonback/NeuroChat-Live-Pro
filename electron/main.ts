@@ -261,6 +261,10 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('browser-is-open', () => {
+    return { result: 'success', isOpen: browserService.isBrowserOpen() }
+  })
+
   ipcMain.handle('browser-search', async (_, query: string) => {
     try {
       return await browserService.search(query)
