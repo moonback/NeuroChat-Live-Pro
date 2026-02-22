@@ -10,9 +10,13 @@ interface SystemStatusModalProps {
   isVideoActive: boolean;
   isScreenShareActive: boolean;
   isFunctionCallingEnabled: boolean;
+  onToggleFunctionCalling: (enabled: boolean) => void;
   isGoogleSearchEnabled: boolean;
+  onToggleGoogleSearch: (enabled: boolean) => void;
   isEyeTrackingEnabled: boolean;
   onToggleEyeTracking: (enabled: boolean) => void;
+  isAvatar3DEnabled: boolean;
+  onToggleAvatar3D: (enabled: boolean) => void;
 }
 
 // --- Icons ---
@@ -32,24 +36,39 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79" />
     </svg>
   )),
+  Code: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+    </svg>
+  )),
+  Search: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  )),
   Eye: memo(() => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
     </svg>
-  ))
+  )),
+  Cube: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  )),
 };
 
 // --- Status Item Component ---
-const StatusItem = memo(({ 
-  label, 
-  value, 
+const StatusItem = memo(({
+  label,
+  value,
   isActive,
   activeColor = 'emerald',
   icon
-}: { 
-  label: string; 
-  value: string; 
+}: {
+  label: string;
+  value: string;
   isActive: boolean;
   activeColor?: 'emerald' | 'amber' | 'blue' | 'green' | 'purple' | 'indigo';
   icon?: React.ReactNode;
@@ -82,21 +101,21 @@ const StatusItem = memo(({
 StatusItem.displayName = 'StatusItem';
 
 // --- Toggle Item Component ---
-const ToggleItem = memo(({ 
-  label, 
-  isEnabled, 
+const ToggleItem = memo(({
+  label,
+  isEnabled,
   onToggle,
   activeColor = 'purple',
   icon
-}: { 
-  label: string; 
-  isEnabled: boolean; 
+}: {
+  label: string;
+  isEnabled: boolean;
   onToggle: () => void;
   activeColor?: 'emerald' | 'amber' | 'blue' | 'green' | 'purple' | 'indigo';
   icon?: React.ReactNode;
 }) => {
   const [isPressed, setIsPressed] = useState(false);
-  
+
   const colorClasses = {
     emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
     amber: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
@@ -107,7 +126,7 @@ const ToggleItem = memo(({
   };
 
   return (
-    <button 
+    <button
       onClick={onToggle}
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
@@ -146,9 +165,13 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   isVideoActive,
   isScreenShareActive,
   isFunctionCallingEnabled,
+  onToggleFunctionCalling,
   isGoogleSearchEnabled,
+  onToggleGoogleSearch,
   isEyeTrackingEnabled,
   onToggleEyeTracking,
+  isAvatar3DEnabled,
+  onToggleAvatar3D,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -166,13 +189,13 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Focus trap
+  // Focus trap and accessibility
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab' || !modalRef.current) return;
-      
+
       const focusableElements = modalRef.current.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
@@ -188,13 +211,33 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
       }
     };
 
+    // Focus the first element when the modal opens
+    const focusableElements = modalRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements.length > 0) {
+      (focusableElements[0] as HTMLElement).focus();
+    }
+
     document.addEventListener('keydown', handleTabKey);
     return () => document.removeEventListener('keydown', handleTabKey);
   }, [isOpen]);
 
+  const handleToggleFunctionCalling = useCallback(() => {
+    onToggleFunctionCalling(!isFunctionCallingEnabled);
+  }, [isFunctionCallingEnabled, onToggleFunctionCalling]);
+
+  const handleToggleGoogleSearch = useCallback(() => {
+    onToggleGoogleSearch(!isGoogleSearchEnabled);
+  }, [isGoogleSearchEnabled, onToggleGoogleSearch]);
+
   const handleToggleEyeTracking = useCallback(() => {
     onToggleEyeTracking(!isEyeTrackingEnabled);
   }, [isEyeTrackingEnabled, onToggleEyeTracking]);
+
+  const handleToggleAvatar3D = useCallback(() => {
+    onToggleAvatar3D(!isAvatar3DEnabled);
+  }, [isAvatar3DEnabled, onToggleAvatar3D]);
 
   if (!isOpen) return null;
 
@@ -202,21 +245,21 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   const isConnecting = connectionState === ConnectionState.CONNECTING;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
       aria-labelledby="status-modal-title"
     >
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal Container */}
-      <div 
+      <div
         ref={modalRef}
         className="relative w-full max-w-2xl bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 zoom-in-95 duration-500"
         style={{
@@ -226,7 +269,7 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center gap-4">
-            <div 
+            <div
               className="p-3 rounded-xl border transition-all duration-300 hover:scale-105"
               style={{
                 backgroundColor: `${currentPersonality.themeColor}20`,
@@ -252,7 +295,7 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
 
         {/* Content */}
         <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-          
+
           {/* Connection Status */}
           <div className="flex items-center justify-between p-5 rounded-xl bg-white/5 transition-colors duration-300 hover:bg-white/[0.07]">
             <span className="text-base text-slate-200 font-semibold flex items-center gap-3">
@@ -269,10 +312,10 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
                 )}
                 <span className={`
                   relative inline-flex rounded-full h-4 w-4 
-                  ${isConnected 
-                    ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]' 
-                    : isConnecting 
-                      ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]' 
+                  ${isConnected
+                    ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]'
+                    : isConnecting
+                      ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]'
                       : 'bg-slate-600'
                   }
                 `} />
@@ -295,10 +338,10 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
               </span>
               <span className={`
                 text-2xl font-bold font-mono transition-colors duration-300
-                ${!isConnected || latency === 0 
-                  ? 'text-slate-500' 
-                  : latency > 200 
-                    ? 'text-amber-400' 
+                ${!isConnected || latency === 0
+                  ? 'text-slate-500'
+                  : latency > 200
+                    ? 'text-amber-400'
                     : 'text-emerald-400'
                 }
               `}>
@@ -321,10 +364,10 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
               </span>
               <span className={`
                 text-xl font-bold transition-colors duration-300
-                ${isScreenShareActive 
-                  ? 'text-indigo-400' 
-                  : isVideoActive 
-                    ? 'text-indigo-400' 
+                ${isScreenShareActive
+                  ? 'text-indigo-400'
+                  : isVideoActive
+                    ? 'text-indigo-400'
                     : 'text-slate-500'
                 }
               `}>
@@ -343,21 +386,23 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">
               Fonctionnalités
             </h3>
-            
-            <StatusItem
+
+            <ToggleItem
               label="Appel de Fonctions"
-              value={isFunctionCallingEnabled ? 'ON' : 'OFF'}
-              isActive={isFunctionCallingEnabled}
+              isEnabled={isFunctionCallingEnabled}
+              onToggle={handleToggleFunctionCalling}
               activeColor="blue"
+              icon={<Icons.Code />}
             />
-            
-            <StatusItem
+
+            <ToggleItem
               label="Recherche Google"
-              value={isGoogleSearchEnabled ? 'ON' : 'OFF'}
-              isActive={isGoogleSearchEnabled}
+              isEnabled={isGoogleSearchEnabled}
+              onToggle={handleToggleGoogleSearch}
               activeColor="green"
+              icon={<Icons.Search />}
             />
-            
+
             <ToggleItem
               label="Suivi des Yeux"
               isEnabled={isEyeTrackingEnabled}
@@ -365,14 +410,22 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
               activeColor="purple"
               icon={<Icons.Eye />}
             />
+
+            <ToggleItem
+              label="Avatar 3D"
+              isEnabled={isAvatar3DEnabled}
+              onToggle={handleToggleAvatar3D}
+              activeColor="indigo"
+              icon={<Icons.Cube />}
+            />
           </div>
 
           {/* Personality Info */}
           <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-3 h-3 rounded-full"
-                style={{ 
+                style={{
                   backgroundColor: currentPersonality.themeColor,
                   boxShadow: `0 0 12px ${currentPersonality.themeColor}`
                 }}
@@ -407,4 +460,3 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
 };
 
 export default memo(SystemStatusModal);
-

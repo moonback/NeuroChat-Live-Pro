@@ -22,6 +22,7 @@ interface AppState {
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
   isEyeTrackingEnabled: boolean;
+  isAvatar3DEnabled: boolean;
 
   // Actions
   setConnectionState: (state: ConnectionState) => void;
@@ -30,6 +31,7 @@ interface AppState {
   setIsFunctionCallingEnabled: (enabled: boolean) => void;
   setIsGoogleSearchEnabled: (enabled: boolean) => void;
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
+  setIsAvatar3DEnabled: (enabled: boolean) => void;
 
   // Session Actions
   createNewSession: (personalityId: string) => string;
@@ -75,9 +77,10 @@ export const useAppStore = create<AppState>()(
       uploadedDocuments: [],
       sessions: [],
       currentSessionId: null,
-      isFunctionCallingEnabled: true,
+      isFunctionCallingEnabled: false,
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: true,
+      isAvatar3DEnabled: true,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -86,6 +89,7 @@ export const useAppStore = create<AppState>()(
       setIsFunctionCallingEnabled: (enabled) => set({ isFunctionCallingEnabled: enabled }),
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
+      setIsAvatar3DEnabled: (enabled) => set({ isAvatar3DEnabled: enabled }),
 
       setCurrentSessionId: (id) => set({ currentSessionId: id }),
 
@@ -180,6 +184,7 @@ export const useAppStore = create<AppState>()(
         isFunctionCallingEnabled: state.isFunctionCallingEnabled,
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
+        isAvatar3DEnabled: state.isAvatar3DEnabled,
       }),
       merge: (persistedState: any, currentState) => {
         const merged = { ...currentState };
@@ -217,6 +222,10 @@ export const useAppStore = create<AppState>()(
 
         if (typeof persistedState?.isEyeTrackingEnabled === 'boolean') {
           merged.isEyeTrackingEnabled = persistedState.isEyeTrackingEnabled;
+        }
+
+        if (typeof persistedState?.isAvatar3DEnabled === 'boolean') {
+          merged.isAvatar3DEnabled = persistedState.isAvatar3DEnabled;
         }
 
         return merged;

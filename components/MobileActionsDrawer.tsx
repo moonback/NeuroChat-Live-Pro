@@ -8,9 +8,11 @@ interface MobileActionsDrawerProps {
   isFunctionCallingEnabled: boolean;
   isGoogleSearchEnabled: boolean;
   isEyeTrackingEnabled: boolean;
+  isAvatar3DEnabled: boolean;
   onToggleFunctionCalling: (enabled: boolean) => void;
   onToggleGoogleSearch: (enabled: boolean) => void;
   onToggleEyeTracking: (enabled: boolean) => void;
+  onToggleAvatar3D: (enabled: boolean) => void;
 
   onOpenToolsList: () => void;
   onOpenHistory: () => void;
@@ -63,7 +65,12 @@ const Icons = {
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-  ))
+  )),
+  Cube: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  )),
 };
 
 // --- Action Button Component ---
@@ -258,9 +265,11 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
   isFunctionCallingEnabled,
   isGoogleSearchEnabled,
   isEyeTrackingEnabled,
+  isAvatar3DEnabled,
   onToggleFunctionCalling,
   onToggleGoogleSearch,
   onToggleEyeTracking,
+  onToggleAvatar3D,
 
   onOpenToolsList,
   onOpenHistory,
@@ -379,6 +388,17 @@ const MobileActionsDrawer: React.FC<MobileActionsDrawerProps> = ({
             isToggle
             isEnabled={isEyeTrackingEnabled}
             colorScheme="purple"
+            showBadge
+          />
+
+          {/* Avatar 3D Toggle */}
+          <ActionButton
+            onClick={() => handleActionWithClose(() => onToggleAvatar3D(!isAvatar3DEnabled))}
+            icon={<Icons.Cube />}
+            label={`${isAvatar3DEnabled ? 'Désactiver' : 'Activer'} Avatar 3D`}
+            isToggle
+            isEnabled={isAvatar3DEnabled}
+            colorScheme="blue"
             showBadge
           />
 

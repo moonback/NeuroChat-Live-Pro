@@ -15,10 +15,6 @@ interface HeaderProps {
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
   onConnect: () => void;
   onDisconnect: () => void;
-  isFunctionCallingEnabled: boolean;
-  onToggleFunctionCalling: (enabled: boolean) => void;
-  isGoogleSearchEnabled: boolean;
-  onToggleGoogleSearch: (enabled: boolean) => void;
   onOpenToolsList: () => void;
 
   onOpenSystemStatus?: () => void;
@@ -165,10 +161,6 @@ const Header: React.FC<HeaderProps> = ({
   onVoiceChange,
   uploadedDocuments,
   onDocumentsChange,
-  isFunctionCallingEnabled,
-  onToggleFunctionCalling,
-  isGoogleSearchEnabled,
-  onToggleGoogleSearch,
   onOpenSystemStatus,
   onOpenConclusions,
   onOpenHistory,
@@ -223,27 +215,6 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* RIGHT: Controls */}
         <nav className="flex items-center gap-4">
-          {/* AI Engines */}
-          <ControlGroup label="AI Engines">
-            <ControlButton
-              active={isGoogleSearchEnabled}
-              onClick={() => onToggleGoogleSearch(!isGoogleSearchEnabled)}
-              icon={<Icons.Search />}
-              label="Web Search"
-              themeColor={currentPersonality.themeColor}
-              disabled={isConnected}
-              disabledReason={disabledReason}
-            />
-            <ControlButton
-              active={isFunctionCallingEnabled}
-              onClick={() => onToggleFunctionCalling(!isFunctionCallingEnabled)}
-              icon={<Icons.Function />}
-              label="Intelligence"
-              themeColor={currentPersonality.themeColor}
-              disabled={isConnected}
-              disabledReason={disabledReason}
-            />
-          </ControlGroup>
 
           {/* System & Data */}
           <div className="flex items-center gap-2">

@@ -64,12 +64,14 @@ const App: React.FC = () => {
     isFunctionCallingEnabled,
     isGoogleSearchEnabled,
     isEyeTrackingEnabled,
+    isAvatar3DEnabled,
     setConnectionState: setStoreConnectionState,
     setPersonality,
     setUploadedDocuments,
     setIsFunctionCallingEnabled,
     setIsGoogleSearchEnabled,
     setIsEyeTrackingEnabled,
+    setIsAvatar3DEnabled,
   } = useAppStore();
 
   // Sync useStatusManager with store state
@@ -271,21 +273,21 @@ const App: React.FC = () => {
       {/* Screen Sharing Indicator */}
       <ScreenShareOverlay isActive={isScreenShareActive} />
 
-      {/* Real-time 3D Avatar (Replaces 2D Visualizer) */}
-      <Avatar3D
-        analyserRef={analyserRef}
-        color={currentPersonality.themeColor}
-        isActive={isTalking || isConnected}
-      />
-
-      {/* Legacy 2D Visualizer (Commented out)
-      <Visualizer
-        analyserRef={analyserRef}
-        color={currentPersonality.themeColor}
-        isActive={isTalking || isConnected}
-        isEyeTrackingEnabled={isEyeTrackingEnabled}
-      />
-      */}
+      {/* Real-time 3D Avatar or 2D Visualizer */}
+      {isAvatar3DEnabled ? (
+        <Avatar3D
+          analyserRef={analyserRef}
+          color={currentPersonality.themeColor}
+          isActive={isTalking || isConnected}
+        />
+      ) : (
+        <Visualizer
+          analyserRef={analyserRef}
+          color={currentPersonality.themeColor}
+          isActive={isTalking || isConnected}
+          isEyeTrackingEnabled={isEyeTrackingEnabled}
+        />
+      )}
 
       {/* Toast Management System */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -311,6 +313,10 @@ const App: React.FC = () => {
         isGoogleSearchEnabled={isGoogleSearchEnabled}
         isEyeTrackingEnabled={isEyeTrackingEnabled}
         onToggleEyeTracking={setIsEyeTrackingEnabled}
+        isAvatar3DEnabled={isAvatar3DEnabled}
+        onToggleAvatar3D={setIsAvatar3DEnabled}
+        onToggleFunctionCalling={handleFunctionCallingToggle}
+        onToggleGoogleSearch={handleGoogleSearchToggle}
       />
 
       <ConclusionsModal
@@ -336,6 +342,8 @@ const App: React.FC = () => {
         onToggleFunctionCalling={handleFunctionCallingToggle}
         onToggleGoogleSearch={handleGoogleSearchToggle}
         onToggleEyeTracking={setIsEyeTrackingEnabled}
+        isAvatar3DEnabled={isAvatar3DEnabled}
+        onToggleAvatar3D={setIsAvatar3DEnabled}
         onOpenToolsList={() => ui.setToolsListOpen(true)}
         onOpenHistory={() => ui.setHistoryModalOpen(true)}
       />
@@ -365,10 +373,6 @@ const App: React.FC = () => {
           onDocumentsChange={handleDocumentsChange}
           onConnect={handleConnect}
           onDisconnect={handleDisconnect}
-          isFunctionCallingEnabled={isFunctionCallingEnabled}
-          onToggleFunctionCalling={handleFunctionCallingToggle}
-          isGoogleSearchEnabled={isGoogleSearchEnabled}
-          onToggleGoogleSearch={handleGoogleSearchToggle}
 
 
           onOpenToolsList={() => ui.setToolsListOpen(true)}
