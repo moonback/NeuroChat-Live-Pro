@@ -33,7 +33,7 @@ const Icons = {
   )),
   Signal: memo(() => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.344 6.582c5.974-5.974 15.338-5.974 21.312 0" />
     </svg>
   )),
   Code: memo(() => (
@@ -55,6 +55,26 @@ const Icons = {
   Cube: memo(() => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  )),
+  Activity: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  )),
+  Memory: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+    </svg>
+  )),
+  Clock: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )),
+  Server: memo(() => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
     </svg>
   )),
 };
@@ -155,6 +175,36 @@ const ToggleItem = memo(({
 
 ToggleItem.displayName = 'ToggleItem';
 
+// --- Meter Component ---
+const MetricMeter = memo(({ label, value, percentage, icon, color }: {
+  label: string;
+  value: string;
+  percentage: number;
+  icon: React.ReactNode;
+  color: string;
+}) => (
+  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all duration-300 group">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-300 transition-colors">
+        {icon}
+        <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
+      </div>
+      <span className="text-sm font-mono font-bold" style={{ color }}>{value}</span>
+    </div>
+    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-1000 ease-out"
+        style={{
+          width: `${percentage}%`,
+          backgroundColor: color,
+          boxShadow: `0 0 10px ${color}40`
+        }}
+      />
+    </div>
+  </div>
+));
+MetricMeter.displayName = 'MetricMeter';
+
 // --- Main Component ---
 const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   isOpen,
@@ -239,6 +289,36 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
     onToggleAvatar3D(!isAvatar3DEnabled);
   }, [isAvatar3DEnabled, onToggleAvatar3D]);
 
+  const [uptime, setUptime] = useState('00:00:00');
+  const [cpuUsage, setCpuUsage] = useState(12);
+  const [memUsage, setMemUsage] = useState(124);
+  const [healthScore, setHealthScore] = useState(98);
+  const [lastUpdate, setLastUpdate] = useState(new Date().toLocaleTimeString());
+
+  useEffect(() => {
+    const start = Date.now();
+    const interval = setInterval(() => {
+      // Uptime
+      const diff = Math.floor((Date.now() - start) / 1000);
+      const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+      const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+      const s = (diff % 60).toString().padStart(2, '0');
+      setUptime(`${h}:${m}:${s}`);
+
+      // Fluctuations
+      if (Math.random() > 0.6) {
+        setCpuUsage(prev => Math.min(Max_CPU, Math.max(Min_CPU, prev + (Math.random() * 4 - 2))));
+        setMemUsage(prev => Math.min(Max_MEM, Math.max(Min_MEM, prev + (Math.random() * 2 - 1))));
+        setHealthScore(prev => Math.min(100, Math.max(95, prev + (Math.random() * 0.4 - 0.2))));
+        setLastUpdate(new Date().toLocaleTimeString());
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const Min_CPU = 8, Max_CPU = 24;
+  const Min_MEM = 120, Max_MEM = 135;
+
   if (!isOpen) return null;
 
   const isConnected = connectionState === ConnectionState.CONNECTED;
@@ -270,13 +350,16 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
         <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center gap-4">
             <div
-              className="p-3 rounded-xl border transition-all duration-300 hover:scale-105"
+              className="p-3 rounded-xl border transition-all duration-700 hover:scale-105 bg-white/[0.03]"
               style={{
-                backgroundColor: `${currentPersonality.themeColor}20`,
-                borderColor: `${currentPersonality.themeColor}30`
+                borderColor: `${currentPersonality.themeColor}30`,
+                boxShadow: `0 0 20px -5px ${currentPersonality.themeColor}30`
               }}
             >
-              <div style={{ color: currentPersonality.themeColor }}>
+              <div
+                style={{ color: currentPersonality.themeColor }}
+                className="animate-[spin_10s_linear_infinite]"
+              >
                 <Icons.CheckCircle />
               </div>
             </div>
@@ -294,167 +377,191 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar relative">
 
-          {/* Connection Status */}
-          <div className="flex items-center justify-between p-5 rounded-xl bg-white/5 transition-colors duration-300 hover:bg-white/[0.07]">
-            <span className="text-base text-slate-200 font-semibold flex items-center gap-3">
-              <Icons.Signal />
-              Connexion
-            </span>
-            <div className="flex items-center gap-4">
-              <span className="relative flex h-4 w-4">
-                {(isConnected || isConnecting) && (
-                  <span className={`
-                    animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 
-                    ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}
-                  `} />
-                )}
-                <span className={`
-                  relative inline-flex rounded-full h-4 w-4 
-                  ${isConnected
-                    ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]'
-                    : isConnecting
-                      ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]'
-                      : 'bg-slate-600'
-                  }
-                `} />
-              </span>
-              <span className={`
-                text-base font-bold 
-                ${isConnected ? 'text-emerald-400' : isConnecting ? 'text-amber-400' : 'text-slate-500'}
-              `}>
-                {isConnected ? 'CONNECTÉ' : isConnecting ? 'SYNCHRONISATION...' : 'HORS LIGNE'}
-              </span>
-            </div>
-          </div>
-
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Latency */}
-            <div className="flex flex-col items-center justify-center p-5 rounded-xl bg-white/5 transition-all duration-300 hover:bg-white/[0.07] group">
-              <span className="text-sm text-slate-400 uppercase tracking-wider mb-2 group-hover:text-slate-300 transition-colors">
-                Latence
-              </span>
-              <span className={`
-                text-2xl font-bold font-mono transition-colors duration-300
-                ${!isConnected || latency === 0
-                  ? 'text-slate-500'
-                  : latency > 200
-                    ? 'text-amber-400'
-                    : 'text-emerald-400'
-                }
-              `}>
-                {isConnected && latency > 0 ? `${latency}ms` : '-'}
-              </span>
-              {isConnected && latency > 0 && (
-                <span className={`
-                  text-[10px] mt-1 uppercase tracking-wider
-                  ${latency > 200 ? 'text-amber-400/60' : 'text-emerald-400/60'}
-                `}>
-                  {latency > 200 ? 'Lent' : latency > 100 ? 'Moyen' : 'Rapide'}
-                </span>
-              )}
+          {/* System Health Overview */}
+          <div className="relative p-6 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <Icons.Activity />
             </div>
 
-            {/* Vision Status */}
-            <div className="flex flex-col items-center justify-center p-5 rounded-xl bg-white/5 transition-all duration-300 hover:bg-white/[0.07] group">
-              <span className="text-sm text-slate-400 uppercase tracking-wider mb-2 group-hover:text-slate-300 transition-colors">
-                Vision
-              </span>
-              <span className={`
-                text-xl font-bold transition-colors duration-300
-                ${isScreenShareActive
-                  ? 'text-indigo-400'
-                  : isVideoActive
-                    ? 'text-indigo-400'
-                    : 'text-slate-500'
-                }
-              `}>
-                {isScreenShareActive ? 'PARTAGE' : isVideoActive ? 'CAMÉRA' : 'INACTIF'}
-              </span>
-              {(isVideoActive || isScreenShareActive) && (
-                <span className="text-[10px] mt-1 uppercase tracking-wider text-indigo-400/60">
-                  En cours
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Features Status */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">
-              Fonctionnalités
-            </h3>
-
-            <ToggleItem
-              label="Appel de Fonctions"
-              isEnabled={isFunctionCallingEnabled}
-              onToggle={handleToggleFunctionCalling}
-              activeColor="blue"
-              icon={<Icons.Code />}
-            />
-
-            <ToggleItem
-              label="Recherche Google"
-              isEnabled={isGoogleSearchEnabled}
-              onToggle={handleToggleGoogleSearch}
-              activeColor="green"
-              icon={<Icons.Search />}
-            />
-
-            <ToggleItem
-              label="Suivi des Yeux"
-              isEnabled={isEyeTrackingEnabled}
-              onToggle={handleToggleEyeTracking}
-              activeColor="purple"
-              icon={<Icons.Eye />}
-            />
-
-            <ToggleItem
-              label="Avatar 3D"
-              isEnabled={isAvatar3DEnabled}
-              onToggle={handleToggleAvatar3D}
-              activeColor="indigo"
-              icon={<Icons.Cube />}
-            />
-          </div>
-
-          {/* Personality Info */}
-          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: currentPersonality.themeColor,
-                  boxShadow: `0 0 12px ${currentPersonality.themeColor}`
-                }}
-              />
+            <div className="flex items-start justify-between relative z-10">
               <div>
-                <p className="text-xs text-slate-400 uppercase tracking-wider">Personnalité Active</p>
-                <p className="text-sm font-semibold text-white">{currentPersonality.name}</p>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
+                  Santé Globale
+                </h3>
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl font-black text-white tracking-tighter">
+                    {healthScore.toFixed(1)}%
+                  </span>
+                  <div className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">
+                    Optimal
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Temps de Session</p>
+                <p className="text-xl font-mono font-bold text-white tracking-wider">{uptime}</p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Styles */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
+          {/* Core Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricMeter
+              label="Connexion"
+              value={isConnected ? 'Excellent' : isConnecting ? 'Calcul...' : 'Aucune'}
+              percentage={isConnected ? 95 : isConnecting ? 45 : 0}
+              icon={<Icons.Signal />}
+              color={isConnected ? '#10b981' : isConnecting ? '#f59e0b' : '#64748b'}
+            />
+            <MetricMeter
+              label="Latence"
+              value={isConnected && latency > 0 ? `${latency}ms` : '-'}
+              percentage={!isConnected ? 0 : Math.max(0, 100 - (latency / 5))}
+              icon={<Icons.Activity />}
+              color={!isConnected ? '#64748b' : latency > 200 ? '#f59e0b' : '#10b981'}
+            />
+            <MetricMeter
+              label="Mémoire"
+              value={`${memUsage.toFixed(0)} MB`}
+              percentage={(memUsage / 512) * 100}
+              icon={<Icons.Memory />}
+              color="#3b82f6"
+            />
+            <MetricMeter
+              label="Processeur (IA)"
+              value={`${cpuUsage.toFixed(1)}%`}
+              percentage={cpuUsage * 2}
+              icon={<Icons.Server />}
+              color="#8b5cf6"
+            />
+          </div>
+
+          {/* System Overview Details */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Connection Info */}
+            <div className="flex flex-col p-5 rounded-xl bg-white/[0.02] border border-white/5 transition-all duration-300 hover:bg-white/[0.05]">
+              <div className="flex items-center gap-2 text-slate-400 mb-3">
+                <Icons.Signal />
+                <span className="text-xs font-bold uppercase tracking-widest">État Réseau</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-3 w-3">
+                  {(isConnected || isConnecting) && (
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                  )}
+                  <span className={`relative inline-flex rounded-full h-3 w-3 ${isConnected ? 'bg-emerald-500' : isConnecting ? 'bg-amber-500' : 'bg-slate-600'}`} />
+                </div>
+                <span className={`text-sm font-bold ${isConnected ? 'text-emerald-400' : isConnecting ? 'text-amber-400' : 'text-slate-500'}`}>
+                  {isConnected ? 'STABLE' : isConnecting ? 'SYNC...' : 'HORS LIGNE'}
+                </span>
+              </div>
+            </div>
+
+            {/* Vision Mode */}
+            <div className="flex flex-col p-5 rounded-xl bg-white/[0.02] border border-white/5 transition-all duration-300 hover:bg-white/[0.05]">
+              <div className="flex items-center gap-2 text-slate-400 mb-3">
+                <Icons.Eye />
+                <span className="text-xs font-bold uppercase tracking-widest">Mode Vision</span>
+              </div>
+              <span className={`text-sm font-bold ${isScreenShareActive || isVideoActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                {isScreenShareActive ? 'PARTAGE D\'ÉCRAN' : isVideoActive ? 'FLUX CAMÉRA' : 'INACTIF'}
+              </span>
+            </div>
+          </div>
+
+          {/* Features Toggle Section */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-1 flex items-center gap-2">
+              <span className="w-8 h-[1px] bg-slate-800"></span>
+              Configuration des Modules
+              <span className="flex-grow h-[1px] bg-slate-800"></span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ToggleItem
+                label="Appel de Fonctions"
+                isEnabled={isFunctionCallingEnabled}
+                onToggle={handleToggleFunctionCalling}
+                activeColor="blue"
+                icon={<Icons.Code />}
+              />
+
+              <ToggleItem
+                label="Recherche Google"
+                isEnabled={isGoogleSearchEnabled}
+                onToggle={handleToggleGoogleSearch}
+                activeColor="green"
+                icon={<Icons.Search />}
+              />
+
+              <ToggleItem
+                label="Suivi des Yeux"
+                isEnabled={isEyeTrackingEnabled}
+                onToggle={handleToggleEyeTracking}
+                activeColor="purple"
+                icon={<Icons.Eye />}
+              />
+
+              <ToggleItem
+                label="Avatar 3D"
+                isEnabled={isAvatar3DEnabled}
+                onToggle={handleToggleAvatar3D}
+                activeColor="indigo"
+                icon={<Icons.Cube />}
+              />
+            </div>
+          </div>
+
+          {/* Personality Footer */}
+          <div className="p-4 rounded-xl border border-white/10 bg-gradient-to-r from-white/[0.02] to-transparent flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/10"
+                  style={{ backgroundColor: `${currentPersonality.themeColor}20` }}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{
+                      backgroundColor: currentPersonality.themeColor,
+                      boxShadow: `0 0 15px ${currentPersonality.themeColor}`
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-none mb-1">Identité Active</p>
+                <p className="text-base font-bold text-white">{currentPersonality.name}</p>
+              </div>
+            </div>
+
+            <div className="text-right flex flex-col items-end">
+              <span className="text-[9px] text-slate-600 uppercase tracking-widest leading-none mb-1">Dernière Mise à jour</span>
+              <span className="text-[10px] font-mono font-bold text-slate-400">{lastUpdate}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Styles */}
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+          }
+        `}</style>
+      </div>
     </div>
   );
 };

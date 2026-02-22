@@ -79,8 +79,8 @@ export const useAppStore = create<AppState>()(
       currentSessionId: null,
       isFunctionCallingEnabled: false,
       isGoogleSearchEnabled: false,
-      isEyeTrackingEnabled: true,
-      isAvatar3DEnabled: true,
+      isEyeTrackingEnabled: false,
+      isAvatar3DEnabled: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
