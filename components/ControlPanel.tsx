@@ -410,7 +410,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <div
-      className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 md:pb-10 w-full pointer-events-none safe-area-bottom"
+      className="relative z-40 flex flex-col items-center justify-end pb-8 sm:pb-10 md:pb-12 w-full pointer-events-none safe-area-bottom"
       role="region"
       aria-label="Panneau de contrôle"
     >
