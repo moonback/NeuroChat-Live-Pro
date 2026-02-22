@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations, Environment, ContactShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -11,7 +11,11 @@ interface Avatar3DProps {
 }
 
 // ─── Dynamic Light: reacts to audio ──────────────────────────────────────────
-const DynamicPointLight: React.FC<{ color: string; analyserRef: React.MutableRefObject<AnalyserNode | null>; isActive: boolean }> = ({ color, analyserRef, isActive }) => {
+const DynamicPointLight: React.FC<{
+    color: string;
+    analyserRef: React.MutableRefObject<AnalyserNode | null>;
+    isActive: boolean;
+}> = ({ color, analyserRef, isActive }) => {
     const lightRef = useRef<THREE.PointLight>(null);
     const dataArray = useMemo(() => new Uint8Array(256), []);
 
@@ -24,15 +28,18 @@ const DynamicPointLight: React.FC<{ color: string; analyserRef: React.MutableRef
             audioLevel = sum / (20 * 255);
         }
         if (lightRef.current) {
-            // Subtle intensity pulse based on voice
-            lightRef.current.intensity = THREE.MathUtils.lerp(lightRef.current.intensity, 0.8 + audioLevel * 1.5, 0.1);
+            lightRef.current.intensity = THREE.MathUtils.lerp(
+                lightRef.current.intensity,
+                0.8 + audioLevel * 1.2,
+                0.1
+            );
         }
     });
 
     return <pointLight ref={lightRef} position={[-5, 5, -5]} color={color} intensity={0.8} />;
 };
 
-// ─── Avatar Model Component ────────────────────────────────────────────────────
+// ─── Avatar Model ────────────────────────────────────────────────────────────
 const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
     const { scene, animations } = useGLTF('/models/avatar.glb');
     const groupRef = useRef<THREE.Group>(null);
@@ -40,13 +47,19 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
 
     const dataArray = useMemo(() => new Uint8Array(256), []);
     const mousePos = useRef({ x: 0, y: 0 });
-    const audioLevelRef = useRef(0); // Smooth audio level (not raw)
-    const mouthHoldRef = useRef(0); // Hold mouth open briefly after sound stops
+    const smoothAudio = useRef(0);
+    const prevAudio = useRef(0); // For derivative-based syllable detection
 
     // Blink state
-    const blinkRef = useRef({ lastBlink: 0, nextBlink: 2500, isBlinking: false });
+    const blinkState = useRef({
+        lastBlink: 0,
+        nextBlink: 2500,
+        isBlinking: false,
+        phase: 0, // 0 = idle, 1 = closing, 2 = opening
+        value: 0,
+    });
 
-    // ── Cache all face meshes once at load time (no scene.traverse each frame) ──
+    // Cache face meshes + morph target indices once at load
     const faceMeshes = useMemo(() => {
         const meshes: THREE.Mesh[] = [];
         scene.traverse((child) => {
@@ -57,187 +70,227 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
         return meshes;
     }, [scene]);
 
-    // ── Cache eye objects once ─────────────────────────────────────────────────
+    // Cache eye objects 
     const eyeObjects = useMemo(() => {
         const eyes: THREE.Object3D[] = [];
         scene.traverse((child) => {
-            const name = child.name.toLowerCase();
-            if (name.includes('eye') && !name.includes('brow') && !name.includes('lash')) {
+            const n = child.name.toLowerCase();
+            if (n.includes('eye') && !n.includes('brow') && !n.includes('lash')) {
                 eyes.push(child);
             }
         });
         return eyes;
     }, [scene]);
 
-    // ── Mouse tracking ─────────────────────────────────────────────────────────
+    // Mouse tracking
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
+        const onMove = (e: MouseEvent) => {
             mousePos.current.x = (e.clientX / window.innerWidth) * 2 - 1;
             mousePos.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
         };
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mousemove', onMove);
+        return () => window.removeEventListener('mousemove', onMove);
     }, []);
 
-    // ── Idle animation ─────────────────────────────────────────────────────────
+    // Idle animation
     useEffect(() => {
         if (actions) {
-            const firstAction = actions[Object.keys(actions)[0]];
-            if (firstAction) firstAction.reset().fadeIn(0.5).play();
+            const first = actions[Object.keys(actions)[0]];
+            if (first) first.reset().fadeIn(0.5).play();
         }
     }, [actions]);
 
-    // ── Main animation loop ────────────────────────────────────────────────────
+    // ── Main animation loop ──────────────────────────────────────────────────
     useFrame((state) => {
-        let rawAudio = 0;
         const t = state.clock.elapsedTime;
         const now = t * 1000;
 
-        // 1. Audio Analysis (linear curve, fast decay)
+        // ━━━ 1. AUDIO ANALYSIS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        let rawAudio = 0;
         if (isActive && analyserRef.current) {
             analyserRef.current.getByteFrequencyData(dataArray);
             let sum = 0;
             for (let i = 0; i < 20; i++) sum += dataArray[i];
-            const raw = sum / (20 * 255);
-            // Fast attack when speaking
-            audioLevelRef.current = THREE.MathUtils.lerp(audioLevelRef.current, raw, 0.45);
-        } else {
-            // Fast decay when mic is off — mouth closes
-            audioLevelRef.current = THREE.MathUtils.lerp(audioLevelRef.current, 0, 0.35);
+            rawAudio = sum / (20 * 255);
         }
 
-        const audio = audioLevelRef.current;
-        const isSpeaking = audio > 0.05;
-        // mouthTarget: same as audio, closes to 0 when silent
-        const mouthTarget = audio;
+        // Smooth with asymmetric lerp: fast attack, faster decay
+        const attackSpeed = 0.5;
+        const decaySpeed = 0.4;
+        const target = rawAudio;
+        const speed = target > smoothAudio.current ? attackSpeed : decaySpeed;
+        smoothAudio.current = THREE.MathUtils.lerp(smoothAudio.current, target, speed);
 
-        // 2. Blink trigger
-        const blinkInterval = isSpeaking ? blinkRef.current.nextBlink * 0.7 : blinkRef.current.nextBlink;
-        if (!blinkRef.current.isBlinking && now - blinkRef.current.lastBlink > blinkInterval) {
-            blinkRef.current.isBlinking = true;
-        }
+        const audio = smoothAudio.current;
+        const isSpeaking = audio > 0.04;
 
-        // 3. Head: mouse tracking (horizontal only)
+        // Derivative: how fast audio is changing (for syllable detection)
+        const audioDelta = Math.abs(audio - prevAudio.current);
+        prevAudio.current = audio;
+
+        // ━━━ 2. HEAD TRACKING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
         if (groupRef.current) {
             const targetRotY = (mousePos.current.x * Math.PI) / 10;
-            groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotY, 0.05);
-            groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, -0.2, 0.03);
+            groupRef.current.rotation.y = THREE.MathUtils.lerp(
+                groupRef.current.rotation.y, targetRotY, 0.05
+            );
+            groupRef.current.rotation.x = THREE.MathUtils.lerp(
+                groupRef.current.rotation.x, -0.2, 0.03
+            );
 
-            // 4. Breathing — subtle Y oscillation when idle
-            const breathSpeed = isSpeaking ? 1.8 : 0.6;
-            const breathAmp = isSpeaking ? 0.008 : 0.015;
-            groupRef.current.position.y = -4.8 + Math.sin(t * breathSpeed) * breathAmp;
+            // Breathing
+            const breathHz = isSpeaking ? 1.8 : 0.6;
+            const breathAmp = isSpeaking ? 0.006 : 0.012;
+            groupRef.current.position.y = -4.8 + Math.sin(t * breathHz) * breathAmp;
+
+            // Subtle head nod when speaking (driven by audio energy changes)
+            if (isSpeaking) {
+                groupRef.current.rotation.z = THREE.MathUtils.lerp(
+                    groupRef.current.rotation.z,
+                    Math.sin(t * 3.5) * audioDelta * 2,
+                    0.08
+                );
+            } else {
+                groupRef.current.rotation.z = THREE.MathUtils.lerp(
+                    groupRef.current.rotation.z, 0, 0.05
+                );
+            }
         }
 
-        // 5. Facial Morphing (using cached meshes — no traverse per frame)
+        // ━━━ 3. BLINK STATE MACHINE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        const blink = blinkState.current;
+        if (blink.phase === 0) {
+            // Idle: wait for next blink
+            const interval = isSpeaking ? blink.nextBlink * 0.6 : blink.nextBlink;
+            if (now - blink.lastBlink > interval) {
+                blink.phase = 1; // Start closing
+            }
+        } else if (blink.phase === 1) {
+            // Closing: fast
+            blink.value = THREE.MathUtils.lerp(blink.value, 1, 0.6);
+            if (blink.value > 0.97) {
+                blink.phase = 2; // Start opening
+            }
+        } else if (blink.phase === 2) {
+            // Opening: slower
+            blink.value = THREE.MathUtils.lerp(blink.value, 0, 0.2);
+            if (blink.value < 0.03) {
+                blink.value = 0;
+                blink.phase = 0;
+                blink.lastBlink = now;
+                blink.nextBlink = 1200 + Math.random() * 4500;
+            }
+        }
+
+        // ━━━ 4. FACIAL MORPHING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        // Syllable oscillation: multi-frequency for more organic feel
+        const osc1 = (Math.sin(t * 16) + 1) / 2;        // ~2.5 Hz
+        const osc2 = (Math.sin(t * 24 + 1.2) + 1) / 2;  // ~3.8 Hz
+        const syllableOsc = osc1 * 0.6 + osc2 * 0.4;     // Mix two rhythms
+
         for (const mesh of faceMeshes) {
             const dict = mesh.morphTargetDictionary;
-            if (!dict || !mesh.morphTargetInfluences) continue;
+            const inf = mesh.morphTargetInfluences;
+            if (!dict || !inf) continue;
 
-            // ── MOUTH: syllable oscillation ──────────────────────────────────
-            // Without proper phoneme data, we modulate audio with a fast sine
-            // to create open-close cycles that mimic syllables (~5-7 per second).
-            const syllableOsc = (Math.sin(t * 18) + 1) / 2; // 0 to 1, ~3 Hz cycles
-            const mouthValue = mouthTarget > 0.03
-                ? mouthTarget * 0.7 * syllableOsc  // oscillate when speaking
-                : 0;                                 // close fully when silent
+            // ── MOUTH ────────────────────────────────────────────────────────
+            const jawTarget = isSpeaking
+                ? audio * 0.65 * syllableOsc
+                : 0;
 
             const jawIdx = dict['jawOpen'] ?? dict['mouthOpen'];
             if (jawIdx !== undefined) {
-                mesh.morphTargetInfluences[jawIdx] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[jawIdx],
-                    mouthValue,
-                    0.45 // fast lerp to follow the oscillation
+                inf[jawIdx] = THREE.MathUtils.lerp(inf[jawIdx], jawTarget, 0.5);
+            }
+
+            // Viseme AA — open vowel, in phase with jaw
+            const aaIdx = dict['viseme_aa'];
+            if (aaIdx !== undefined) {
+                inf[aaIdx] = THREE.MathUtils.lerp(
+                    inf[aaIdx],
+                    isSpeaking ? audio * 0.5 * syllableOsc : 0,
+                    0.35
                 );
             }
 
-            // Viseme AA (ah) — appears only when mouth opens wide
-            const visemeAA = dict['viseme_aa'];
-            if (visemeAA !== undefined) {
-                mesh.morphTargetInfluences[visemeAA] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[visemeAA],
-                    Math.max(0, mouthTarget * 0.55),
+            // Viseme O — rounded vowel, opposite phase for variety
+            const oIdx = dict['viseme_O'];
+            if (oIdx !== undefined) {
+                inf[oIdx] = THREE.MathUtils.lerp(
+                    inf[oIdx],
+                    isSpeaking ? audio * 0.35 * (1 - syllableOsc) : 0,
+                    0.3
+                );
+            }
+
+            // Viseme FF — consonant
+            const ffIdx = dict['viseme_FF'];
+            if (ffIdx !== undefined) {
+                inf[ffIdx] = THREE.MathUtils.lerp(
+                    inf[ffIdx],
+                    isSpeaking ? audio * 0.25 * osc2 : 0,
                     0.25
                 );
             }
 
-            // Viseme O (ooh) — rounds the mouth
-            const visemeO = dict['viseme_O'];
-            if (visemeO !== undefined) {
-                mesh.morphTargetInfluences[visemeO] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[visemeO],
-                    Math.max(0, mouthTarget * 0.42),
-                    0.18
-                );
-            }
-
-            // Viseme FF — labio-dental friction sounds
-            const visemeFF = dict['viseme_FF'];
-            if (visemeFF !== undefined) {
-                mesh.morphTargetInfluences[visemeFF] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[visemeFF],
-                    Math.max(0, audio * 0.35),
-                    0.2
-                );
-            }
-
-            // ── SMILE: subtle resting expression ─────────────────────────────
+            // ── SMILE: micro resting expression ──────────────────────────────
             const smileIdx = dict['mouthSmile'] ?? dict['mouthSmileLeft'];
             if (smileIdx !== undefined) {
-                const smilePulse = Math.sin(t * 0.4) * 0.04 + 0.06;
-                mesh.morphTargetInfluences[smileIdx] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[smileIdx], smilePulse, 0.08
-                );
+                const restSmile = Math.sin(t * 0.35) * 0.03 + 0.04;
+                inf[smileIdx] = THREE.MathUtils.lerp(inf[smileIdx], restSmile, 0.06);
             }
 
-            // ── BROWS: micro-expressions ──────────────────────────────────────
+            // ── BROWS ────────────────────────────────────────────────────────
             const browIdx = dict['browInnerUp'] ?? dict['browUp'];
             if (browIdx !== undefined) {
-                const browNoise = Math.sin(t * 2.5) * 0.025;
-                mesh.morphTargetInfluences[browIdx] = THREE.MathUtils.lerp(
-                    mesh.morphTargetInfluences[browIdx],
-                    Math.max(0, (audio * 0.5) + browNoise),
+                const browWave = Math.sin(t * 2.2) * 0.02;
+                const browTarget = isSpeaking ? audio * 0.35 + browWave : browWave + 0.01;
+                inf[browIdx] = THREE.MathUtils.lerp(inf[browIdx], Math.max(0, browTarget), 0.1);
+            }
+
+            // ── EYES (blink state machine) ───────────────────────────────────
+            const blinkL = dict['eyeBlinkLeft'];
+            const blinkR = dict['eyeBlinkRight'];
+            const blinkBoth = dict['eyesClosed'];
+
+            if (blinkL !== undefined) inf[blinkL] = blink.value;
+            if (blinkR !== undefined) inf[blinkR] = blink.value;
+            if (blinkBoth !== undefined && blinkL === undefined) inf[blinkBoth] = blink.value;
+
+            // ── SQUINT: subtle when speaking ─────────────────────────────────
+            const squintL = dict['eyeSquintLeft'];
+            const squintR = dict['eyeSquintRight'];
+            if (squintL !== undefined) {
+                inf[squintL] = THREE.MathUtils.lerp(inf[squintL], isSpeaking ? 0.15 : 0, 0.08);
+            }
+            if (squintR !== undefined) {
+                inf[squintR] = THREE.MathUtils.lerp(inf[squintR], isSpeaking ? 0.15 : 0, 0.08);
+            }
+
+            // ── CHEEKS: puff when speaking ───────────────────────────────────
+            const cheekIdx = dict['cheekPuff'];
+            if (cheekIdx !== undefined) {
+                inf[cheekIdx] = THREE.MathUtils.lerp(
+                    inf[cheekIdx],
+                    isSpeaking ? audio * 0.2 * (1 - syllableOsc) : 0,
                     0.12
                 );
             }
-
-            // ── EYES: natural asymmetric blinking ─────────────────────────────
-            // Left eye
-            const blinkLIdx = dict['eyeBlinkLeft'];
-            // Right eye (slightly delayed for realism)
-            const blinkRIdx = dict['eyeBlinkRight'];
-            // Fallback: both eyes together
-            const blinkBothIdx = dict['eyesClosed'];
-
-            const applyBlink = (idx: number, delay: number = 0) => {
-                if (!mesh.morphTargetInfluences) return;
-                if (blinkRef.current.isBlinking) {
-                    mesh.morphTargetInfluences[idx] = THREE.MathUtils.lerp(mesh.morphTargetInfluences[idx], 1, 0.55);
-                    if (mesh.morphTargetInfluences[idx] > 0.97 && delay === 0) {
-                        blinkRef.current.isBlinking = false;
-                        blinkRef.current.lastBlink = now;
-                        blinkRef.current.nextBlink = 900 + Math.random() * 5000;
-                    }
-                } else {
-                    mesh.morphTargetInfluences[idx] = THREE.MathUtils.lerp(mesh.morphTargetInfluences[idx], 0, 0.22);
-                }
-            };
-
-            if (blinkLIdx !== undefined) applyBlink(blinkLIdx, 0);
-            if (blinkRIdx !== undefined) applyBlink(blinkRIdx, 1); // slightly delayed
-            if (blinkBothIdx !== undefined && blinkLIdx === undefined) applyBlink(blinkBothIdx, 0);
         }
 
-        // 6. Eye saccades (micro gaze movements on cached eye objects)
+        // ━━━ 5. EYE SACCADES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
         for (const eye of eyeObjects) {
-            // Occasional random micro-saccade (5% chance per frame)
-            if (Math.random() > 0.95) {
-                eye.rotation.x += (Math.random() - 0.5) * 0.008;
-                eye.rotation.y += (Math.random() - 0.5) * 0.008;
+            if (Math.random() > 0.97) {
+                eye.rotation.x += (Math.random() - 0.5) * 0.006;
+                eye.rotation.y += (Math.random() - 0.5) * 0.006;
             }
-            // Slowly drift back toward center
-            eye.rotation.x = THREE.MathUtils.lerp(eye.rotation.x, 0, 0.02);
-            eye.rotation.y = THREE.MathUtils.lerp(eye.rotation.y, 0, 0.02);
+            eye.rotation.x = THREE.MathUtils.lerp(eye.rotation.x, 0, 0.025);
+            eye.rotation.y = THREE.MathUtils.lerp(eye.rotation.y, 0, 0.025);
         }
     });
 
@@ -264,7 +317,6 @@ const Avatar3D: React.FC<Avatar3DProps> = (props) => {
             >
                 <ambientLight intensity={0.5} />
                 <spotLight position={[5, 5, 5]} angle={0.25} penumbra={1} intensity={1.5} castShadow />
-                {/* Dynamic light that reacts to voice */}
                 <DynamicPointLight color={props.color} analyserRef={props.analyserRef} isActive={props.isActive} />
                 <directionalLight position={[0, 10, 0]} intensity={0.4} />
 
