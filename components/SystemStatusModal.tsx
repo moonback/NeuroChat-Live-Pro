@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ConnectionState, Personality } from '../types';
 import VoiceSelector from './VoiceSelector';
+import { useAppStore } from '../stores/appStore';
 
 interface SystemStatusModalProps {
   isOpen: boolean;
@@ -543,6 +544,20 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
                 onVoiceChange={onVoiceChange}
                 disabled={isConnected}
               />
+            </div>
+
+            {/* Action Logs Button */}
+            <div className="pt-4 flex justify-center mt-2">
+              <button
+                onClick={() => {
+                  onClose();
+                  useAppStore.getState().setLogsModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 w-full justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/10"
+              >
+                <Icons.Code />
+                <span className="text-sm font-semibold tracking-wider">VOIR L'HISTORIQUE DES ACTIONS IA (LOGS)</span>
+              </button>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
 import ConclusionsModal from './components/ConclusionsModal';
 import HistoryModal from './components/HistoryModal';
+import { ActionLogViewer } from './components/ActionLogViewer';
 import { ToastContainer } from './components/Toast';
 import { ConnectionState, Personality } from './types';
 import { DEFAULT_PERSONALITY } from './constants';
@@ -332,7 +333,7 @@ const App: React.FC = () => {
         onClose={() => ui.setHistoryModalOpen(false)}
       />
 
-
+      <ActionLogViewer />
 
       <MobileActionsDrawer
         isOpen={ui.isMobileActionsDrawerOpen && !isConnected}

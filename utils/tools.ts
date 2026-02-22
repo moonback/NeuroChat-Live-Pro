@@ -6,6 +6,7 @@
 import { FunctionDeclaration, FunctionCall, FunctionResponse } from '../types';
 import { AVAILABLE_PERSONALITIES } from '../constants';
 import type { Personality } from '../types';
+import { useAppStore } from '../stores/appStore';
 
 // Type pour le callback de changement de personnalité
 export type PersonalityChangeCallback = (personality: Personality) => void;
@@ -288,8 +289,8 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
   }
 };
 
-// Gestionnaire d'exécution des fonctions
-export async function executeFunction(
+// Fonction interne d'exécution (sans les logs)
+async function _executeFunctionImpl(
   functionCall: FunctionCall,
   options?: {
     onPersonalityChange?: PersonalityChangeCallback;
@@ -794,6 +795,49 @@ ${content}
     result: 'error',
     message: `Fonction ${name} non implémentée`
   };
+}
+
+// Fonction publique qui enveloppe l'exécution d'un log système
+export async function executeFunction(
+  functionCall: FunctionCall,
+  options?: {
+    onPersonalityChange?: PersonalityChangeCallback;
+    onToggleScreenShare?: (enabled: boolean) => void;
+    onOpenDocument?: (document: SavedConclusion) => void;
+  }
+): Promise<any> {
+  const { name = 'unknown_function', args = {} } = functionCall;
+  const store = useAppStore.getState();
+
+  const logId = store.addActionLog({
+    toolName: name,
+    args: args,
+    result: 'pending'
+  });
+
+  try {
+    const response = await _executeFunctionImpl(functionCall, options);
+
+    // Déterminer le statut
+    let status: 'success' | 'error' = 'success';
+    if (response?.result === 'error' || response?.error) {
+      status = 'error';
+    }
+
+    store.updateActionLog(logId, {
+      result: status,
+      message: response?.message || (status === 'success' ? 'Exécuté avec succès' : 'Une erreur est survenue')
+    });
+
+    return response;
+  } catch (error) {
+    store.updateActionLog(logId, {
+      result: 'error',
+      message: String(error)
+    });
+    console.error(`[Tools] Error executing ${name}:`, error);
+    throw error;
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ConnectionState, Personality, ChatSession, ChatMessage } from '../types';
+import { ConnectionState, Personality, ChatSession, ChatMessage, ActionLog } from '../types';
 import { DEFAULT_PERSONALITY } from '../constants';
 import type { ProcessedDocument } from '../utils/documentProcessor';
 
@@ -24,6 +24,10 @@ interface AppState {
   isEyeTrackingEnabled: boolean;
   isAvatar3DEnabled: boolean;
 
+  // Logs des actions de l'IA
+  actionLogs: ActionLog[];
+  isLogsModalOpen: boolean;
+
   // Actions
   setConnectionState: (state: ConnectionState) => void;
   setPersonality: (p: Personality) => void;
@@ -40,6 +44,12 @@ interface AppState {
   deleteSession: (id: string) => void;
   renameSession: (id: string, title: string) => void;
   clearHistory: () => void;
+
+  // Log Actions
+  addActionLog: (log: Omit<ActionLog, 'id' | 'timestamp'>) => string;
+  updateActionLog: (id: string, updates: Partial<ActionLog>) => void;
+  clearActionLogs: () => void;
+  setLogsModalOpen: (open: boolean) => void;
 }
 
 // Helper pour désérialiser les documents
@@ -81,6 +91,8 @@ export const useAppStore = create<AppState>()(
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: false,
       isAvatar3DEnabled: false,
+      actionLogs: [],
+      isLogsModalOpen: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -173,6 +185,23 @@ export const useAppStore = create<AppState>()(
       })),
 
       clearHistory: () => set({ sessions: [], currentSessionId: null }),
+
+      addActionLog: (log) => {
+        const id = crypto.randomUUID();
+        const timestamp = new Date().toISOString();
+        set((state) => ({
+          actionLogs: [{ id, timestamp, ...log }, ...state.actionLogs].slice(0, 100), // Keep last 100
+        }));
+        return id;
+      },
+
+      updateActionLog: (id, updates) => set((state) => ({
+        actionLogs: state.actionLogs.map((log) => (log.id === id ? { ...log, ...updates } : log)),
+      })),
+
+      clearActionLogs: () => set({ actionLogs: [] }),
+
+      setLogsModalOpen: (open) => set({ isLogsModalOpen: open }),
     }),
     {
       name: 'neurochat-storage',

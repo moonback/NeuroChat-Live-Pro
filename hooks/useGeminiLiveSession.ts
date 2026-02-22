@@ -80,17 +80,21 @@ export const useGeminiLiveSession = ({
   const {
     scheduleReconnect,
     reset: resetReconnection,
-    isReconnecting,
+    isReconnecting: isGlobalReconnecting,
     isIntentionalDisconnect,
     setIsIntentionalDisconnect,
+    attemptCount
   } = useReconnection({
-    maxAttempts: 5,
+    maxAttempts: 10, // Increase max attempts for genuine temporary drops
     onReconnect: () => connect(),
     onMaxAttemptsReached: () => {
       setConnectionState(ConnectionState.ERROR);
       showReconnectionFailure(addToast);
     },
   });
+
+  // Alias for backward compatibility in the hook
+  const isReconnecting = isGlobalReconnecting;
 
   // Latest values refs for session config (prevents re-triggering connect)
   const refs = useRef({
@@ -165,7 +169,12 @@ export const useGeminiLiveSession = ({
 
   const connect = useCallback(async () => {
     try {
-      if (!isReconnecting) setConnectionState(ConnectionState.CONNECTING);
+      if (!isReconnecting && attemptCount === 0) {
+        setConnectionState(ConnectionState.CONNECTING);
+      } else {
+        // If we are quietly reconnecting, we don't spam the UI with "Connecting..." full screen loaders
+        console.log(`[useGeminiLiveSession] ♻️ Reconnexion silencieuse en cours (Essai ${attemptCount})...`);
+      }
 
       // Crucial: Clear stale session reference from previous attempts
       sessionRef.current = null;
@@ -214,7 +223,14 @@ export const useGeminiLiveSession = ({
           onopen: async () => {
             console.log('Gemini Live Session Opened');
             setConnectionState(ConnectionState.CONNECTED);
-            showConnectionSuccess(addToast);
+
+            if (attemptCount === 0) {
+              showConnectionSuccess(addToast);
+            } else {
+              // Si on s'est reconnecté silencieusement, avertir l'utilisateur d'un retour à la normale
+              addToast('success', 'Reconnexion Réussie', 'La communication avec l\'assistant est rétablie.');
+            }
+
             resetReconnection();
 
             if (refs.current.isVideoActive) startFrameTransmission();
@@ -253,6 +269,8 @@ export const useGeminiLiveSession = ({
                   // Silent fail for already closed sessions to avoid console spam
                   return;
                 }
+                // Si la perte de frame est bénigne, on ignore simplement.
+                if (attemptCount > 0) return;
                 console.warn('[UseGemini] onaudioprocess error:', err);
               }
             };
@@ -327,14 +345,20 @@ export const useGeminiLiveSession = ({
             }
           },
           onclose: () => {
-            if (!isIntentionalDisconnect && !isReconnecting) handleInternalReconnect();
+            if (!isIntentionalDisconnect && !isReconnecting) {
+              showSessionError(addToast, attemptCount === 0 ? 'Connexion perdue. Tentative de reconnexion...' : 'Reconnexion en cours...');
+              handleInternalReconnect();
+            }
           },
           onerror: (err: any) => {
             console.error('[UseGemini] Session error:', err);
-            showSessionError(addToast, err?.message || 'Une erreur est survenue.');
+
             if (!isIntentionalDisconnect && !isReconnecting && err?.code !== 'AUTH_ERROR') {
+              // Ne pas spammer l'UI avec l'erreur si on va retenter une reconnexion
+              if (attemptCount === 0) showSessionError(addToast, 'Problème réseau détecté. Agent en reconnexion...');
               handleInternalReconnect();
-            } else {
+            } else if (err?.code === 'AUTH_ERROR') {
+              showSessionError(addToast, err?.message || 'Erreur d\'authentification. Vérifiez votre clé API.');
               setConnectionState(ConnectionState.ERROR);
               setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 5000);
             }
@@ -357,12 +381,20 @@ export const useGeminiLiveSession = ({
     } catch (error: any) {
       console.error("[UseGemini] Connection failure:", error);
       cleanupAudioResources();
-      showConnectionFailure(addToast, error.message || "Impossible de se connecter.");
-      setConnectionState(ConnectionState.ERROR);
-      setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 3000);
-      if (!isIntentionalDisconnect && !isReconnecting) scheduleReconnect();
+
+      if (attemptCount === 0) {
+        showConnectionFailure(addToast, error.message || "Impossible de se connecter.");
+      }
+
+      if (!isIntentionalDisconnect) {
+        setConnectionState(ConnectionState.CONNECTING); // Keep loading state if we are going to retry
+        scheduleReconnect();
+      } else {
+        setConnectionState(ConnectionState.ERROR);
+        setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 3000);
+      }
     }
-  }, [cleanupAudioResources, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency, isReconnecting, isIntentionalDisconnect, scheduleReconnect, resetReconnection, sessionRef, onPersonalityChange, onToggleScreenShare, startFrameTransmission]);
+  }, [cleanupAudioResources, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency, isReconnecting, isIntentionalDisconnect, scheduleReconnect, resetReconnection, sessionRef, onPersonalityChange, onToggleScreenShare, startFrameTransmission, attemptCount]);
 
   useEffect(() => { connectRef.current = connect; }, [connect]);
   useEffect(() => { return () => { disconnect(); }; }, [disconnect]);
