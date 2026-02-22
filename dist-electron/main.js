@@ -145,13 +145,7 @@ electron_1.app.whenReady().then(() => {
     // Obtenir le chemin vers le dossier public (ou ressource en prod)
     // En dev, on veut écrire dans le dossier source pour que les changements soient permanents
     const getBasePath = () => {
-        if (electron_1.app.isPackaged) {
-            return node_path_1.default.join(process.resourcesPath, 'public');
-        }
-        else {
-            // En dev, on remonte depuis dist-electron/main.js vers public
-            return node_path_1.default.join(__dirname, '../public');
-        }
+        return VITE_PUBLIC;
     };
     // Lire un fichier
     electron_1.ipcMain.handle('read-file', async (_, filePath) => {

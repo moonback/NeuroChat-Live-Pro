@@ -36,7 +36,7 @@ export const useAudioManager = (): UseAudioManagerResult => {
       audioContextActivatedRef.current = true;
 
       if (!beepAudioRef.current) {
-        const audio = new Audio('/bip.mp3');
+        const audio = new Audio('bip.mp3');
         audio.volume = 0.7;
         audio.preload = 'auto';
         audio.load();
@@ -48,7 +48,7 @@ export const useAudioManager = (): UseAudioManagerResult => {
   }, []);
 
   useEffect(() => {
-    const audio = new Audio('/bip.mp3');
+    const audio = new Audio('bip.mp3');
     audio.volume = 0.7;
     audio.preload = 'auto';
     audio.load();
@@ -76,7 +76,7 @@ export const useAudioManager = (): UseAudioManagerResult => {
           });
         }
       } else {
-        const audio = new Audio('/bip.mp3');
+        const audio = new Audio('bip.mp3');
         audio.volume = 0.7;
         audio.play().catch(error => {
           if (error.name !== 'NotAllowedError') {

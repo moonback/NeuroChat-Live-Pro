@@ -41,7 +41,7 @@ const DynamicPointLight: React.FC<{
 
 // ─── Avatar Model ────────────────────────────────────────────────────────────
 const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
-    const { scene, animations } = useGLTF('/models/avatar.glb');
+    const { scene, animations } = useGLTF('models/avatar.glb');
     const groupRef = useRef<THREE.Group>(null);
     const { actions } = useAnimations(animations, groupRef);
 
@@ -344,4 +344,4 @@ const Avatar3D: React.FC<Avatar3DProps> = (props) => {
 
 export default Avatar3D;
 
-useGLTF.preload('/models/avatar.glb');
+useGLTF.preload('models/avatar.glb');
