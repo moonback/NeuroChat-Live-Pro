@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback, memo } from 'react';
 import { ConnectionState, Personality } from '../types';
-import { AVAILABLE_PERSONALITIES } from '../constants';
 import Loader from './Loader';
 import Tooltip from './Tooltip';
 import LatencyIndicator from './LatencyIndicator';
@@ -25,7 +24,7 @@ interface ControlPanelProps {
   onToggleMic?: () => void;
   onCameraChange?: (cameraId: string) => void;
 
-  onSelectPersonality?: (personality: Personality) => void;
+
   onToggleFunctionCalling?: (enabled: boolean) => void;
   onToggleGoogleSearch?: (enabled: boolean) => void;
   onOpenMobileActions?: () => void;
@@ -279,222 +278,6 @@ const StatusIsland = memo(({
 
 StatusIsland.displayName = 'StatusIsland';
 
-// Personality Card Component
-const PersonalityCard = memo(({
-  personality,
-  isSelected,
-  onClick,
-  isPreview = false
-}: {
-  personality: Personality;
-  isSelected: boolean;
-  onClick: () => void;
-  isPreview?: boolean;
-}) => (
-  <button
-    onClick={onClick}
-    className={`
-      w-full flex items-start gap-3 p-4 transition-all duration-300
-      ${isSelected
-        ? 'bg-white/[0.08] border-l-2'
-        : 'hover:bg-white/[0.05] border-l-2 border-transparent hover:border-white/10'
-      }
-      ${isPreview ? 'scale-[1.02] bg-white/[0.06]' : ''}
-    `}
-    style={isSelected ? { borderLeftColor: personality.themeColor } : {}}
-    role="option"
-    aria-selected={isSelected}
-  >
-    {/* Color Indicator with glow */}
-    <div
-      className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mt-0.5 transition-all duration-300 group-hover:scale-110"
-      style={{ color: personality.themeColor }}
-    >
-      <div
-        className="w-3 h-3 rounded-full transition-all duration-300"
-        style={{
-          backgroundColor: personality.themeColor,
-          boxShadow: `0 0 12px ${personality.themeColor}, 0 0 24px ${personality.themeColor}40`
-        }}
-      />
-    </div>
-
-    {/* Content */}
-    <div className="flex-1 min-w-0 text-left">
-      <div className="flex items-center gap-2 mb-1">
-        <h3 className="text-base font-bold text-white transition-colors duration-300">
-          {personality.name}
-        </h3>
-        {isSelected && (
-          <div
-            className="flex-shrink-0 animate-in zoom-in duration-200"
-            style={{ color: personality.themeColor }}
-          >
-            <Icons.Check />
-          </div>
-        )}
-      </div>
-      <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">
-        {personality.description}
-      </p>
-    </div>
-  </button>
-));
-
-PersonalityCard.displayName = 'PersonalityCard';
-
-// Personality Selector Component
-const PersonalitySelector = memo(({
-  currentPersonality,
-  onSelectPersonality,
-  isOpen,
-  onToggle
-}: {
-  currentPersonality: Personality;
-  onSelectPersonality: (personality: Personality) => void;
-  isOpen: boolean;
-  onToggle: () => void;
-}) => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onToggle();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen, onToggle]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-
-      if (e.key === 'Escape') {
-        onToggle();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onToggle]);
-
-  return (
-    <div
-      ref={dropdownRef}
-      className="fixed top-1/2 right-6 -translate-y-1/2 pointer-events-auto z-20"
-    >
-      {/* Main Card */}
-      <button
-        onClick={onToggle}
-        className="group relative w-80 max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#050508]/70 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:border-white/20 hover:bg-[#050508]/90 animate-in fade-in slide-in-from-right-4 duration-700 focus:outline-none focus:ring-2 focus:ring-white/20"
-        aria-label="Sélectionner une personnalité"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-      >
-        {/* Ambient glow */}
-        <div
-          className="absolute inset-0 opacity-20 transition-opacity duration-500 group-hover:opacity-30"
-          style={{
-            background: `radial-gradient(ellipse at center, ${currentPersonality.themeColor}30 0%, transparent 70%)`
-          }}
-        />
-
-        <div className="relative z-10 flex items-center justify-between p-4">
-          {/* Left Icon */}
-          <div
-            className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/10 shadow-inner transition-all duration-300 group-hover:scale-110 group-hover:bg-white/10"
-            style={{ color: currentPersonality.themeColor }}
-          >
-            <div
-              className="w-3.5 h-3.5 rounded-full transition-all duration-300"
-              style={{
-                backgroundColor: currentPersonality.themeColor,
-                boxShadow: `0 0 15px ${currentPersonality.themeColor}, 0 0 30px ${currentPersonality.themeColor}50`
-              }}
-            />
-          </div>
-
-          {/* Text Info */}
-          <div className="flex-1 px-4 text-left">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1 transition-colors duration-300 group-hover:text-zinc-400">
-              <span className="text-[10px] font-semibold tracking-widest uppercase">Personnalité</span>
-            </div>
-            <h2 className="text-lg font-bold text-white tracking-tight leading-none transition-all duration-300 group-hover:translate-x-1">
-              {currentPersonality.name}
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1 line-clamp-1">
-              {currentPersonality.description}
-            </p>
-          </div>
-
-          {/* Chevron with rotation */}
-          <div className={`
-            flex items-center justify-center w-8 h-8 text-zinc-400 
-            transition-all duration-300 group-hover:text-white
-            ${isOpen ? 'rotate-180' : 'rotate-0'}
-          `}>
-            <Icons.ChevronDown />
-          </div>
-        </div>
-
-        {/* Bottom accent line */}
-        <div
-          className="absolute bottom-0 left-0 h-[2px] w-full opacity-60 transition-all duration-500 group-hover:opacity-100"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${currentPersonality.themeColor}, transparent)`
-          }}
-        />
-      </button>
-
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className="mt-3 w-80 max-w-sm rounded-2xl border border-white/10 bg-[#050508]/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-300"
-          role="listbox"
-          aria-label="Liste des personnalités"
-        >
-          <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-            {AVAILABLE_PERSONALITIES.map((personality) => {
-              const isSelected = personality.id === currentPersonality.id;
-              const isHovered = hoveredId === personality.id;
-
-              return (
-                <div
-                  key={personality.id}
-                  onMouseEnter={() => setHoveredId(personality.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                >
-                  <PersonalityCard
-                    personality={personality}
-                    isSelected={isSelected}
-                    isPreview={isHovered && !isSelected}
-                    onClick={() => {
-                      if (!isSelected) {
-                        onSelectPersonality(personality);
-                      }
-                      onToggle();
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-
-PersonalitySelector.displayName = 'PersonalitySelector';
-
 // Main Connect Button Component
 const ConnectButton = memo(({
   isConnecting,
@@ -611,16 +394,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleVideo,
   onToggleScreenShare,
   onToggleMic,
-  onSelectPersonality,
   onOpenMobileActions,
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
-  const [isPersonalityDropdownOpen, setIsPersonalityDropdownOpen] = useState(false);
-
-  const togglePersonalityDropdown = useCallback(() => {
-    setIsPersonalityDropdownOpen(prev => !prev);
-  }, []);
 
   // Memoized dock style
   const dockStyle = useMemo(() => ({
@@ -644,15 +421,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         themeColor={currentPersonality.themeColor}
       />
 
-      {/* 2. PERSONALITY SELECTOR */}
-      {!isConnected && onSelectPersonality && (
-        <PersonalitySelector
-          currentPersonality={currentPersonality}
-          onSelectPersonality={onSelectPersonality}
-          isOpen={isPersonalityDropdownOpen}
-          onToggle={togglePersonalityDropdown}
-        />
-      )}
 
       {/* 3. MAIN DOCK */}
       <div className="pointer-events-auto">

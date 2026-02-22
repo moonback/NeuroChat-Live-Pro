@@ -1,6 +1,5 @@
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { ConnectionState, Personality } from '../types';
-import VoiceSelector from './VoiceSelector';
 import Tooltip from './Tooltip';
 import DocumentUploader from './DocumentUploader';
 import { ProcessedDocument } from '../utils/documentProcessor';
@@ -9,8 +8,6 @@ import { ProcessedDocument } from '../utils/documentProcessor';
 interface HeaderProps {
   connectionState: ConnectionState;
   currentPersonality: Personality;
-  selectedVoice: string;
-  onVoiceChange: (voice: string) => void;
   uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
   onConnect: () => void;
@@ -157,8 +154,6 @@ ControlGroup.displayName = 'ControlGroup';
 const Header: React.FC<HeaderProps> = ({
   connectionState,
   currentPersonality,
-  selectedVoice,
-  onVoiceChange,
   uploadedDocuments,
   onDocumentsChange,
   onOpenSystemStatus,
@@ -196,8 +191,6 @@ const Header: React.FC<HeaderProps> = ({
       window.removeEventListener('keydown', resetHideTimeout);
     };
   }, [resetHideTimeout]);
-
-  const disabledReason = isConnected ? "Disconnect to edit" : undefined;
 
   return (
     <header
@@ -263,20 +256,6 @@ const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </div>
-
-            <div className="w-px h-4 bg-white/10" />
-
-            <div className={isConnected ? 'opacity-40 grayscale cursor-not-allowed' : ''}>
-              <Tooltip content={isConnected ? "Disconnect to change voice" : "Voice"} position="bottom">
-                <div>
-                  <VoiceSelector
-                    currentVoice={selectedVoice}
-                    onVoiceChange={onVoiceChange}
-                    disabled={isConnected}
-                  />
-                </div>
-              </Tooltip>
-            </div>
           </div>
         </nav>
       </div>
@@ -307,4 +286,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header;
+export default memo(Header);

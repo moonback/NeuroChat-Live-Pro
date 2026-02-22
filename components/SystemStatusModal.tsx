@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ConnectionState, Personality } from '../types';
+import VoiceSelector from './VoiceSelector';
 
 interface SystemStatusModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface SystemStatusModalProps {
   onToggleEyeTracking: (enabled: boolean) => void;
   isAvatar3DEnabled: boolean;
   onToggleAvatar3D: (enabled: boolean) => void;
+  selectedVoice: string;
+  onVoiceChange: (voice: string) => void;
 }
 
 // --- Icons ---
@@ -222,6 +225,8 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   onToggleEyeTracking,
   isAvatar3DEnabled,
   onToggleAvatar3D,
+  selectedVoice,
+  onVoiceChange,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -511,6 +516,32 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
                 onToggle={handleToggleAvatar3D}
                 activeColor="indigo"
                 icon={<Icons.Cube />}
+              />
+            </div>
+          </div>
+
+          {/* Voice Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-1 flex items-center gap-2">
+              <span className="w-8 h-[1px] bg-slate-800"></span>
+              Configuration Audio
+              <span className="flex-grow h-[1px] bg-slate-800"></span>
+            </h3>
+
+            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <Icons.Activity />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Voix du Système</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-tight">Sélectionnez la personnalité vocale</p>
+                </div>
+              </div>
+              <VoiceSelector
+                currentVoice={selectedVoice}
+                onVoiceChange={onVoiceChange}
+                disabled={isConnected}
               />
             </div>
           </div>

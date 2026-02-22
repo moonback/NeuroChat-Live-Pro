@@ -317,6 +317,8 @@ const App: React.FC = () => {
         onToggleAvatar3D={setIsAvatar3DEnabled}
         onToggleFunctionCalling={handleFunctionCallingToggle}
         onToggleGoogleSearch={handleGoogleSearchToggle}
+        selectedVoice={selectedVoice}
+        onVoiceChange={setSelectedVoice}
       />
 
       <ConclusionsModal
@@ -367,8 +369,6 @@ const App: React.FC = () => {
         <Header
           connectionState={storeConnectionState}
           currentPersonality={currentPersonality}
-          selectedVoice={selectedVoice}
-          onVoiceChange={setSelectedVoice}
           uploadedDocuments={uploadedDocuments}
           onDocumentsChange={handleDocumentsChange}
           onConnect={handleConnect}
@@ -396,11 +396,6 @@ const App: React.FC = () => {
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
               onToggleVideo={() => setIsVideoActive(!isVideoActive)}
-              onToggleScreenShare={toggleScreenShare}
-              onToggleMic={handleToggleMic}
-              onCameraChange={changeCamera}
-
-              onSelectPersonality={handlePersonalityChange}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}
               onToggleFunctionCalling={handleFunctionCallingToggle}
