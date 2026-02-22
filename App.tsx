@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Visualizer from './components/Visualizer';
+import Avatar3D from './components/Avatar3D';
 import ControlPanel from './components/ControlPanel';
 import Header from './components/Header';
 
@@ -270,13 +271,21 @@ const App: React.FC = () => {
       {/* Screen Sharing Indicator */}
       <ScreenShareOverlay isActive={isScreenShareActive} />
 
-      {/* Real-time Visualizer */}
+      {/* Real-time 3D Avatar (Replaces 2D Visualizer) */}
+      <Avatar3D
+        analyserRef={analyserRef}
+        color={currentPersonality.themeColor}
+        isActive={isTalking || isConnected}
+      />
+
+      {/* Legacy 2D Visualizer (Commented out)
       <Visualizer
         analyserRef={analyserRef}
         color={currentPersonality.themeColor}
         isActive={isTalking || isConnected}
         isEyeTrackingEnabled={isEyeTrackingEnabled}
       />
+      */}
 
       {/* Toast Management System */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
