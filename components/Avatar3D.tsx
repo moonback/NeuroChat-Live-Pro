@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Sphere, Environment, ContactShadows } from '@react-three/drei';
+import { Sphere, Box, Cylinder, Environment, ContactShadows, RoundedBox } from '@react-three/drei';
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
@@ -16,16 +16,12 @@ const RoboticHead: React.FC<Avatar3DProps> = ({ analyserRef, color, isActive }) 
     const mouthRef = useRef<THREE.Mesh>(null);
     const leftEyeRef = useRef<THREE.Mesh>(null);
     const rightEyeRef = useRef<THREE.Mesh>(null);
-    const innerCoreRef = useRef<THREE.Mesh>(null);
 
-    // Audio state
     const dataArray = useMemo(() => new Uint8Array(256), []);
-
-    // Global Mouse Tracking (using a ref to store position)
     const mousePos = useRef({ x: 0, y: 0 });
+
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            // Normalize to -1 to 1
             mousePos.current.x = (e.clientX / window.innerWidth) * 2 - 1;
             mousePos.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
         };
@@ -33,14 +29,12 @@ const RoboticHead: React.FC<Avatar3DProps> = ({ analyserRef, color, isActive }) 
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
-    // Blink state
-    const blinkRef = useRef({ lastBlink: 0, nextBlink: 2000, isBlinking: false, progress: 1 });
+    const blinkRef = useRef({ lastBlink: 0, nextBlink: 2500, isBlinking: false, progress: 1 });
 
     useFrame((state) => {
         let audioLevel = 0;
         const now = state.clock.elapsedTime * 1000;
 
-        // 1. Audio Analysis
         if (isActive && analyserRef.current) {
             analyserRef.current.getByteFrequencyData(dataArray);
             let sum = 0;
@@ -48,141 +42,145 @@ const RoboticHead: React.FC<Avatar3DProps> = ({ analyserRef, color, isActive }) 
             audioLevel = sum / (18 * 255);
         }
 
-        // 2. Head & Neck Rotation (Look at global mouse)
+        // Rotations
         if (neckRef.current) {
-            const targetRotationY = (mousePos.current.x * Math.PI) / 3.5;
-            const targetRotationX = (mousePos.current.y * Math.PI) / 6;
-
+            const targetRotationY = (mousePos.current.x * Math.PI) / 4;
+            const targetRotationX = (mousePos.current.y * Math.PI) / 8;
             neckRef.current.rotation.y = THREE.MathUtils.lerp(neckRef.current.rotation.y, targetRotationY, 0.08);
             neckRef.current.rotation.x = THREE.MathUtils.lerp(neckRef.current.rotation.x, targetRotationX, 0.08);
         }
 
-        // 3. Floating Animation
         if (headGroupRef.current) {
-            headGroupRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.2) * 0.12;
-            headGroupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+            headGroupRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.05;
         }
 
-        // 4. Mouth Animation
+        // Mouth
         if (mouthRef.current) {
-            const targetScaleY = 0.08 + audioLevel * 4;
+            const targetScaleY = 0.2 + audioLevel * 5;
             mouthRef.current.scale.y = THREE.MathUtils.lerp(mouthRef.current.scale.y, targetScaleY, 0.3);
             (mouthRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 2 + audioLevel * 15;
         }
 
-        // 5. Blink Logic
+        // Blink
         if (!blinkRef.current.isBlinking && now - blinkRef.current.lastBlink > blinkRef.current.nextBlink) {
             blinkRef.current.isBlinking = true;
         }
-
         if (blinkRef.current.isBlinking) {
-            blinkRef.current.progress -= 0.15; // Close speed
+            blinkRef.current.progress -= 0.2;
             if (blinkRef.current.progress <= 0) {
                 blinkRef.current.progress = 0;
                 blinkRef.current.isBlinking = false;
                 blinkRef.current.lastBlink = now;
-                blinkRef.current.nextBlink = 2000 + Math.random() * 4000;
+                blinkRef.current.nextBlink = 3000 + Math.random() * 5000;
             }
         } else {
-            blinkRef.current.progress = THREE.MathUtils.lerp(blinkRef.current.progress, 1, 0.2); // Open speed
+            blinkRef.current.progress = THREE.MathUtils.lerp(blinkRef.current.progress, 1, 0.25);
         }
 
-        // 6. Eyes Glow & Scale
+        // Eyes
         if (leftEyeRef.current && rightEyeRef.current) {
-            const eyeIntensity = 3 + audioLevel * 20;
+            const eyeIntensity = 4 + audioLevel * 15;
             (leftEyeRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = eyeIntensity;
             (rightEyeRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = eyeIntensity;
 
-            const baseScale = 1 + audioLevel * 0.4;
-            leftEyeRef.current.scale.set(baseScale, baseScale * blinkRef.current.progress, baseScale);
-            rightEyeRef.current.scale.set(baseScale, baseScale * blinkRef.current.progress, baseScale);
-        }
-
-        // 7. Inner Core Pulse
-        if (innerCoreRef.current) {
-            const corePulse = 0.8 + Math.sin(state.clock.elapsedTime * 2.5) * 0.4 + audioLevel * 3;
-            (innerCoreRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = corePulse;
-            innerCoreRef.current.rotation.y += 0.01;
-            innerCoreRef.current.rotation.x += 0.005;
+            leftEyeRef.current.scale.y = blinkRef.current.progress;
+            rightEyeRef.current.scale.y = blinkRef.current.progress;
         }
     });
 
     return (
         <group ref={neckRef}>
-            <group ref={headGroupRef}>
-                {/* Outer Glass Shell */}
-                <Sphere args={[1, 64, 64]}>
-                    <meshPhysicalMaterial
-                        color="#000"
-                        roughness={0.02}
-                        metalness={0.1}
-                        transmission={0.95}
-                        thickness={1.5}
-                        transparent={true}
-                        opacity={0.35}
-                        envMapIntensity={2}
-                    />
-                </Sphere>
-
-                {/* Dynamic Inner Core (Tech Brain) */}
-                <mesh ref={innerCoreRef}>
-                    <octahedronGeometry args={[0.7, 2]} />
-                    <meshStandardMaterial
-                        color={color}
-                        emissive={color}
-                        emissiveIntensity={1}
-                        wireframe
-                        transparent
-                        opacity={0.4}
-                    />
-                </mesh>
-
-                {/* Secondary Inner Core (Solid) */}
-                <mesh>
-                    <sphereGeometry args={[0.3, 16, 16]} />
+            {/* MECHANICAL NECK */}
+            <group position={[0, -0.8, 0]}>
+                <Cylinder args={[0.2, 0.25, 0.6, 16]} position={[0, 0, 0]}>
+                    <meshStandardMaterial color="#111" metalness={0.9} roughness={0.1} />
+                </Cylinder>
+                <Cylinder args={[0.05, 0.05, 0.6, 8]} position={[0.15, 0, 0.15]}>
                     <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
-                </mesh>
+                </Cylinder>
+                <Cylinder args={[0.05, 0.05, 0.6, 8]} position={[-0.15, 0, 0.15]}>
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+                </Cylinder>
+            </group>
 
-                {/* EYES */}
-                <group position={[0, 0.25, 0.88]}>
-                    <mesh ref={leftEyeRef} position={[-0.35, 0, 0.05]}>
-                        <sphereGeometry args={[0.13, 32, 32]} />
+            <group ref={headGroupRef}>
+                {/* MAIN CHASSIS (Robotic Shape) */}
+                <RoundedBox args={[1.2, 1.4, 1]} radius={0.2} smoothness={4}>
+                    <meshStandardMaterial
+                        color="#0a0a0a"
+                        metalness={0.9}
+                        roughness={0.2}
+                        envMapIntensity={1}
+                    />
+                </RoundedBox>
+
+                {/* TOP PLATE */}
+                <Box args={[1.3, 0.1, 1.1]} position={[0, 0.7, 0]}>
+                    <meshStandardMaterial color="#151515" metalness={1} roughness={0} />
+                </Box>
+
+                {/* VISOR AREA */}
+                <Box args={[1.2, 0.5, 0.1]} position={[0, 0.2, 0.5]}>
+                    <meshStandardMaterial color="#000" metalness={1} roughness={0} />
+                </Box>
+
+                {/* EYES (Visor Display) */}
+                <group position={[0, 0.2, 0.56]}>
+                    <mesh ref={leftEyeRef} position={[-0.3, 0, 0]}>
+                        <planeGeometry args={[0.35, 0.2]} />
+                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} transparent opacity={0.9} />
+                    </mesh>
+                    <mesh ref={rightEyeRef} position={[0.3, 0, 0]}>
+                        <planeGeometry args={[0.35, 0.2]} />
+                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} transparent opacity={0.9} />
+                    </mesh>
+                </group>
+
+                {/* SIDE PANELS (Ears/Sensors) */}
+                <group position={[-0.65, 0.1, 0]}>
+                    <Box args={[0.2, 0.8, 0.6]}>
+                        <meshStandardMaterial color="#111" metalness={1} />
+                    </Box>
+                    <Box args={[0.05, 0.4, 0.4]} position={[-0.1, 0, 0]}>
+                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
+                    </Box>
+                </group>
+                <group position={[0.65, 0.1, 0]}>
+                    <Box args={[0.2, 0.8, 0.6]}>
+                        <meshStandardMaterial color="#111" metalness={1} />
+                    </Box>
+                    <Box args={[0.05, 0.4, 0.4]} position={[0.1, 0, 0]}>
+                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
+                    </Box>
+                </group>
+
+                {/* DECORATIVE LIGHT LINES (Circuits) */}
+                <Box args={[0.02, 0.8, 1.02]} position={[0.61, -0.2, 0]}>
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+                </Box>
+                <Box args={[0.02, 0.8, 1.02]} position={[-0.61, -0.2, 0]}>
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+                </Box>
+
+                {/* MOUTH (Digital Equalizer) */}
+                <group position={[0, -0.45, 0.51]}>
+                    {/* Background plate */}
+                    <Box args={[0.6, 0.2, 0.05]} position={[0, 0, -0.05]}>
+                        <meshStandardMaterial color="#000" />
+                    </Box>
+                    <mesh ref={mouthRef} position={[0, 0, 0]}>
+                        <boxGeometry args={[0.5, 0.04, 0.01]} />
                         <meshStandardMaterial color="#fff" emissive={color} emissiveIntensity={10} />
                     </mesh>
-                    <mesh ref={rightEyeRef} position={[0.35, 0, 0.05]}>
-                        <sphereGeometry args={[0.13, 32, 32]} />
-                        <meshStandardMaterial color="#fff" emissive={color} emissiveIntensity={10} />
-                    </mesh>
-                    <pointLight position={[0, 0, 0.2]} distance={2} intensity={4} color={color} />
                 </group>
 
-                {/* DIGITAL MOUTH */}
-                <mesh ref={mouthRef} position={[0, -0.4, 0.9]}>
-                    <boxGeometry args={[0.5, 0.06, 0.05]} />
-                    <meshStandardMaterial color="#fff" emissive={color} emissiveIntensity={10} />
-                </mesh>
-
-                {/* ANTENNAS (Glowing Tips) */}
-                <group rotation={[0, 0, 0.5]} position={[-0.8, 0.6, 0]}>
-                    <mesh position={[0, 0, 0]}>
-                        <cylinderGeometry args={[0.01, 0.01, 0.8]} />
-                        <meshStandardMaterial color="#222" />
-                    </mesh>
-                    <mesh position={[0, 0.4, 0]}>
-                        <sphereGeometry args={[0.04, 16, 16]} />
-                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
-                    </mesh>
-                </group>
-                <group rotation={[0, 0, -0.5]} position={[0.8, 0.6, 0]}>
-                    <mesh position={[0, 0, 0]}>
-                        <cylinderGeometry args={[0.01, 0.01, 0.8]} />
-                        <meshStandardMaterial color="#222" />
-                    </mesh>
-                    <mesh position={[0, 0.4, 0]}>
-                        <sphereGeometry args={[0.04, 16, 16]} />
-                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
-                    </mesh>
-                </group>
+                {/* TECH ANTENNAS */}
+                <Cylinder args={[0.01, 0.01, 0.5]} position={[-0.4, 0.75, 0]} rotation={[0.4, 0, 0.2]}>
+                    <meshStandardMaterial color="#333" />
+                </Cylinder>
+                <Cylinder args={[0.01, 0.01, 0.5]} position={[0.4, 0.75, 0]} rotation={[0.4, 0, -0.2]}>
+                    <meshStandardMaterial color="#333" />
+                </Cylinder>
             </group>
         </group>
     );
@@ -194,22 +192,22 @@ const Avatar3D: React.FC<Avatar3DProps> = (props) => {
             <Canvas
                 shadows
                 dpr={[1, 2]}
-                camera={{ position: [0, 0, 4.5], fov: 45 }}
+                camera={{ position: [0, 0, 4], fov: 45 }}
                 gl={{ antialias: true, alpha: true }}
             >
                 <ambientLight intensity={0.4} />
-                <spotLight position={[5, 5, 5]} angle={0.15} penumbra={1} intensity={2} castShadow />
-                <pointLight position={[-5, -5, -5]} color={props.color} intensity={1} />
+                <spotLight position={[5, 5, 5]} angle={0.2} penumbra={1} intensity={2} castShadow />
+                <pointLight position={[-5, 5, -5]} color={props.color} intensity={1} />
 
                 <RoboticHead {...props} />
 
-                <Environment preset="night" />
+                <Environment preset="city" />
 
-                <ContactShadows position={[0, -2.5, 0]} opacity={0.5} scale={10} blur={2.5} far={4.5} />
+                <ContactShadows position={[0, -2, 0]} opacity={0.6} scale={10} blur={2} far={4} />
 
-                <EffectComposer disableNormalPass>
-                    <Bloom luminanceThreshold={0.5} mipmapBlur intensity={1.8} radius={0.4} />
-                    <Noise opacity={0.05} />
+                <EffectComposer multisampling={4}>
+                    <Bloom luminanceThreshold={0.5} mipmapBlur intensity={1.5} radius={0.4} />
+                    <Noise opacity={0.03} />
                     <Vignette eskil={false} offset={0.1} darkness={1.1} />
                 </EffectComposer>
             </Canvas>
