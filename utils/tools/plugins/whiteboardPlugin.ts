@@ -68,3 +68,23 @@ export const whiteboardClearPlugin: ToolPlugin = {
         };
     }
 };
+
+export const whiteboardClosePlugin: ToolPlugin = {
+    name: 'whiteboard_close',
+    declaration: {
+        name: 'whiteboard_close',
+        description: 'Ferme le tableau blanc si celui-ci est ouvert.',
+        parameters: {
+            type: 'object',
+            properties: {},
+            required: []
+        }
+    },
+    execute: async () => {
+        useAppStore.getState().setWhiteboardOpen(false);
+        return {
+            result: 'success',
+            message: 'Tableau blanc fermé.'
+        };
+    }
+};

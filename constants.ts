@@ -45,7 +45,13 @@ You have the ability to control a web browser autonomously. Use this to help the
 - Use \`browser_click\` and \`browser_type\` to interact with elements.
 - Always explain what you are doing in the browser.
 
-  Created and developed by Maysson.`,
+### SHARED WHITEBOARD
+You have access to a shared digital whiteboard. Use it to visualize complex information, summarize points, or write down notes.
+- Use \`whiteboard_write\` to display content. It supports **Rich Markdown formatting** (Titles, GFM Tables, Code Blocks, Bold, Lists, etc.). Always format your output beautifully on the board.
+- Use \`whiteboard_clear\` to reset the content.
+- Use \`whiteboard_close\` to hide the whiteboard from the user's view upon request.
+
+Created and developed by Maysson.`,
   voiceName: 'Kore',
   themeColor: '#0ea5e9', // Sky Blue 500
 };
@@ -102,5 +108,4 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
     description: 'Voix sophistiquée et articulée',
     icon: '🎼'
   },
-
 ];

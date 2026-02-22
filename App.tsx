@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useAppStore } from './stores/appStore';
+import { useUIStore } from './stores/uiStore';
 import Visualizer from './components/Visualizer';
 import Avatar3D from './components/Avatar3D';
 import ControlPanel from './components/ControlPanel';
@@ -26,8 +28,7 @@ import { useConnectionLifecycle } from './hooks/useConnectionLifecycle';
 import VideoOverlay from './components/VideoOverlay';
 import BackgroundLayers from './components/BackgroundLayers';
 import ScreenShareOverlay from './components/ScreenShareOverlay';
-import { useAppStore } from './stores/appStore';
-import { useUIStore } from './stores/uiStore';
+
 import {
   showFunctionCallingToggle,
   showGoogleSearchToggle,
@@ -36,14 +37,18 @@ import {
 } from './utils/toastHelpers';
 import { initializeCorePlugins } from './utils/tools/index';
 
-// Initialisation globale du SDK des plugins
-initializeCorePlugins();
+console.log('[App] useAppStore:', useAppStore);
 
 /**
  * Main App Component
  * Orchestrates the UI, Gemini Session, Vision, and Audio.
  */
 const App: React.FC = () => {
+  // Initialisation du SDK des plugins au montage
+  useEffect(() => {
+    initializeCorePlugins();
+  }, []);
+
   // UI Store for transient states (modals, drawers)
   const ui = useUIStore();
 
@@ -374,7 +379,7 @@ const App: React.FC = () => {
       />
 
       <ActionLogViewer />
-
+      <Whiteboard />
       <MobileActionsDrawer
         isOpen={ui.isMobileActionsDrawerOpen && !isConnected}
         onClose={() => ui.setMobileActionsDrawerOpen(false)}
