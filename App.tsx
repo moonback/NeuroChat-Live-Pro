@@ -396,6 +396,7 @@ const App: React.FC = () => {
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
               onToggleVideo={() => setIsVideoActive(!isVideoActive)}
+              onToggleScreenShare={toggleScreenShare}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}
               onToggleFunctionCalling={handleFunctionCallingToggle}
