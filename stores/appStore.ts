@@ -30,10 +30,13 @@ interface AppState {
   voicePitch: number;
   themePreference: string;
   compactMode: boolean;
-
   // Logs des actions de l'IA
   actionLogs: ActionLog[];
   isLogsModalOpen: boolean;
+
+  // Whiteboard (Tableau Blanc)
+  whiteboardContent: string;
+  isWhiteboardOpen: boolean;
 
   // Actions
   setConnectionState: (state: ConnectionState) => void;
@@ -63,6 +66,12 @@ interface AppState {
   updateActionLog: (id: string, updates: Partial<ActionLog>) => void;
   clearActionLogs: () => void;
   setLogsModalOpen: (open: boolean) => void;
+
+  // Whiteboard Actions
+  setWhiteboardContent: (content: string) => void;
+  appendToWhiteboard: (text: string) => void;
+  setWhiteboardOpen: (open: boolean) => void;
+  clearWhiteboard: () => void;
 }
 
 // Helper pour désérialiser les documents
@@ -111,6 +120,8 @@ export const useAppStore = create<AppState>()(
       compactMode: false,
       actionLogs: [],
       isLogsModalOpen: false,
+      whiteboardContent: '',
+      isWhiteboardOpen: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -226,6 +237,14 @@ export const useAppStore = create<AppState>()(
       clearActionLogs: () => set({ actionLogs: [] }),
 
       setLogsModalOpen: (open) => set({ isLogsModalOpen: open }),
+
+      // Whiteboard Actions Implementation
+      setWhiteboardContent: (content) => set({ whiteboardContent: content }),
+      appendToWhiteboard: (text) => set((state) => ({
+        whiteboardContent: state.whiteboardContent + text
+      })),
+      setWhiteboardOpen: (open) => set({ isWhiteboardOpen: open }),
+      clearWhiteboard: () => set({ whiteboardContent: '' }),
     }),
     {
       name: 'neurochat-storage',

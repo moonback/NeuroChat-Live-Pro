@@ -9,6 +9,7 @@ import SystemStatusModal from './components/SystemStatusModal';
 import MobileActionsDrawer from './components/MobileActionsDrawer';
 import ConclusionsModal from './components/ConclusionsModal';
 import HistoryModal from './components/HistoryModal';
+import { Whiteboard } from './components/Whiteboard';
 import { ActionLogViewer } from './components/ActionLogViewer';
 import { ToastContainer } from './components/Toast';
 import { ConnectionState, Personality } from './types';
@@ -83,6 +84,8 @@ const App: React.FC = () => {
     voicePitch,
     themePreference,
     compactMode,
+    isWhiteboardOpen,
+    setWhiteboardOpen,
   } = useAppStore();
 
   // Sync useStatusManager with store state
@@ -417,6 +420,8 @@ const App: React.FC = () => {
           onOpenSystemStatus={() => ui.setSystemStatusModalOpen(true)}
           onOpenConclusions={() => ui.setConclusionsModalOpen(true)}
           onOpenHistory={() => ui.setHistoryModalOpen(true)}
+          onToggleWhiteboard={() => setWhiteboardOpen(!isWhiteboardOpen)}
+          isWhiteboardOpen={isWhiteboardOpen}
         />
 
         <div className="relative flex-grow flex flex-col lg:pt-0 xl:pt-0">
