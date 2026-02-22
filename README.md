@@ -1,129 +1,118 @@
 # 🧠 NeuroChat Live Pro
 
-> **Assistant IA Professionnel avec Conversations Vocales en Temps Réel**  
-> Une application Desktop immersive propulsée par Gemini Live pour des interactions vocales naturelles, l'analyse visuelle et l'exécution d'outils complexes.
+> **Votre Assistant IA Multimodal & Autonome sur Bureau**  
+> Une application Desktop propulsée par Gemini Live permettant des conversations vocales ultra-rapides, l'analyse visuelle en temps réel (écran/caméra) et l'exécution d'actions complexes sur votre système et le web.
 
 ---
 
-## 📖 À propos
+## 💻 Stack Technique
 
-**NeuroChat Live Pro** est un assistant IA conversationnel de nouvelle génération conçu pour offrir une expérience utilisateur fluide et immersive. En exploitant la puissance de **Google Gemini Live** et une intégration **Electron** profonde, il offre une réactivité sans précédent (conversations vocales fluides) et des capacités d'action directes sur votre système.
+L'application repose sur des technologies modernes pour allier performance, interface réactive et contrôle du système hôte :
 
-L'application se concentre sur une personnalité centrale : **NeuroChat Pro**, optimisée pour la productivité, l'analyse stratégique et l'assistance technique en temps réel.
-
-### 🎯 Points forts
-- **Interaction Naturelle** : Parlez à votre IA comme à un humain.
-- **Vision Contextuelle** : Partagez votre écran ou votre caméra pour une assistance visuelle.
-- **Autonomie Web** : L'assistant peut naviguer sur Internet pour vous.
-- **Contrôle Système** : Exécution de commandes terminal et gestion de fichiers locale.
-- **Confidentialité** : Approche "Local-First", vos documents et notes restent sur votre machine.
-
----
-
-## ✨ Fonctionnalités Principales
-
-### 🎙️ Conversations Vocales en Temps Réel
-- **Audio Bidirectionnel** : Latence ultra-faible (< 200ms) pour une discussion fluide.
-- **Voix Premium** : 6 voix naturelles Google (Puck, Charon, Kore, Fenrir, Zephyr, Aoede).
-- **VAD (Voice Activity Detection)** : Détection automatique de la parole et interruptions naturelles.
-- **Reconnexion Intelligente** : Gestion robuste des sessions Gemini Live.
-
-### 👁️ Vision et Analyse Vidéo
-- **Analyse Caméra** : Description d'objets ou de documents via webcam.
-- **Partage d'Écran** : Assistance technique en direct, analyse de code ou de données à l'écran.
-- **Suivi des Yeux (Beta)** : Interaction basée sur l'attention visuelle.
-
-### 🛠️ Outils et "Function Calling"
-- **Navigation Web Autonome** : L'assistant peut naviguer sur le web via Playwright (recherche, lecture de contenu).
-- **Contrôle PC** : Exécution de commandes Shell (ex: ouvrir des apps, gérer des dossiers).
-- **Gestion de Documents** : Analyse de fichiers PDF, TXT, MD avec contexte persistant.
-- **Utilitaires Intégrés** : Calculs, timers, rappels, gestion de notes et d'agenda.
-- **Google Search** : Recherche d'informations en direct sur le web.
+- **Frontend** : **React 19** avec **TypeScript**
+- **Styling** : **Tailwind CSS 3** pour un design premium et adaptatif, **Lucide React** pour l'iconographie
+- **Desktop & Système** : **Electron 39**, communication IPC sécurisée
+- **IA & Multimodalité** : API **Google Gemini Live** (`@google/genai`)
+- **Gestion d'État** : **Zustand 5** pour un state management fluide et persistant
+- **Automatisation & Web** : **Playwright** pour la navigation autonome de l'IA
+- **Build & Tests** : **Vite 6**, **Vitest** (Unit tests) & **Playwright** (E2E)
 
 ---
 
-## 🛠️ Stack Technique
+## ✨ Fonctionnalités Principales (MVP)
 
-### Frontend & Desktop
-- **React 19** : Interface utilisateur moderne et réactive.
-- **Electron 39** : Intégration système et capacités Desktop.
-- **Tailwind CSS 3** : Design system premium et responsive.
-- **Zustand 5** : Gestion d'état fluide avec persistance LocalStorage.
-
-### IA & Services
-- **Gemini Live API** : @google/genai pour les sessions vocales multimodales.
-- **Playwright** : Automatisation de navigateur pour la navigation web autonome.
-- **PostCSS / Vite 6** : Build system optimisé.
-
-### Qualité & Tests
-- **Vitest** : Tests unitaires ultra-rapides.
-- **Playwright Test** : Tests End-to-End (E2E) pour valider les workflows réels.
+- 🎙️ **Audio Bidirectionnel Temps Réel** : Discutez vocalement avec l'IA avec une latence quasi-nulle (<200ms) grâce à Gemini Live.
+- 👁️ **Vision Contextuelle** : Partage d'écran et flux webcam analysés en direct pour une aide visuelle précise (ex: aide au code, analyse de documents).
+- 🛠️ **Function Calling Avancé** : L'IA agit pour vous (gestion de fichiers locaux, opérations système).
+- 🌐 **Navigation Web Autonome** : L'assistant pilote un navigateur (Playwright) pour chercher, lire et résumer des contenus invisibles au préalable.
+- ⚡ **Expérience "Local-First"** : Vos documents, notes et contextes locaux restent sur votre machine.
 
 ---
 
-## 🚀 Installation
+## ⚙️ Prérequis
 
-### Prérequis
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0
-- **Clé API Google Gemini** ([Obtenir ici](https://aistudio.google.com/))
+Avant de commencer, assurez-vous de disposer de l'environnement suivant :
 
-### 1. Installation des dépendances
-```bash
-git clone https://github.com/votre-repo/NeuroChat-Live-Pro.git
-cd NeuroChat-Live-Pro
-npm install
-```
+- **Node.js** : Version `18.x` ou supérieure
+- **npm** : Version `9.x` ou supérieure
+- **Clé API Google Gemini** : Utilisable sur [Google AI Studio](https://aistudio.google.com/)
 
-### 2. Configuration
-Créez un fichier `.env.local` à la racine :
-```env
-VITE_GEMINI_API_KEY=votre_cle_api_ici
-```
+---
 
-### 3. Lancement
-**Mode Développement (Vite + Electron) :**
+## 🚀 Installation & Configuration
+
+Suivez ces étapes pour configurer le projet localement :
+
+1. **Cloner le projet**
+   ```bash
+   git clone https://github.com/votre-user/NeuroChat-Live-Pro.git
+   cd NeuroChat-Live-Pro
+   ```
+
+2. **Installer les dépendances**
+   ```bash
+   npm install
+   ```
+
+3. **Variables d'environnement**
+   Créez un fichier `.env.local` à la racine du projet et insérez votre clé API :
+   ```env
+   VITE_GEMINI_API_KEY=votre_cle_api_gemini_ici
+   ```
+
+---
+
+## 🏁 Lancement du Projet
+
+### Mode Développement
+Idéal pour travailler sur le code. Il lance simultanément le serveur Vite et la fenêtre Electron via un script concurrent :
 ```bash
 npm run electron:dev
 ```
 
-**Compiler pour Production :**
+### Build pour la Production
+Cette commande compile l'application React et package l'exécutable final via `electron-builder` :
 ```bash
 npm run electron:build
 ```
+Les exécutables générés se trouveront dans le dossier `release/`.
 
 ---
 
 ## 🗂️ Structure du Projet
 
+L'arborescence est organisée de manière à séparer la logique UI (React) des privilèges système (Electron) et des outils de l'IA.
+
 ```
 NeuroChat-Live-Pro/
-├── components/         # UI Components (Header, ControlPanel, Visualizer...)
-├── electron/           # Code du processus principal Electron (IPC, Browser Service)
-├── hooks/              # Logique métier réutilisable (useGeminiLiveSession, useVision...)
-├── stores/             # État global (uiStore, appStore)
-├── utils/              # Outils système, traitement de documents, function calling
-├── constants.ts        # Configuration des voix et de la personnalité par défaut
-├── systemConfig.ts     # Règles fondamentales et prompt système
-└── App.tsx             # Point d'entrée de l'application
+├── components/       # UI React (Boutons, Modals, Panneaux de contrôle, ...)
+├── electron/         # Code Main process Electron (IPC, intégration OS)
+├── hooks/            # Hooks métier (connexion Gemini, WebRTC, flux audio)
+├── public/           # Assets statiques (logos, audios)
+├── stores/           # Stores Zustand (état global, UI, configurations)
+├── test-results/     # Dossiers générés relatifs aux logs de test E2E
+├── tests/            # Fichiers de test (unitaires et composants)
+├── utils/            # Utilitaires IA, outils Function Calling, parseurs text/audio
+├── App.tsx           # Composant racine de l'application React
+├── index.html        # Point d'entrée web
+├── systemConfig.ts   # Configuration du persona et des contraintes système
+├── package.json      # Scripts, dépendances, configuration de build
+└── vite.config.ts    # Options de bundle (Vite)
 ```
 
 ---
 
-## 📄 Documentation Additionnelle
+## 🤝 Bonnes pratiques pour contribuer
 
-- [🏗️ ARCHITECTURE.md](ARCHITECTURE.md) : Détails techniques et flux de données.
-- [🔌 API_DOCS.md](API_DOCS.md) : Référence des outils et des canaux IPC.
-- [💾 DB_SCHEMA.md](DB_SCHEMA.md) : Organisation du stockage local.
-- [🗺️ ROADMAP.md](ROADMAP.md) : Évolutions prévues.
-- [🤝 CONTRIBUTING.md](CONTRIBUTING.md) : Comment participer au projet.
+Développeurs, vous êtes les bienvenus pour améliorer NeuroChat ! 
+
+1. **Branche par Fonctionnalité** : Créez toujours une branche spécifique `feature/nom-feature` ou `fix/nom-bug` depuis `main`.
+2. **Qualité du code** : Assurez-vous que le projet compile avec Typescript strict.
+3. **Tests Systematiques** : Ajoutez des tests unitaires (`npm run test:ui`) ou E2E Playwright (`npm run test:e2e`) avant toute PR importante.
+4. **Commits Sélectifs** : Privilégiez les conventions *Conventional Commits* (ex: `feat: ajout de la vision`, `fix: correction audio`).
 
 ---
 
 ## 📄 Licence
-Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
----
-<div align="center">
-Développé par <b>Maysson</b> | 2025
-</div>
+Ce projet est distribué sous la licence **MIT**. Vous êtes libres de le modifier et de le distribuer. Pour plus d'informations, consultez le fichier [LICENSE](LICENSE).
