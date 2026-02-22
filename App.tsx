@@ -33,6 +33,10 @@ import {
   showDocumentsUpdated,
   showDocumentsLoaded,
 } from './utils/toastHelpers';
+import { initializeCorePlugins } from './utils/tools/index';
+
+// Initialisation globale du SDK des plugins
+initializeCorePlugins();
 
 /**
  * Main App Component

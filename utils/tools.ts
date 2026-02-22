@@ -7,6 +7,7 @@ import { FunctionDeclaration, FunctionCall, FunctionResponse } from '../types';
 import { AVAILABLE_PERSONALITIES } from '../constants';
 import type { Personality } from '../types';
 import { useAppStore } from '../stores/appStore';
+import { toolRegistry } from './tools/ToolRegistry';
 
 // Type pour le callback de changement de personnalité
 export type PersonalityChangeCallback = (personality: Personality) => void;
@@ -146,119 +147,6 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       required: ['enabled']
     }
   },
-  browser_search: {
-    name: 'browser_search',
-    description: 'Effectue une recherche Google.',
-    parameters: {
-      type: 'object',
-      properties: {
-        query: { type: 'string' }
-      },
-      required: ['query']
-    }
-  },
-  browser_navigate: {
-    name: 'browser_navigate',
-    description: 'Navigue vers une URL spécifique.',
-    parameters: {
-      type: 'object',
-      properties: {
-        url: { type: 'string' },
-        newTab: { type: 'boolean' }
-      },
-      required: ['url']
-    }
-  },
-  browser_click: {
-    name: 'browser_click',
-    description: 'Clique sur un élément CSS.',
-    parameters: {
-      type: 'object',
-      properties: {
-        selector: { type: 'string' }
-      },
-      required: ['selector']
-    }
-  },
-  browser_scroll: {
-    name: 'browser_scroll',
-    description: 'Fait défiler la page.',
-    parameters: {
-      type: 'object',
-      properties: {
-        direction: { type: 'string', enum: ['up', 'down', 'top', 'bottom'] }
-      },
-      required: ['direction']
-    }
-  },
-  browser_back: {
-    name: 'browser_back',
-    description: 'Page précédente.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_forward: {
-    name: 'browser_forward',
-    description: 'Page suivante.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_type: {
-    name: 'browser_type',
-    description: 'Saisit du texte.',
-    parameters: {
-      type: 'object',
-      properties: {
-        selector: { type: 'string' },
-        text: { type: 'string' }
-      },
-      required: ['selector', 'text']
-    }
-  },
-  browser_press: {
-    name: 'browser_press',
-    description: 'Appuie sur une touche.',
-    parameters: {
-      type: 'object',
-      properties: {
-        key: { type: 'string' }
-      },
-      required: ['key']
-    }
-  },
-  browser_get_content: {
-    name: 'browser_get_content',
-    description: 'Récupère le texte de la page.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_screenshot: {
-    name: 'browser_screenshot',
-    description: 'Prend une capture d\'écran.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_extract_text: {
-    name: 'browser_extract_text',
-    description: 'Extrait le texte visible d\'une page web via OCR.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
   manage_window: {
     name: 'manage_window',
     description: 'Contrôle les fenêtres nativement (minimiser, etc.).',
@@ -286,7 +174,10 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       },
       required: ['operation']
     }
-  }
+  },
+
+  // Importer toutes les définitions des plugins enregistrés
+  ...toolRegistry.getDeclarations()
 };
 
 // Fonction interne d'exécution (sans les logs)
@@ -302,7 +193,16 @@ async function _executeFunctionImpl(
 
   console.log(`[Tools] Exécution de la fonction: ${name}`, args);
 
-  // Gestion du changement de personnalité
+  // 1. Plugins enregistrés (Priorité)
+  if (toolRegistry.hasTool(name)) {
+    try {
+      return await toolRegistry.executeTool(name, args, options);
+    } catch (e) {
+      return { result: 'error', message: `Erreur plugin ${name}: ${String(e)}` };
+    }
+  }
+
+  // 2. Gestion du changement de personnalité (Legacy conditionnel)
   if (name === 'change_personality') {
     const { personalityId, personalityName } = args || {};
 
@@ -650,88 +550,6 @@ ${content}
         result: 'error',
         message: 'Le contrôle du partage d\'écran n\'est pas disponible actuellement'
       };
-    }
-  }
-
-  // --- Gestion des outils du navigateur autonome ---
-
-  if (name === 'browser_navigate') {
-    const { url, newTab } = args || {};
-    if (!url) return { result: 'error', message: 'URL requise' };
-    return await window.ipcRenderer?.invoke('browser-navigate', { url, newTab });
-  }
-
-  if (name === 'browser_search') {
-    const { query } = args || {};
-    if (!query) return { result: 'error', message: 'Requête requise' };
-    return await window.ipcRenderer?.invoke('browser-search', query);
-  }
-
-  if (name === 'browser_click') {
-    const { selector } = args || {};
-    if (!selector) return { result: 'error', message: 'Sélecteur requis' };
-    return await window.ipcRenderer?.invoke('browser-click', selector);
-  }
-
-  if (name === 'browser_scroll') {
-    const { direction } = args || {};
-    if (!direction) return { result: 'error', message: 'Direction requise' };
-    return await window.ipcRenderer?.invoke('browser-scroll', direction);
-  }
-
-  if (name === 'browser_back') {
-    return await window.ipcRenderer?.invoke('browser-back');
-  }
-
-  if (name === 'browser_forward') {
-    return await window.ipcRenderer?.invoke('browser-forward');
-  }
-
-  if (name === 'browser_type') {
-    const { selector, text } = args || {};
-    if (!selector || text === undefined) return { result: 'error', message: 'Sélecteur et texte requis' };
-    return await window.ipcRenderer?.invoke('browser-type', { selector, text });
-  }
-
-  if (name === 'browser_press') {
-    const { key } = args || {};
-    if (!key) return { result: 'error', message: 'Touche requise' };
-    return await window.ipcRenderer?.invoke('browser-press', key);
-  }
-
-  if (name === 'browser_get_content') {
-    return await window.ipcRenderer?.invoke('browser-get-content');
-  }
-
-  if (name === 'browser_screenshot') {
-    return await window.ipcRenderer?.invoke('browser-screenshot');
-  }
-
-  if (name === 'browser_extract_text') {
-    try {
-      // 1. Prendre une capture d'écran
-      const screenshot = await window.ipcRenderer?.invoke('browser-screenshot');
-      if (screenshot.result === 'error') return screenshot;
-
-      // 2. Importer l'extracteur d'image (OCR)
-      const { extractTextFromFile } = await import('./documentProcessor');
-
-      // 3. Convertir base64 en File/Blob pour l'OCR
-      const base64Data = screenshot.data;
-      const res = await fetch(`data:image/jpeg;base64,${base64Data}`);
-      const blob = await res.blob();
-      const file = new File([blob], 'screenshot.jpg', { type: 'image/jpeg' });
-
-      // 4. Lancer l'OCR
-      const text = await extractTextFromFile(file);
-
-      return {
-        result: 'success',
-        text: text,
-        message: 'Texte extrait avec succès via OCR'
-      };
-    } catch (error) {
-      return { result: 'error', message: `Échec de l'OCR : ${String(error)}` };
     }
   }
 
