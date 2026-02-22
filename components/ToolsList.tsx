@@ -95,10 +95,7 @@ const ToolsList: React.FC<ToolsListProps> = ({ isOpen, onClose }) => {
         }
       }}
     >
-      <div className={`relative w-full h-full ${compactMode ? 'max-w-3xl max-h-[80vh]' : 'max-w-5xl max-h-[90vh]'} m-4 flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden`}
-        style={{
-          boxShadow: '0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.3)'
-        }}
+      <div className={`relative w-full h-full ${compactMode ? 'max-w-3xl max-h-[80vh]' : 'max-w-5xl max-h-[90vh]'} m-4 flex flex-col glass-premium rounded-3xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)] overflow-hidden animate-scale-in transition-all duration-500`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-slate-900/50 to-slate-800/30">

@@ -8,9 +8,9 @@ export const ActionLogViewer: React.FC = () => {
     if (!isLogsModalOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6 transition-all duration-300">
-            <div className={`bg-slate-900 border border-slate-700/50 shadow-2xl rounded-2xl w-full ${compactMode ? 'max-w-xl max-h-[70vh]' : 'max-w-3xl max-h-[85vh]'} flex flex-col overflow-hidden ring-1 ring-white/10`}>
-                <div className={`flex items-center justify-between ${compactMode ? 'p-3' : 'p-4'} border-b border-slate-800 bg-slate-900/80`}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4 sm:p-6 animate-fade-in transition-all">
+            <div className={`glass-premium rounded-3xl w-full ${compactMode ? 'max-w-xl max-h-[70vh]' : 'max-w-3xl max-h-[85vh]'} flex flex-col overflow-hidden animate-scale-in`}>
+                <div className={`flex items-center justify-between ${compactMode ? 'p-4' : 'p-5'} border-b border-white/10 bg-white/[0.02]`}>
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
                             <Terminal className="w-5 h-5 text-blue-400" />

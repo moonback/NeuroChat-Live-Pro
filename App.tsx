@@ -286,12 +286,27 @@ const App: React.FC = () => {
   return (
     <div className={`relative w-full h-screen overflow-hidden font-body selection:bg-indigo-500/30 safe-area-inset theme-${themePreference} ${themeClasses}`}>
 
+      {/* Tech Grid Overlay */}
+      <div className="absolute inset-0 z-[1] pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+          backgroundSize: '100px 100px'
+        }}
+      />
+
+      {/* Vignette Effect */}
+      <div className="absolute inset-0 z-[2] pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+
       {/* Visual Background Layers */}
       <BackgroundLayers
         themeColor={currentPersonality.themeColor}
         isTalking={isTalking}
         isConnected={isConnected}
       />
+
+      {/* Holographic Effects */}
+      <div className="perspective-grid" />
+      <div className="holo-base" style={{ '--primary-accent': currentPersonality.themeColor } as any} />
 
       {/* Screen Sharing Indicator */}
       <ScreenShareOverlay isActive={isScreenShareActive} />

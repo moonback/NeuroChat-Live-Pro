@@ -428,10 +428,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="pointer-events-auto">
         <div
           className={`
-            flex items-center gap-2 md:gap-3 rounded-full border border-white/10 bg-[#08080a]/95 backdrop-blur-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4
-            ${compactMode ? 'p-1.5 pl-3 pr-1.5' : 'p-2.5 pl-4 pr-3'}
+            flex items-center gap-2 md:gap-3 glass-island transition-all duration-700 animate-in fade-in slide-in-from-bottom-4
+            ${compactMode ? 'p-1.5 pl-4 pr-2' : 'p-3 pl-6 pr-4'}
           `}
-          style={dockStyle}
+          style={{
+            ...dockStyle,
+            borderColor: isConnected ? `${currentPersonality.themeColor}30` : 'rgba(255,255,255,0.1)'
+          }}
           role="toolbar"
           aria-label="Contrôles de session"
         >

@@ -72,13 +72,13 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   };
 
   return (
-    <div 
+    <div
       className={`
-        relative flex items-start gap-1.5 sm:gap-2 p-2.5 sm:p-3 mb-1.5 sm:mb-2 rounded-lg sm:rounded-xl glass-intense border backdrop-blur-xl shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98] touch-manipulation sm:max-w-[400px]
+        relative flex items-start gap-3 p-4 mb-3 rounded-2xl glass-premium shadow-2xl transition-all duration-500 cursor-pointer hover:scale-[1.02] active:scale-[0.98] sm:max-w-[420px]
         ${getStyles()}
-        ${isExiting ? 'opacity-0 translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}
+        ${isExiting ? 'opacity-0 translate-x-12 scale-95 blur-sm' : 'opacity-100 translate-x-0 scale-100 animate-slide-in-right'}
       `}
-      style={{ minWidth: '260px', maxWidth: 'calc(100vw - 2rem)' }}
+      style={{ minWidth: '280px', maxWidth: 'calc(100vw - 2rem)' }}
       onClick={handleClose}
       role="alert"
       aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
@@ -98,7 +98,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
         <h3 className="font-display text-[10px] sm:text-xs font-bold text-white mb-0.5">{toast.title}</h3>
         <p className="font-body text-[9px] sm:text-[10px] text-slate-300 leading-relaxed break-words">{toast.message}</p>
       </div>
-      <button 
+      <button
         onClick={handleClose}
         className="flex-shrink-0 text-slate-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 rounded p-1 touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
         aria-label="Fermer la notification"
@@ -108,17 +108,17 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      
+
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 h-0.5 bg-white/20 rounded-b-xl overflow-hidden w-full">
-        <div 
-            className="h-full bg-white/50 origin-left"
-            style={{ 
-                animation: `shrink ${toast.duration || 5000}ms linear forwards` 
-            }}
+        <div
+          className="h-full bg-white/50 origin-left"
+          style={{
+            animation: `shrink ${toast.duration || 5000}ms linear forwards`
+          }}
         ></div>
       </div>
-      
+
       <style>{`
         @keyframes shrink {
             from { transform: scaleX(1); }

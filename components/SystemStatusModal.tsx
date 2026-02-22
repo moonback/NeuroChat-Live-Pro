@@ -374,25 +374,22 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="status-modal-title"
+      aria-labelledby="modal-title"
     >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
       {/* Modal Container */}
       <div
         ref={modalRef}
-        className="relative w-full max-w-2xl bg-[#08080a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 zoom-in-95 duration-500"
-        style={{
-          boxShadow: `0 0 100px -20px ${currentPersonality.themeColor}15, 0 0 40px -10px rgba(0,0,0,0.5)`
-        }}
+        className={`
+          relative w-full max-w-4xl max-h-[90vh] glass-premium rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)]
+          flex flex-col overflow-hidden animate-scale-in transition-all duration-500
+          border border-white/10
+        `}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.02]">
