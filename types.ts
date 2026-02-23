@@ -56,6 +56,15 @@ export interface ToolCall {
   functionCalls: FunctionCall[];
 }
 
+export interface ActionLog {
+  id: string;
+  timestamp: string;
+  toolName: string;
+  args: Record<string, any>;
+  result: 'pending' | 'success' | 'error';
+  message?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model' | 'system';

@@ -18,6 +18,7 @@ interface UseReconnectionResult {
   isReconnecting: boolean;
   isIntentionalDisconnect: boolean;
   setIsIntentionalDisconnect: (value: boolean) => void;
+  attemptCount: number;
 }
 
 /**
@@ -27,7 +28,7 @@ export const useReconnection = (
   options: UseReconnectionOptions = {}
 ): UseReconnectionResult => {
   const { maxAttempts = 5, onReconnect, onMaxAttemptsReached } = options;
-  
+
   const [state, setState] = useState<ReconnectionState>({ type: 'idle' });
   const isIntentionalDisconnectRef = useRef<boolean>(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,9 +46,9 @@ export const useReconnection = (
       return;
     }
 
-    const delay = Math.min(1000 * Math.pow(2, attemptCountRef.current), 10000);
+    const delay = Math.min(500 * Math.pow(1.5, attemptCountRef.current), 5000); // Max 5s delay between attempts (seamless)
     console.log(
-      `[useReconnection] Reconnexion dans ${delay}ms... (Tentative ${attemptCountRef.current + 1}/${maxAttempts})`
+      `[useReconnection] ♻️ Reconnexion silencieuse dans ${Math.round(delay)}ms... (Tentative ${attemptCountRef.current + 1}/${maxAttempts})`
     );
 
     // Nettoyer le timeout précédent s'il existe
@@ -62,7 +63,7 @@ export const useReconnection = (
       if (!isIntentionalDisconnectRef.current) {
         onReconnect?.(attemptCountRef.current);
       } else {
-        console.log('[useReconnection] Reconnexion annulée (déconnexion intentionnelle)');
+        console.log('[useReconnection] 🛑 Reconnexion annulée (déconnexion intentionnelle)');
         setState({ type: 'idle' });
         attemptCountRef.current = 0;
       }
@@ -108,6 +109,7 @@ export const useReconnection = (
     isReconnecting: state.type === 'reconnecting',
     isIntentionalDisconnect: isIntentionalDisconnectRef.current,
     setIsIntentionalDisconnect,
+    attemptCount: attemptCountRef.current
   };
 };
 

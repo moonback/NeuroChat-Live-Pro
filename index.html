@@ -1,116 +1,122 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="description" content="NeuroChat Pro • Assistant IA Professionnel">
-    <meta name="keywords" content="NeuroChat Pro, Assistant IA Professionnel, Gemini Live, AI Assistant, Voice Assistant, Real-time Conversation">
-    <meta name="author" content="Maysson">
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
-    <meta name="google" content="notranslate">
-  
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>NeuroChat Pro • Assistant IA Professionnel</title>
-    
-    <!-- Kiosk Mode Meta Tags -->
-    <meta name="kiosk-mode" content="true" />
-    <meta name="fullscreen" content="yes" />
-    <meta name="browsermode" content="fullscreen" />
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="NeuroChat Pro" />
-    <meta name="application-name" content="NeuroChat Pro" />
-    <meta name="msapplication-TileColor" content="#6366f1" />
-    <meta name="msapplication-TileImage" content="/icon-192.png" />
-    
-    <!-- Disable browser UI for kiosk mode -->
-    <meta name="display-mode" content="fullscreen" />
-    
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="manifest" href="/manifest.webmanifest" />
-    
-    <!-- Google Fonts - Professional Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="NeuroChat Pro • Assistant IA Professionnel">
+  <meta name="keywords"
+    content="NeuroChat Pro, Assistant IA Professionnel, Gemini Live, AI Assistant, Voice Assistant, Real-time Conversation">
+  <meta name="author" content="Maysson">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="google" content="notranslate">
+
+
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>NeuroChat Pro • Assistant IA Professionnel</title>
+
+  <!-- Kiosk Mode Meta Tags -->
+  <meta name="kiosk-mode" content="true" />
+  <meta name="fullscreen" content="yes" />
+  <meta name="browsermode" content="fullscreen" />
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NeuroChat Pro" />
+  <meta name="application-name" content="NeuroChat Pro" />
+  <meta name="msapplication-TileColor" content="#6366f1" />
+  <meta name="msapplication-TileImage" content="/icon-192.png" />
+
+  <!-- Disable browser UI for kiosk mode -->
+  <meta name="display-mode" content="fullscreen" />
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/logo.png">
+
+  <!-- Google Fonts - Professional Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-    <script>
-      // Mode Kiosque - Plein écran automatique
-      (function() {
-        function enterFullscreen() {
-          var docEl = document.documentElement;
-          if (docEl.requestFullscreen) {
-            docEl.requestFullscreen().catch(function() {});
-          } else if (docEl.webkitRequestFullscreen) {
-            docEl.webkitRequestFullscreen();
-          } else if (docEl.mozRequestFullScreen) {
-            docEl.mozRequestFullScreen();
-          } else if (docEl.msRequestFullscreen) {
-            docEl.msRequestFullscreen();
-          }
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+  <script>
+    // Mode Kiosque - Plein écran automatique
+    (function () {
+      function enterFullscreen() {
+        var docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(function () { });
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        } else if (docEl.mozRequestFullScreen) {
+          docEl.mozRequestFullScreen();
+        } else if (docEl.msRequestFullscreen) {
+          docEl.msRequestFullscreen();
         }
-        
-        // Entrer en plein écran au chargement
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(enterFullscreen, 500);
-          });
-        } else {
+      }
+
+      // Entrer en plein écran au chargement
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
           setTimeout(enterFullscreen, 500);
+        });
+      } else {
+        setTimeout(enterFullscreen, 500);
+      }
+
+      // Réessayer si on sort du plein écran (pour kiosque)
+      document.addEventListener('fullscreenchange', function () {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement &&
+          !document.mozFullScreenElement && !document.msFullscreenElement) {
+          setTimeout(enterFullscreen, 1000);
         }
-        
-        // Réessayer si on sort du plein écran (pour kiosque)
-        document.addEventListener('fullscreenchange', function() {
-          if (!document.fullscreenElement && !document.webkitFullscreenElement && 
-              !document.mozFullScreenElement && !document.msFullscreenElement) {
-            setTimeout(enterFullscreen, 1000);
-          }
-        });
-        
-        document.addEventListener('webkitfullscreenchange', function() {
-          if (!document.webkitFullscreenElement) {
-            setTimeout(enterFullscreen, 1000);
-          }
-        });
-        
-        document.addEventListener('mozfullscreenchange', function() {
-          if (!document.mozFullScreenElement) {
-            setTimeout(enterFullscreen, 1000);
-          }
-        });
-        
-        document.addEventListener('MSFullscreenChange', function() {
-          if (!document.msFullscreenElement) {
-            setTimeout(enterFullscreen, 1000);
-          }
-        });
-        
-        // Désactiver le menu contextuel (clic droit)
-        document.addEventListener('contextmenu', function(e) {
+      });
+
+      document.addEventListener('webkitfullscreenchange', function () {
+        if (!document.webkitFullscreenElement) {
+          setTimeout(enterFullscreen, 1000);
+        }
+      });
+
+      document.addEventListener('mozfullscreenchange', function () {
+        if (!document.mozFullScreenElement) {
+          setTimeout(enterFullscreen, 1000);
+        }
+      });
+
+      document.addEventListener('MSFullscreenChange', function () {
+        if (!document.msFullscreenElement) {
+          setTimeout(enterFullscreen, 1000);
+        }
+      });
+
+      // Désactiver le menu contextuel (clic droit)
+      document.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      // Désactiver les raccourcis clavier (F11, F12, etc.)
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'F11' || e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
           e.preventDefault();
-        });
-        
-        // Désactiver les raccourcis clavier (F11, F12, etc.)
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'F11' || e.key === 'F12' || 
-              (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
-            e.preventDefault();
-          }
-        });
-      })();
-    </script>
-  </body>
+        }
+      });
+    })();
+  </script>
+</body>
+
 </html>

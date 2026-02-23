@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ConnectionState } from '../types';
 import { ToastMessage } from '../components/Toast';
+import { useAppStore } from '../stores/appStore';
 
 interface UseStatusManagerResult {
   connectionState: ConnectionState;
-  setConnectionState: React.Dispatch<React.SetStateAction<ConnectionState>>;
+  setConnectionState: (state: ConnectionState) => void;
   connectionStateRef: React.MutableRefObject<ConnectionState>;
   isTalking: boolean;
   setIsTalking: React.Dispatch<React.SetStateAction<boolean>>;
@@ -16,7 +17,7 @@ interface UseStatusManagerResult {
 }
 
 export const useStatusManager = (): UseStatusManagerResult => {
-  const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
+  const { connectionState, setConnectionState } = useAppStore();
   const [isTalking, setIsTalking] = useState(false);
   const [latency, setLatency] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

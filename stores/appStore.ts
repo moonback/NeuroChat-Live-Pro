@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ConnectionState, Personality, ChatSession, ChatMessage } from '../types';
+import { ConnectionState, Personality, ChatSession, ChatMessage, ActionLog } from '../types';
 import { DEFAULT_PERSONALITY } from '../constants';
 import type { ProcessedDocument } from '../utils/documentProcessor';
 
@@ -24,6 +24,24 @@ interface AppState {
   isEyeTrackingEnabled: boolean;
   isAvatar3DEnabled: boolean;
 
+  // UI / Customization
+  selectedVoice: string;
+  voiceRate: number;
+  voicePitch: number;
+  themePreference: string;
+  compactMode: boolean;
+  // Logs des actions de l'IA
+  actionLogs: ActionLog[];
+  isLogsModalOpen: boolean;
+
+  // Video state
+  isVideoActive: boolean;
+  setIsVideoActive: (active: boolean) => void;
+
+  // Screen share request flag (decoupled from Gemini)
+  screenShareRequested: boolean;
+  setScreenShareRequested: (requested: boolean) => void;
+
   // Actions
   setConnectionState: (state: ConnectionState) => void;
   setPersonality: (p: Personality) => void;
@@ -33,6 +51,12 @@ interface AppState {
   setIsEyeTrackingEnabled: (enabled: boolean) => void;
   setIsAvatar3DEnabled: (enabled: boolean) => void;
 
+  setSelectedVoice: (voice: string) => void;
+  setVoiceRate: (rate: number) => void;
+  setVoicePitch: (pitch: number) => void;
+  setThemePreference: (theme: string) => void;
+  setCompactMode: (compact: boolean) => void;
+
   // Session Actions
   createNewSession: (personalityId: string) => string;
   addMessageToCurrentSession: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -40,6 +64,13 @@ interface AppState {
   deleteSession: (id: string) => void;
   renameSession: (id: string, title: string) => void;
   clearHistory: () => void;
+
+  // Log Actions
+  addActionLog: (log: Omit<ActionLog, 'id' | 'timestamp'>) => string;
+  updateActionLog: (id: string, updates: Partial<ActionLog>) => void;
+  clearActionLogs: () => void;
+  setLogsModalOpen: (open: boolean) => void;
+
 }
 
 // Helper pour désérialiser les documents
@@ -81,6 +112,17 @@ export const useAppStore = create<AppState>()(
       isGoogleSearchEnabled: false,
       isEyeTrackingEnabled: false,
       isAvatar3DEnabled: false,
+      selectedVoice: DEFAULT_PERSONALITY.voiceName,
+      voiceRate: 1.0,
+      voicePitch: 1.0,
+      themePreference: 'slate', // 'slate' | 'midnight' | 'zinc' | 'cyberpunk' | 'forest'
+      compactMode: false,
+      actionLogs: [],
+      isLogsModalOpen: false,
+
+      // Video state initial
+      isVideoActive: false,
+      screenShareRequested: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -90,6 +132,15 @@ export const useAppStore = create<AppState>()(
       setIsGoogleSearchEnabled: (enabled) => set({ isGoogleSearchEnabled: enabled }),
       setIsEyeTrackingEnabled: (enabled) => set({ isEyeTrackingEnabled: enabled }),
       setIsAvatar3DEnabled: (enabled) => set({ isAvatar3DEnabled: enabled }),
+
+      setSelectedVoice: (voice) => set({ selectedVoice: voice }),
+      setVoiceRate: (rate) => set({ voiceRate: rate }),
+      setVoicePitch: (pitch) => set({ voicePitch: pitch }),
+      setThemePreference: (theme) => set({ themePreference: theme }),
+      setCompactMode: (compact) => set({ compactMode: compact }),
+
+      // Video state actions
+      setIsVideoActive: (active) => set({ isVideoActive: active }),
 
       setCurrentSessionId: (id) => set({ currentSessionId: id }),
 
@@ -173,6 +224,26 @@ export const useAppStore = create<AppState>()(
       })),
 
       clearHistory: () => set({ sessions: [], currentSessionId: null }),
+
+      addActionLog: (log) => {
+        const id = crypto.randomUUID();
+        const timestamp = new Date().toISOString();
+        set((state) => ({
+          actionLogs: [{ id, timestamp, ...log }, ...state.actionLogs].slice(0, 100), // Keep last 100
+        }));
+        return id;
+      },
+
+      updateActionLog: (id, updates) => set((state) => ({
+        actionLogs: state.actionLogs.map((log) => (log.id === id ? { ...log, ...updates } : log)),
+      })),
+
+      clearActionLogs: () => set({ actionLogs: [] }),
+
+      setLogsModalOpen: (open) => set({ isLogsModalOpen: open }),
+
+      // Screen share request handling
+      setScreenShareRequested: (requested) => set({ screenShareRequested: requested }),
     }),
     {
       name: 'neurochat-storage',
@@ -185,6 +256,11 @@ export const useAppStore = create<AppState>()(
         isGoogleSearchEnabled: state.isGoogleSearchEnabled,
         isEyeTrackingEnabled: state.isEyeTrackingEnabled,
         isAvatar3DEnabled: state.isAvatar3DEnabled,
+        selectedVoice: state.selectedVoice,
+        voiceRate: state.voiceRate,
+        voicePitch: state.voicePitch,
+        themePreference: state.themePreference,
+        compactMode: state.compactMode,
       }),
       merge: (persistedState: any, currentState) => {
         const merged = { ...currentState };

@@ -4,6 +4,7 @@ import Loader from './Loader';
 import Tooltip from './Tooltip';
 import LatencyIndicator from './LatencyIndicator';
 import AudioInputVisualizer from './AudioInputVisualizer';
+import { useAppStore } from '../stores/appStore';
 
 interface ControlPanelProps {
   connectionState: ConnectionState;
@@ -228,7 +229,7 @@ const StatusIsland = memo(({
 }) => (
   <div
     className={`
-      fixed bottom-10 left-6 z-50 pointer-events-auto 
+      fixed bottom-10 left-6 z-30 pointer-events-auto 
       transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left
       ${isConnected ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-90 -translate-x-4 pointer-events-none'}
     `}
@@ -282,11 +283,13 @@ StatusIsland.displayName = 'StatusIsland';
 const ConnectButton = memo(({
   isConnecting,
   onClick,
-  themeColor
+  themeColor,
+  large = false
 }: {
   isConnecting: boolean;
   onClick: () => void;
   themeColor: string;
+  large?: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -296,7 +299,7 @@ const ConnectButton = memo(({
       disabled={isConnecting}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative flex items-center gap-3 px-7 py-3.5 rounded-full bg-white text-black font-bold text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
+      className={`group relative flex items-center justify-center gap-2 md:gap-3 ${large ? 'px-10 py-5 md:px-14 md:py-7 min-w-[200px] md:min-w-[260px] text-lg md:text-2xl' : 'px-5 py-2.5 md:px-7 md:py-3.5 min-w-[140px] md:min-w-[170px] text-sm md:text-base'} rounded-full bg-white text-black font-bold transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation`}
       style={{
         boxShadow: isHovered
           ? `0 0 40px rgba(255,255,255,0.3), 0 0 60px ${themeColor}30`
@@ -353,7 +356,7 @@ const DisconnectButton = memo(({ onClick }: { onClick: () => void }) => {
       onMouseUp={() => setIsPressed(false)}
       onMouseLeave={() => setIsPressed(false)}
       className={`
-        group flex items-center justify-center w-14 h-14 rounded-full 
+        group flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full 
         bg-red-500/10 border border-red-500/20 text-red-500 
         transition-all duration-300 
         hover:bg-red-500 hover:text-white hover:border-red-500 
@@ -398,6 +401,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const isConnected = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
+  const { compactMode } = useAppStore();
 
   // Memoized dock style
   const dockStyle = useMemo(() => ({
@@ -408,7 +412,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <div
-      className="relative z-40 flex flex-col items-center justify-end h-full pb-6 sm:pb-8 md:pb-10 w-full pointer-events-none safe-area-bottom"
+      className={`relative z-40 flex flex-col items-center ${isConnected ? 'justify-end pb-8 sm:pb-10 md:pb-12' : 'justify-start pt-[62vh] sm:pt-[65vh]'} w-full h-full pointer-events-none safe-area-bottom transition-all duration-1000 ease-in-out`}
       role="region"
       aria-label="Panneau de contrôle"
     >
@@ -423,10 +427,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
 
       {/* 3. MAIN DOCK */}
-      <div className="pointer-events-auto">
+      <div className="pointer-events-auto relative z-50">
         <div
-          className="flex items-center gap-3 md:gap-4 p-2.5 pl-4 pr-3 rounded-full border border-white/10 bg-[#08080a]/95 backdrop-blur-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 duration-700"
-          style={dockStyle}
+          className={`
+            flex items-center gap-2 md:gap-3 glass-island transition-all duration-700 animate-in fade-in slide-in-from-bottom-4
+            ${compactMode ? 'p-1.5 pl-4 pr-2' : 'p-3 pl-6 pr-4'}
+          `}
+          style={{
+            ...dockStyle,
+            borderColor: isConnected ? `${currentPersonality.themeColor}30` : 'rgba(255,255,255,0.1)'
+          }}
           role="toolbar"
           aria-label="Contrôles de session"
         >
@@ -440,6 +450,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Microphone */}
             {isConnected && onToggleMic && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleMic}
                 active={!isMicMuted}
                 activeColor="bg-white/10"
@@ -452,6 +463,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Camera */}
             {isConnected && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleVideo}
                 active={isVideoActive}
                 activeColor="bg-white/10"
@@ -464,6 +476,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Screen Share */}
             {isConnected && onToggleScreenShare && (
               <RoundButton
+                size={compactMode ? 'sm' : 'md'}
                 onClick={onToggleScreenShare}
                 active={isScreenShareActive}
                 activeColor="bg-indigo-500/30"
@@ -482,6 +495,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               isConnecting={isConnecting}
               onClick={onConnect}
               themeColor={currentPersonality.themeColor}
+              large={!isConnected}
             />
           ) : (
             <DisconnectButton onClick={onDisconnect} />

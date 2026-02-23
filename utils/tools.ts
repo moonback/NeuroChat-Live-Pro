@@ -6,6 +6,8 @@
 import { FunctionDeclaration, FunctionCall, FunctionResponse } from '../types';
 import { AVAILABLE_PERSONALITIES } from '../constants';
 import type { Personality } from '../types';
+import { useAppStore } from '../stores/appStore';
+import { toolRegistry } from './tools/ToolRegistry';
 
 // Type pour le callback de changement de personnalité
 export type PersonalityChangeCallback = (personality: Personality) => void;
@@ -142,154 +144,15 @@ export const AVAILABLE_FUNCTIONS: Record<string, FunctionDeclaration> = {
       properties: {
         enabled: { type: 'boolean' }
       },
-      required: ['enabled']
     }
   },
-  browser_search: {
-    name: 'browser_search',
-    description: 'Effectue une recherche Google.',
-    parameters: {
-      type: 'object',
-      properties: {
-        query: { type: 'string' }
-      },
-      required: ['query']
-    }
-  },
-  browser_navigate: {
-    name: 'browser_navigate',
-    description: 'Navigue vers une URL spécifique.',
-    parameters: {
-      type: 'object',
-      properties: {
-        url: { type: 'string' },
-        newTab: { type: 'boolean' }
-      },
-      required: ['url']
-    }
-  },
-  browser_click: {
-    name: 'browser_click',
-    description: 'Clique sur un élément CSS.',
-    parameters: {
-      type: 'object',
-      properties: {
-        selector: { type: 'string' }
-      },
-      required: ['selector']
-    }
-  },
-  browser_scroll: {
-    name: 'browser_scroll',
-    description: 'Fait défiler la page.',
-    parameters: {
-      type: 'object',
-      properties: {
-        direction: { type: 'string', enum: ['up', 'down', 'top', 'bottom'] }
-      },
-      required: ['direction']
-    }
-  },
-  browser_back: {
-    name: 'browser_back',
-    description: 'Page précédente.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_forward: {
-    name: 'browser_forward',
-    description: 'Page suivante.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_type: {
-    name: 'browser_type',
-    description: 'Saisit du texte.',
-    parameters: {
-      type: 'object',
-      properties: {
-        selector: { type: 'string' },
-        text: { type: 'string' }
-      },
-      required: ['selector', 'text']
-    }
-  },
-  browser_press: {
-    name: 'browser_press',
-    description: 'Appuie sur une touche.',
-    parameters: {
-      type: 'object',
-      properties: {
-        key: { type: 'string' }
-      },
-      required: ['key']
-    }
-  },
-  browser_get_content: {
-    name: 'browser_get_content',
-    description: 'Récupère le texte de la page.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_screenshot: {
-    name: 'browser_screenshot',
-    description: 'Prend une capture d\'écran.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  browser_extract_text: {
-    name: 'browser_extract_text',
-    description: 'Extrait le texte visible d\'une page web via OCR.',
-    parameters: {
-      type: 'object',
-      properties: {},
-      required: []
-    }
-  },
-  manage_window: {
-    name: 'manage_window',
-    description: 'Contrôle les fenêtres nativement (minimiser, etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        action: { type: 'string', enum: ['minimize', 'maximize', 'unmaximize', 'close', 'show', 'hide', 'center', 'focus'] },
-        alwaysOnTop: { type: 'boolean' },
-        getState: { type: 'boolean' }
-      },
-      required: []
-    }
-  },
-  os_file_operation: {
-    name: 'os_file_operation',
-    description: 'Opérations natives sur les fichiers (lire, écrire, etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        operation: { type: 'string', enum: ['read', 'write', 'delete', 'rename', 'list_dir', 'get_info', 'open_dialog', 'save_dialog'] },
-        path: { type: 'string' },
-        content: { type: 'string' },
-        newPath: { type: 'string' },
-        dialogOptions: { type: 'object' }
-      },
-      required: ['operation']
-    }
-  }
+
+  // Importer toutes les définitions des plugins enregistrés
+  ...toolRegistry.getDeclarations()
 };
 
-// Gestionnaire d'exécution des fonctions
-export async function executeFunction(
+// Fonction interne d'exécution (sans les logs)
+async function _executeFunctionImpl(
   functionCall: FunctionCall,
   options?: {
     onPersonalityChange?: PersonalityChangeCallback;
@@ -299,9 +162,20 @@ export async function executeFunction(
 ): Promise<any> {
   const { name, args } = functionCall;
 
-  console.log(`[Tools] Exécution de la fonction: ${name}`, args);
+  if (!name) return { result: 'error', message: 'Nom de fonction manquant' };
 
-  // Gestion du changement de personnalité
+  console.log(`[PluginSystem] 🛠️ Exécution : ${name}`, args);
+
+  // 1. Plugins enregistrés (Priorité)
+  if (toolRegistry.hasTool(name)) {
+    try {
+      return await toolRegistry.executeTool(name, args, options);
+    } catch (e) {
+      return { result: 'error', message: `Erreur plugin ${name}: ${String(e)}` };
+    }
+  }
+
+  // 2. Gestion du changement de personnalité (Legacy conditionnel)
   if (name === 'change_personality') {
     const { personalityId, personalityName } = args || {};
 
@@ -652,148 +526,54 @@ ${content}
     }
   }
 
-  // --- Gestion des outils du navigateur autonome ---
-
-  if (name === 'browser_navigate') {
-    const { url, newTab } = args || {};
-    if (!url) return { result: 'error', message: 'URL requise' };
-    return await window.ipcRenderer?.invoke('browser-navigate', { url, newTab });
-  }
-
-  if (name === 'browser_search') {
-    const { query } = args || {};
-    if (!query) return { result: 'error', message: 'Requête requise' };
-    return await window.ipcRenderer?.invoke('browser-search', query);
-  }
-
-  if (name === 'browser_click') {
-    const { selector } = args || {};
-    if (!selector) return { result: 'error', message: 'Sélecteur requis' };
-    return await window.ipcRenderer?.invoke('browser-click', selector);
-  }
-
-  if (name === 'browser_scroll') {
-    const { direction } = args || {};
-    if (!direction) return { result: 'error', message: 'Direction requise' };
-    return await window.ipcRenderer?.invoke('browser-scroll', direction);
-  }
-
-  if (name === 'browser_back') {
-    return await window.ipcRenderer?.invoke('browser-back');
-  }
-
-  if (name === 'browser_forward') {
-    return await window.ipcRenderer?.invoke('browser-forward');
-  }
-
-  if (name === 'browser_type') {
-    const { selector, text } = args || {};
-    if (!selector || text === undefined) return { result: 'error', message: 'Sélecteur et texte requis' };
-    return await window.ipcRenderer?.invoke('browser-type', { selector, text });
-  }
-
-  if (name === 'browser_press') {
-    const { key } = args || {};
-    if (!key) return { result: 'error', message: 'Touche requise' };
-    return await window.ipcRenderer?.invoke('browser-press', key);
-  }
-
-  if (name === 'browser_get_content') {
-    return await window.ipcRenderer?.invoke('browser-get-content');
-  }
-
-  if (name === 'browser_screenshot') {
-    return await window.ipcRenderer?.invoke('browser-screenshot');
-  }
-
-  if (name === 'browser_extract_text') {
-    try {
-      // 1. Prendre une capture d'écran
-      const screenshot = await window.ipcRenderer?.invoke('browser-screenshot');
-      if (screenshot.result === 'error') return screenshot;
-
-      // 2. Importer l'extracteur d'image (OCR)
-      const { extractTextFromFile } = await import('./documentProcessor');
-
-      // 3. Convertir base64 en File/Blob pour l'OCR
-      const base64Data = screenshot.data;
-      const res = await fetch(`data:image/jpeg;base64,${base64Data}`);
-      const blob = await res.blob();
-      const file = new File([blob], 'screenshot.jpg', { type: 'image/jpeg' });
-
-      // 4. Lancer l'OCR
-      const text = await extractTextFromFile(file);
-
-      return {
-        result: 'success',
-        text: text,
-        message: 'Texte extrait avec succès via OCR'
-      };
-    } catch (error) {
-      return { result: 'error', message: `Échec de l'OCR : ${String(error)}` };
-    }
-  }
-
-  // --- Deep OS Integration: Window Management Implementation ---
-
-  if (name === 'manage_window') {
-    const { action, alwaysOnTop, getState } = args || {};
-
-    try {
-      if (getState) {
-        return await window.ipcRenderer?.invoke('window-get-state');
-      }
-
-      if (alwaysOnTop !== undefined) {
-        return await window.ipcRenderer?.invoke('window-set-always-on-top', alwaysOnTop);
-      }
-
-      if (action) {
-        return await window.ipcRenderer?.invoke('window-control', action);
-      }
-
-      return { result: 'error', message: 'Aucune action spécifiée pour manage_window' };
-    } catch (error) {
-      return { result: 'error', message: String(error) };
-    }
-  }
-
-  // --- Deep OS Integration: File Operation Implementation ---
-
-  if (name === 'os_file_operation') {
-    const { operation, path: filePath, content, newPath, dialogOptions } = args || {};
-
-    try {
-      switch (operation) {
-        case 'read':
-          return await window.ipcRenderer?.invoke('read-file', filePath);
-        case 'write':
-          return await window.ipcRenderer?.invoke('write-file', { path: filePath, content });
-        case 'delete':
-          return await window.ipcRenderer?.invoke('file-delete', filePath);
-        case 'rename':
-          return await window.ipcRenderer?.invoke('file-rename', { oldPath: filePath, newPath });
-        case 'list_dir':
-          return await window.ipcRenderer?.invoke('file-list-dir', filePath);
-        case 'get_info':
-          return await window.ipcRenderer?.invoke('file-get-info', filePath);
-        case 'open_dialog':
-          return await window.ipcRenderer?.invoke('file-dialog-open', dialogOptions);
-        case 'save_dialog':
-          return await window.ipcRenderer?.invoke('file-dialog-save', dialogOptions);
-        default:
-          return { result: 'error', message: `Opération inconnue: ${operation}` };
-      }
-    } catch (error) {
-      return { result: 'error', message: String(error) };
-    }
-  }
-
   console.warn(`[Tools] ⚠️ Fonction inconnue: ${name}`);
   return {
     result: 'error',
     message: `Fonction ${name} non implémentée`
   };
+}
+
+// Fonction publique qui enveloppe l'exécution d'un log système
+export async function executeFunction(
+  functionCall: FunctionCall,
+  options?: {
+    onPersonalityChange?: PersonalityChangeCallback;
+    onToggleScreenShare?: (enabled: boolean) => void;
+    onOpenDocument?: (document: SavedConclusion) => void;
+  }
+): Promise<any> {
+  const { name = 'unknown_function', args = {} } = functionCall;
+  const store = useAppStore.getState();
+
+  const logId = store.addActionLog({
+    toolName: name,
+    args: args,
+    result: 'pending'
+  });
+
+  try {
+    const response = await _executeFunctionImpl(functionCall, options);
+
+    // Déterminer le statut
+    let status: 'success' | 'error' = 'success';
+    if (response?.result === 'error' || response?.error) {
+      status = 'error';
+    }
+
+    store.updateActionLog(logId, {
+      result: status,
+      message: response?.message || (status === 'success' ? 'Exécuté avec succès' : 'Une erreur est survenue')
+    });
+
+    return response;
+  } catch (error) {
+    store.updateActionLog(logId, {
+      result: 'error',
+      message: String(error)
+    });
+    console.error(`[Tools] Error executing ${name}:`, error);
+    throw error;
+  }
 }
 
 /**

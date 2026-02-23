@@ -3,20 +3,15 @@ import { ConnectionState, Personality } from '../types';
 import Tooltip from './Tooltip';
 import DocumentUploader from './DocumentUploader';
 import { ProcessedDocument } from '../utils/documentProcessor';
+import { useAppStore } from '../stores/appStore'; // Assuming the store is located here
 
 // --- Types ---
 interface HeaderProps {
-  connectionState: ConnectionState;
-  currentPersonality: Personality;
-  uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  onOpenToolsList: () => void;
-
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
   onOpenHistory?: () => void;
+
   autoHideDelay?: number;
 }
 
@@ -27,19 +22,14 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
     </svg>
   ),
-  Function: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
-    </svg>
-  ),
   System: () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 12h9" />
     </svg>
   ),
-  Lock: () => (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+  Power: () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
     </svg>
   ),
   FileText: () => (
@@ -51,7 +41,7 @@ const Icons = {
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-  )
+  ),
 };
 
 // --- Sub-Components ---
@@ -152,15 +142,19 @@ const ControlGroup = memo(({ children }: { children: React.ReactNode; label: str
 ControlGroup.displayName = 'ControlGroup';
 
 const Header: React.FC<HeaderProps> = ({
-  connectionState,
-  currentPersonality,
-  uploadedDocuments,
   onDocumentsChange,
   onOpenSystemStatus,
   onOpenConclusions,
   onOpenHistory,
-  autoHideDelay = 3000,
+
+  autoHideDelay = 5000,
 }) => {
+  const {
+    connectionState,
+    currentPersonality,
+    uploadedDocuments,
+  } = useAppStore();
+
   const [isVisible, setIsVisible] = useState(true);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnected = connectionState === ConnectionState.CONNECTED;
@@ -195,12 +189,12 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header
       className={`
-        fixed top-0 left-0 w-full z-50 px-6 py-4
+        fixed top-0 left-0 w-full z-40 px-6 py-4
         transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
         ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}
       `}
     >
-      <div className="max-w-[120rem] mx-auto flex items-center justify-between relative px-4 py-2 rounded-2xl bg-zinc-950/60 backdrop-blur-2xl border border-white/10 shadow-xl">
+      <div className="max-w-[120rem] mx-auto flex items-center justify-between relative px-5 py-2.5 rounded-2xl glass-premium shadow-2xl transition-all duration-500">
         {/* LEFT: Status */}
         <div className="flex items-center gap-4">
           <StatusBadge connectionState={connectionState} />
@@ -234,10 +228,11 @@ const Header: React.FC<HeaderProps> = ({
                 active={false}
                 onClick={onOpenHistory}
                 icon={<Icons.History />}
-                label="History"
+                label="Sessions"
                 themeColor={currentPersonality.themeColor}
               />
             )}
+
           </div>
 
           <div className="h-6 w-px bg-white/10" />

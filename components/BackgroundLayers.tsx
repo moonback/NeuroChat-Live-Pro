@@ -66,11 +66,22 @@ const BackgroundLayers: React.FC<BackgroundLayersProps> = React.memo(({ themeCol
 
         {/* Animated mesh gradient overlay for depth */}
         <div
-            className="absolute inset-0 z-0 pointer-events-none opacity-30"
+            className="absolute inset-0 z-0 pointer-events-none opacity-40 transition-all duration-1000"
             style={{
-                backgroundImage: `linear-gradient(135deg, ${themeColor}05 0%, transparent 50%, ${themeColor}05 100%)`,
-                backgroundSize: '200% 200%',
-                animation: 'gradient-shift 15s ease infinite'
+                backgroundImage: `
+                    radial-gradient(at 0% 0%, ${themeColor}10 0, transparent 50%),
+                    radial-gradient(at 100% 0%, ${themeColor}08 0, transparent 50%),
+                    radial-gradient(at 100% 100%, ${themeColor}10 0, transparent 50%),
+                    radial-gradient(at 0% 100%, ${themeColor}08 0, transparent 50%)
+                `,
+                filter: 'blur(40px)'
+            }}
+        />
+
+        {/* Grain Overlay for Texture */}
+        <div className="absolute inset-0 z-[1] pointer-events-none opacity-[0.03] mix-blend-overlay"
+            style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
             }}
         />
     </>
