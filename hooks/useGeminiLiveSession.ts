@@ -47,7 +47,7 @@ interface UseGeminiLiveSessionProps {
 export const useGeminiLiveSession = ({
   connectionState: _unused, // Passed but we use store for consistency
   setConnectionState,
-  connectionStateRef,
+  connectionStateRef: _connectionStateRef,
   setIsTalking,
   setLatency,
   addToast,
@@ -89,7 +89,7 @@ export const useGeminiLiveSession = ({
     setIsIntentionalDisconnect,
     attemptCount
   } = useReconnection({
-    maxAttempts: 10, // Increase max attempts for genuine temporary drops
+    maxAttempts: 10,
     onReconnect: () => connect(),
     onMaxAttemptsReached: () => {
       setConnectionState(ConnectionState.ERROR);
@@ -97,10 +97,8 @@ export const useGeminiLiveSession = ({
     },
   });
 
-  // Alias for backward compatibility in the hook
   const isReconnecting = isGlobalReconnecting;
 
-  // Latest values refs for session config (prevents re-triggering connect)
   const refs = useRef({
     personality,
     documentsContext,
@@ -179,15 +177,11 @@ export const useGeminiLiveSession = ({
     try {
       if (!isReconnecting && attemptCount === 0) {
         setConnectionState(ConnectionState.CONNECTING);
-      } else {
-        // If we are quietly reconnecting, we don't spam the UI with "Connecting..." full screen loaders
-        console.log(`[useGeminiLiveSession] ♻️ Reconnexion silencieuse en cours (Essai ${attemptCount})...`);
       }
 
-      // Crucial: Clear stale session reference from previous attempts
       sessionRef.current = null;
 
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
       const inputCtx = new AudioContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.inputSampleRate });
       const outputCtx = new AudioContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.outputSampleRate });
 
@@ -224,100 +218,124 @@ export const useGeminiLiveSession = ({
         scheduleReconnect();
       };
 
+      console.log('[UseGemini] 🚀 Tentative de connexion (Modèle: gemini-2.0-flash-exp)...');
+
       const session = await ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025', // Restore original model name
         // Note: keeping the original model name pattern from the code
         callbacks: {
           onopen: async () => {
-            console.log('Gemini Live Session Opened');
-            setConnectionState(ConnectionState.CONNECTED);
+            try {
+              console.log('[UseGemini] ✅ Connexion websocket établie');
+              setConnectionState(ConnectionState.CONNECTED);
 
-            if (attemptCount === 0) {
-              showConnectionSuccess(addToast);
-            } else {
-              // Si on s'est reconnecté silencieusement, avertir l'utilisateur d'un retour à la normale
-              addToast('success', 'Reconnexion Réussie', 'La communication avec l\'assistant est rétablie.');
-            }
+              if (attemptCount === 0) showConnectionSuccess(addToast);
+              else addToast('success', 'Reconnexion Réussie', 'Session rétablie.');
 
-            resetReconnection();
+              resetReconnection();
 
-            if (refs.current.isVideoActive) startFrameTransmission();
-
-            if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
-            const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-            activeSourceInputRef.current = source;
-            if (inputAnalyserRef.current) source.connect(inputAnalyserRef.current);
-
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const bufferSize = isMobile ? 1024 : 2048;
-            const processor = inputAudioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
-            processorRef.current = processor;
-
-            processor.onaudioprocess = (e) => {
-              // Only send if we have an active session ref and it's not the stale one
-              if (!sessionRef.current) return;
-
-              try {
-                const inputData = e.inputBuffer.getChannelData(0);
-                let sum = 0;
-                for (let i = 0; i < inputData.length; i += (isMobile ? 4 : 1)) {
-                  sum += inputData[i] * inputData[i];
-                }
-                const rms = Math.sqrt(sum / (inputData.length / (isMobile ? 4 : 1)));
-                if (rms > 0.02) lastUserAudioTimeRef.current = Date.now();
-
-                const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
-
-                // Final safety check before sending
-                if (sessionRef.current) {
-                  sessionRef.current.sendRealtimeInput({ media: pcmBlob });
-                }
-              } catch (err: any) {
-                if (err?.message?.includes('closed')) {
-                  // Silent fail for already closed sessions to avoid console spam
-                  return;
-                }
-                // Si la perte de frame est bénigne, on ignore simplement.
-                if (attemptCount > 0) return;
-                console.warn('[UseGemini] onaudioprocess error:', err);
+              if (refs.current.isVideoActive) {
+                console.log('[UseGemini] 📹 Activation Vision...');
+                startFrameTransmission();
               }
-            };
 
-            source.connect(processor);
-            processor.connect(inputAudioContextRef.current.destination);
+              if (!inputAudioContextRef.current || !mediaStreamRef.current) {
+                console.error('[UseGemini] 🛑 Ressources audio manquantes !');
+                return;
+              }
+
+              if (inputAudioContextRef.current.state === 'suspended') {
+                await inputAudioContextRef.current.resume();
+              }
+
+              const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+              activeSourceInputRef.current = source;
+              if (inputAnalyserRef.current) source.connect(inputAnalyserRef.current);
+
+              const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+              const bufferSize = isMobile ? 1024 : 2048;
+              const processor = inputAudioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
+              processorRef.current = processor;
+
+              processor.onaudioprocess = (e) => {
+                const activeSession = session || sessionRef.current;
+                if (!activeSession) return;
+
+                try {
+                  const inputData = e.inputBuffer.getChannelData(0);
+                  let sum = 0;
+                  for (let i = 0; i < inputData.length; i += (isMobile ? 4 : 1)) {
+                    sum += inputData[i] * inputData[i];
+                  }
+                  const rms = Math.sqrt(sum / (inputData.length / (isMobile ? 4 : 1)));
+                  if (rms > 0.02) lastUserAudioTimeRef.current = Date.now();
+
+                  const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
+                  activeSession.sendRealtimeInput({ media: pcmBlob });
+                } catch (err: any) {
+                  if (!err?.message?.includes('closed')) {
+                    console.error('[UseGemini] ❌ Erreur audio realtime:', err);
+                  }
+                }
+              };
+
+              source.connect(processor);
+              processor.connect(inputAudioContextRef.current.destination);
+              console.log('[UseGemini] 🎙️ Pipeline audio prêt');
+            } catch (err) {
+              console.error('[UseGemini] ❌ Échec critique onopen:', err);
+            }
           },
           onmessage: async (message: LiveServerMessage) => {
             const addMessageToStore = useAppStore.getState().addMessageToCurrentSession;
             const serverContent = message.serverContent as any;
 
-            // Transcripts logic
-            ['userTurn', 'modelTurn'].forEach(turn => {
-              const text = serverContent?.[turn]?.parts?.map((p: any) => p.text).join('').trim();
-              if (text) addMessageToStore({ role: turn === 'userTurn' ? 'user' : 'model', content: text });
-            });
+            if (serverContent?.userTurn || serverContent?.modelTurn) {
+              ['userTurn', 'modelTurn'].forEach(turn => {
+                const parts = serverContent?.[turn]?.parts;
+                if (parts) {
+                  const text = parts.map((p: any) => p.text).filter(Boolean).join('').trim();
+                  if (text) {
+                    addMessageToStore({ role: turn === 'userTurn' ? 'user' : 'model', content: text });
+                  }
+                }
+              });
+            }
 
-            // Tool execution
             if (message.toolCall?.functionCalls) {
+              console.log('[UseGemini] 🛠️ Appel d\'outils:', message.toolCall.functionCalls.length);
               const { setActiveDocument } = useUIStore.getState();
-              const functionResponses = await Promise.all(message.toolCall.functionCalls.map(async (fc) => {
+              const functionResponsesPromises = message.toolCall.functionCalls.map(async (fc) => {
                 try {
                   const result = await executeFunction(fc, {
                     onPersonalityChange,
                     onToggleScreenShare,
                     onOpenDocument: (doc) => setActiveDocument(doc)
                   });
-                  showFunctionExecuted(addToast, fc.name);
+                  showFunctionExecuted(addToast, fc.name || 'inconnue');
                   return { id: fc.id, name: fc.name, response: result };
                 } catch (error) {
-                  console.warn(`[Self-Correction] Tool ${fc.name} failed, informing the model...`, error);
-                  showSelfCorrection(addToast, fc.name);
-                  return { id: fc.id, name: fc.name, response: { result: 'error', message: `Échec de l'outil ${fc.name} : ${String(error)}. Veuillez analyser l'erreur et tenter une correction autonome si possible.` } };
+                  console.error(`[UseGemini] ❌ Erreur outil ${fc.name}:`, error);
+                  showSelfCorrection(addToast, fc.name || 'inconnue');
+                  return {
+                    id: fc.id,
+                    name: fc.name,
+                    response: { result: 'error', message: `Erreur d'outil : ${String(error)}` }
+                  };
                 }
-              }));
-              if (sessionRef.current) sessionRef.current.sendToolResponse({ functionResponses });
+              });
+
+              const responses = await Promise.all(functionResponsesPromises);
+              const activeSession = session || sessionRef.current;
+              if (activeSession) {
+                try {
+                  activeSession.sendToolResponse({ functionResponses: responses });
+                } catch (e) {
+                  console.warn('[UseGemini] ⚠️ Échec envoi réponses outils:', e);
+                }
+              }
             }
 
-            // Termination command check
             const modelText = serverContent?.modelTurn?.parts?.map((p: any) => p.text).join('').toLowerCase();
             if (modelText?.includes('terminer la session')) {
               showSessionEnd(addToast);
@@ -325,7 +343,6 @@ export const useGeminiLiveSession = ({
               return;
             }
 
-            // Audio output logic
             const base64Audio = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current && gainNodeRef.current) {
               if (lastUserAudioTimeRef.current > 0) {
@@ -336,22 +353,17 @@ export const useGeminiLiveSession = ({
               const ctx = outputAudioContextRef.current;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
               const audioBuffer = await decodeAudioData(base64ToArrayBuffer(base64Audio), ctx, DEFAULT_AUDIO_CONFIG.outputSampleRate);
-              const source = ctx.createBufferSource();
-              source.buffer = audioBuffer;
-
-              // Application de la vitesse et de la tonalité
-              source.playbackRate.value = refs.current.voiceRate;
-              if (source.detune) {
-                // detune est en cents. 1 semi-ton = 100 cents. 
-                // voicePitch est autour de 1.0. On peut mapper (pitch - 1.0) * 500
-                source.detune.value = (refs.current.voicePitch - 1.0) * 1200;
+              const audioSource = ctx.createBufferSource();
+              audioSource.buffer = audioBuffer;
+              audioSource.playbackRate.value = refs.current.voiceRate;
+              if (audioSource.detune) {
+                audioSource.detune.value = (refs.current.voicePitch - 1.0) * 1200;
               }
-
-              source.connect(gainNodeRef.current);
-              source.start(nextStartTimeRef.current);
+              audioSource.connect(gainNodeRef.current);
+              audioSource.start(nextStartTimeRef.current);
               nextStartTimeRef.current += (audioBuffer.duration / refs.current.voiceRate);
-              audioSourcesRef.current.add(source);
-              source.onended = () => audioSourcesRef.current.delete(source);
+              audioSourcesRef.current.add(audioSource);
+              audioSource.onended = () => audioSourcesRef.current.delete(audioSource);
             }
 
             if (serverContent?.interrupted) {
@@ -361,55 +373,48 @@ export const useGeminiLiveSession = ({
               setIsTalking(false);
             }
           },
-          onclose: () => {
+          onclose: (ev: any) => {
+            console.warn('[UseGemini] ⚠️ Session fermée :', ev);
             if (!isIntentionalDisconnect && !isReconnecting) {
-              showSessionError(addToast, attemptCount === 0 ? 'Connexion perdue. Tentative de reconnexion...' : 'Reconnexion en cours...');
+              const reason = ev?.reason || 'Erreur websocket';
+              showSessionError(addToast, attemptCount === 0 ? `Session terminée (${reason})` : 'Reconnexion...');
               handleInternalReconnect();
             }
           },
           onerror: (err: any) => {
-            console.error('[UseGemini] Session error:', err);
-
+            console.error('[UseGemini] ❌ Erreur critique :', err);
             if (!isIntentionalDisconnect && !isReconnecting && err?.code !== 'AUTH_ERROR') {
-              // Ne pas spammer l'UI avec l'erreur si on va retenter une reconnexion
-              if (attemptCount === 0) showSessionError(addToast, 'Problème réseau détecté. Agent en reconnexion...');
               handleInternalReconnect();
             } else if (err?.code === 'AUTH_ERROR') {
-              showSessionError(addToast, err?.message || 'Erreur d\'authentification. Vérifiez votre clé API.');
+              showSessionError(addToast, 'Erreur d\'authentification (Clé API).');
               setConnectionState(ConnectionState.ERROR);
-              setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 5000);
             }
           }
         },
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: refs.current.selectedVoice } } },
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: refs.current.selectedVoice || 'Puck'
+              }
+            }
+          },
           systemInstruction: buildSystemInstruction(
-            refs.current.personality.systemInstruction,
+            refs.current.personality?.systemInstruction || '',
             refs.current.documentsContext,
             refs.current.personalityFilesContext
           ),
           tools: buildToolsConfig(refs.current.isFunctionCallingEnabled, refs.current.isGoogleSearchEnabled),
-          // @ts-ignore
-          transcription: { enabled: true },
         }
       });
       sessionRef.current = session;
     } catch (error: any) {
-      console.error("[UseGemini] Connection failure:", error);
+      console.error("[UseGemini] ❌ Échec critique connexion :", error);
       cleanupAudioResources();
-
-      if (attemptCount === 0) {
-        showConnectionFailure(addToast, error.message || "Impossible de se connecter.");
-      }
-
-      if (!isIntentionalDisconnect) {
-        setConnectionState(ConnectionState.CONNECTING); // Keep loading state if we are going to retry
-        scheduleReconnect();
-      } else {
-        setConnectionState(ConnectionState.ERROR);
-        setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 3000);
-      }
+      if (attemptCount === 0) showConnectionFailure(addToast, error.message || "Échec.");
+      if (!isIntentionalDisconnect) scheduleReconnect();
+      else setConnectionState(ConnectionState.ERROR);
     }
   }, [cleanupAudioResources, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency, isReconnecting, isIntentionalDisconnect, scheduleReconnect, resetReconnection, sessionRef, onPersonalityChange, onToggleScreenShare, startFrameTransmission, attemptCount]);
 

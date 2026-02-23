@@ -162,7 +162,9 @@ async function _executeFunctionImpl(
 ): Promise<any> {
   const { name, args } = functionCall;
 
-  console.log(`[Tools] Exécution de la fonction: ${name}`, args);
+  if (!name) return { result: 'error', message: 'Nom de fonction manquant' };
+
+  console.log(`[PluginSystem] 🛠️ Exécution : ${name}`, args);
 
   // 1. Plugins enregistrés (Priorité)
   if (toolRegistry.hasTool(name)) {

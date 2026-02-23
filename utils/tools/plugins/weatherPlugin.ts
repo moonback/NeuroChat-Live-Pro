@@ -4,9 +4,9 @@ import { ToolPlugin } from '../ToolRegistry';
  * Exemple de Plugin Hyper-Modulaire: Récupère la météo basique.
  */
 export const weatherPlugin: ToolPlugin = {
-    name: 'get_basic_weather',
+    name: 'get_weather_info',
     declaration: {
-        name: 'get_basic_weather',
+        name: 'get_weather_info',
         description: "Récupère la météo et l'heure locale actuelle pour une ville donnée.",
         parameters: {
             type: 'object',
