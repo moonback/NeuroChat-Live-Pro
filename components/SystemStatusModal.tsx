@@ -6,21 +6,11 @@ import { useAppStore } from '../stores/appStore';
 interface SystemStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  connectionState: ConnectionState;
-  currentPersonality: Personality;
   latency: number;
   isVideoActive: boolean;
   isScreenShareActive: boolean;
-  isFunctionCallingEnabled: boolean;
   onToggleFunctionCalling: (enabled: boolean) => void;
-  isGoogleSearchEnabled: boolean;
   onToggleGoogleSearch: (enabled: boolean) => void;
-  isEyeTrackingEnabled: boolean;
-  onToggleEyeTracking: (enabled: boolean) => void;
-  isAvatar3DEnabled: boolean;
-  onToggleAvatar3D: (enabled: boolean) => void;
-  selectedVoice: string;
-  onVoiceChange: (voice: string) => void;
 }
 
 // --- Icons ---
@@ -228,28 +218,25 @@ MetricMeter.displayName = 'MetricMeter';
 const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   isOpen,
   onClose,
-  connectionState,
-  currentPersonality,
   latency,
   isVideoActive,
   isScreenShareActive,
-  isFunctionCallingEnabled,
   onToggleFunctionCalling,
-  isGoogleSearchEnabled,
   onToggleGoogleSearch,
-  isEyeTrackingEnabled,
-  onToggleEyeTracking,
-  isAvatar3DEnabled,
-  onToggleAvatar3D,
-  selectedVoice,
-  onVoiceChange,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const {
+    connectionState,
+    currentPersonality,
     themePreference, setThemePreference,
     compactMode, setCompactMode,
     voiceRate, setVoiceRate,
-    voicePitch, setVoicePitch
+    voicePitch, setVoicePitch,
+    isFunctionCallingEnabled,
+    isGoogleSearchEnabled,
+    isEyeTrackingEnabled, setIsEyeTrackingEnabled,
+    isAvatar3DEnabled, setIsAvatar3DEnabled,
+    selectedVoice, setSelectedVoice
   } = useAppStore();
 
   // Keyboard handling
@@ -309,12 +296,12 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
   }, [isGoogleSearchEnabled, onToggleGoogleSearch]);
 
   const handleToggleEyeTracking = useCallback(() => {
-    onToggleEyeTracking(!isEyeTrackingEnabled);
-  }, [isEyeTrackingEnabled, onToggleEyeTracking]);
+    setIsEyeTrackingEnabled(!isEyeTrackingEnabled);
+  }, [isEyeTrackingEnabled, setIsEyeTrackingEnabled]);
 
   const handleToggleAvatar3D = useCallback(() => {
-    onToggleAvatar3D(!isAvatar3DEnabled);
-  }, [isAvatar3DEnabled, onToggleAvatar3D]);
+    setIsAvatar3DEnabled(!isAvatar3DEnabled);
+  }, [isAvatar3DEnabled, setIsAvatar3DEnabled]);
 
   const [isBrowserActive, setIsBrowserActive] = useState(false);
   const checkBrowserStatus = useCallback(async () => {
@@ -622,7 +609,7 @@ const SystemStatusModal: React.FC<SystemStatusModalProps> = ({
               </div>
               <VoiceSelector
                 currentVoice={selectedVoice}
-                onVoiceChange={onVoiceChange}
+                onVoiceChange={setSelectedVoice}
                 disabled={isConnected}
               />
             </div>

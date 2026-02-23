@@ -3,22 +3,15 @@ import { ConnectionState, Personality } from '../types';
 import Tooltip from './Tooltip';
 import DocumentUploader from './DocumentUploader';
 import { ProcessedDocument } from '../utils/documentProcessor';
+import { useAppStore } from '../stores/appStore'; // Assuming the store is located here
 
 // --- Types ---
 interface HeaderProps {
-  connectionState: ConnectionState;
-  currentPersonality: Personality;
-  uploadedDocuments: ProcessedDocument[];
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  onOpenToolsList: () => void;
-
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
   onOpenHistory?: () => void;
   onToggleWhiteboard?: () => void;
-  isWhiteboardOpen?: boolean;
   autoHideDelay?: number;
 }
 
@@ -154,17 +147,20 @@ const ControlGroup = memo(({ children }: { children: React.ReactNode; label: str
 ControlGroup.displayName = 'ControlGroup';
 
 const Header: React.FC<HeaderProps> = ({
-  connectionState,
-  currentPersonality,
-  uploadedDocuments,
   onDocumentsChange,
   onOpenSystemStatus,
   onOpenConclusions,
   onOpenHistory,
   onToggleWhiteboard,
-  isWhiteboardOpen,
   autoHideDelay = 5000,
 }) => {
+  const {
+    connectionState,
+    currentPersonality,
+    uploadedDocuments,
+    isWhiteboardOpen
+  } = useAppStore();
+
   const [isVisible, setIsVisible] = useState(true);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnected = connectionState === ConnectionState.CONNECTED;
@@ -199,7 +195,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header
       className={`
-        fixed top-0 left-0 w-full z-50 px-6 py-4
+        fixed top-0 left-0 w-full z-40 px-6 py-4
         transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
         ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}
       `}

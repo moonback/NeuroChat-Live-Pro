@@ -38,6 +38,14 @@ interface AppState {
   whiteboardContent: string;
   isWhiteboardOpen: boolean;
 
+  // Video state
+  isVideoActive: boolean;
+  setIsVideoActive: (active: boolean) => void;
+
+  // Screen share request flag (decoupled from Gemini)
+  screenShareRequested: boolean;
+  setScreenShareRequested: (requested: boolean) => void;
+
   // Actions
   setConnectionState: (state: ConnectionState) => void;
   setPersonality: (p: Personality) => void;
@@ -123,6 +131,9 @@ export const useAppStore = create<AppState>()(
       whiteboardContent: '',
       isWhiteboardOpen: false,
 
+      // Video state initial
+      isVideoActive: false,
+
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
       setPersonality: (p) => set({ currentPersonality: p }),
@@ -137,6 +148,9 @@ export const useAppStore = create<AppState>()(
       setVoicePitch: (pitch) => set({ voicePitch: pitch }),
       setThemePreference: (theme) => set({ themePreference: theme }),
       setCompactMode: (compact) => set({ compactMode: compact }),
+
+      // Video state actions
+      setIsVideoActive: (active) => set({ isVideoActive: active }),
 
       setCurrentSessionId: (id) => set({ currentSessionId: id }),
 
@@ -245,6 +259,8 @@ export const useAppStore = create<AppState>()(
       })),
       setWhiteboardOpen: (open) => set({ isWhiteboardOpen: open }),
       clearWhiteboard: () => set({ whiteboardContent: '' }),
+      // Screen share request handling
+      setScreenShareRequested: (requested) => set({ screenShareRequested: requested }),
     }),
     {
       name: 'neurochat-storage',

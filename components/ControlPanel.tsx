@@ -229,7 +229,7 @@ const StatusIsland = memo(({
 }) => (
   <div
     className={`
-      fixed bottom-10 left-6 z-50 pointer-events-auto 
+      fixed bottom-10 left-6 z-30 pointer-events-auto 
       transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left
       ${isConnected ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-90 -translate-x-4 pointer-events-none'}
     `}
@@ -283,11 +283,13 @@ StatusIsland.displayName = 'StatusIsland';
 const ConnectButton = memo(({
   isConnecting,
   onClick,
-  themeColor
+  themeColor,
+  large = false
 }: {
   isConnecting: boolean;
   onClick: () => void;
   themeColor: string;
+  large?: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -297,7 +299,7 @@ const ConnectButton = memo(({
       disabled={isConnecting}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative flex items-center justify-center gap-2 md:gap-3 px-5 py-2.5 md:px-7 md:py-3.5 min-w-[140px] md:min-w-[170px] rounded-full bg-white text-black font-bold text-sm md:text-base transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation"
+      className={`group relative flex items-center justify-center gap-2 md:gap-3 ${large ? 'px-10 py-5 md:px-14 md:py-7 min-w-[200px] md:min-w-[260px] text-lg md:text-2xl' : 'px-5 py-2.5 md:px-7 md:py-3.5 min-w-[140px] md:min-w-[170px] text-sm md:text-base'} rounded-full bg-white text-black font-bold transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden touch-manipulation`}
       style={{
         boxShadow: isHovered
           ? `0 0 40px rgba(255,255,255,0.3), 0 0 60px ${themeColor}30`
@@ -410,7 +412,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <div
-      className="relative z-40 flex flex-col items-center justify-end pb-8 sm:pb-10 md:pb-12 w-full pointer-events-none safe-area-bottom"
+      className={`relative z-40 flex flex-col items-center ${isConnected ? 'justify-end pb-8 sm:pb-10 md:pb-12' : 'justify-start pt-[62vh] sm:pt-[65vh]'} w-full h-full pointer-events-none safe-area-bottom transition-all duration-1000 ease-in-out`}
       role="region"
       aria-label="Panneau de contrôle"
     >
@@ -425,7 +427,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
 
       {/* 3. MAIN DOCK */}
-      <div className="pointer-events-auto">
+      <div className="pointer-events-auto relative z-50">
         <div
           className={`
             flex items-center gap-2 md:gap-3 glass-island transition-all duration-700 animate-in fade-in slide-in-from-bottom-4
@@ -493,6 +495,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               isConnecting={isConnecting}
               onClick={onConnect}
               themeColor={currentPersonality.themeColor}
+              large={!isConnected}
             />
           ) : (
             <DisconnectButton onClick={onDisconnect} />
