@@ -34,10 +34,6 @@ interface AppState {
   actionLogs: ActionLog[];
   isLogsModalOpen: boolean;
 
-  // Whiteboard (Tableau Blanc)
-  whiteboardContent: string;
-  isWhiteboardOpen: boolean;
-
   // Video state
   isVideoActive: boolean;
   setIsVideoActive: (active: boolean) => void;
@@ -75,11 +71,6 @@ interface AppState {
   clearActionLogs: () => void;
   setLogsModalOpen: (open: boolean) => void;
 
-  // Whiteboard Actions
-  setWhiteboardContent: (content: string) => void;
-  appendToWhiteboard: (text: string) => void;
-  setWhiteboardOpen: (open: boolean) => void;
-  clearWhiteboard: () => void;
 }
 
 // Helper pour désérialiser les documents
@@ -128,11 +119,10 @@ export const useAppStore = create<AppState>()(
       compactMode: false,
       actionLogs: [],
       isLogsModalOpen: false,
-      whiteboardContent: '',
-      isWhiteboardOpen: false,
 
       // Video state initial
       isVideoActive: false,
+      screenShareRequested: false,
 
       // Actions
       setConnectionState: (state) => set({ connectionState: state }),
@@ -252,13 +242,6 @@ export const useAppStore = create<AppState>()(
 
       setLogsModalOpen: (open) => set({ isLogsModalOpen: open }),
 
-      // Whiteboard Actions Implementation
-      setWhiteboardContent: (content) => set({ whiteboardContent: content }),
-      appendToWhiteboard: (text) => set((state) => ({
-        whiteboardContent: state.whiteboardContent + text
-      })),
-      setWhiteboardOpen: (open) => set({ isWhiteboardOpen: open }),
-      clearWhiteboard: () => set({ whiteboardContent: '' }),
       // Screen share request handling
       setScreenShareRequested: (requested) => set({ screenShareRequested: requested }),
     }),
