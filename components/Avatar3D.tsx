@@ -70,12 +70,53 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
         return meshes;
     }, [scene]);
 
+    // Detect and cache skeleton bones for procedural animation
+    const bones = useMemo(() => {
+        const b: Record<string, THREE.Object3D> = {};
+        scene.traverse((n) => {
+            const name = n.name.toLowerCase();
+            // Typical Ready Player Me / Mixamo naming
+            if (name.includes('head') && !name.includes('end')) b.head = n;
+            if (name.includes('neck')) b.neck = n;
+            if (name.includes('spine2') || (name.includes('spine') && name.includes('chest'))) b.chest = n;
+            if (name.includes('spine1')) b.spineUpper = n;
+            if (name.includes('spine') && !b.spine) b.spine = n;
+            if (name.includes('hips') || name === 'hips') b.hips = n;
+            if (name.includes('shoulder')) {
+                if (name.includes('left') || name.includes(' l ') || name.includes('_l')) b.leftShoulder = n;
+                if (name.includes('right') || name.includes(' r ') || name.includes('_r')) b.rightShoulder = n;
+            }
+            if (name.includes('arm')) {
+                if (name.includes('left') || name.includes(' l ') || name.includes('_l')) {
+                    if (name.includes('forearm')) b.leftForearm = n; else b.leftArm = n;
+                }
+                if (name.includes('right') || name.includes(' r ') || name.includes('_r')) {
+                    if (name.includes('forearm')) b.rightForearm = n; else b.rightArm = n;
+                }
+            }
+            if (name.includes('hand')) {
+                if (name.includes('left') || name.includes(' l ') || name.includes('_l')) b.leftHand = n;
+                if (name.includes('right') || name.includes(' r ') || name.includes('_r')) b.rightHand = n;
+            }
+        });
+        return b;
+    }, [scene]);
+
+    // Save each bone's REST rotation so we can apply offsets instead of absolutes
+    const restPose = useMemo(() => {
+        const rest: Record<string, THREE.Euler> = {};
+        for (const [key, bone] of Object.entries(bones)) {
+            rest[key] = bone.rotation.clone();
+        }
+        return rest;
+    }, [bones]);
+
     // Cache eye objects 
     const eyeObjects = useMemo(() => {
         const eyes: THREE.Object3D[] = [];
         scene.traverse((child) => {
             const n = child.name.toLowerCase();
-            if (n.includes('eye') && !n.includes('brow') && !n.includes('lash')) {
+            if (n.includes('eye') && !n.includes('brow') && !n.includes('lash') && child.type !== 'SkinnedMesh') {
                 eyes.push(child);
             }
         });
@@ -129,33 +170,117 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
         const audioDelta = Math.abs(audio - prevAudio.current);
         prevAudio.current = audio;
 
-        // ━━━ 2. HEAD TRACKING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ━━━ 2. FULL BODY ARTICULATION (BONES) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // All bone animations use REST POSE + small offset (never absolute values)
 
         if (groupRef.current) {
-            const targetRotY = (mousePos.current.x * Math.PI) / 10;
-            groupRef.current.rotation.y = THREE.MathUtils.lerp(
-                groupRef.current.rotation.y, targetRotY, 0.05
-            );
-            groupRef.current.rotation.x = THREE.MathUtils.lerp(
-                groupRef.current.rotation.x, -0.2, 0.03
-            );
+            // Overall breath cycle
+            const breathFreq = isSpeaking ? 1.4 : 0.55;
+            const breathEnergy = Math.sin(t * breathFreq);
+            const breathVal = (breathEnergy + 1) / 2; // 0..1
 
-            // Breathing
-            const breathHz = isSpeaking ? 1.8 : 0.6;
-            const breathAmp = isSpeaking ? 0.006 : 0.012;
-            groupRef.current.position.y = -4.8 + Math.sin(t * breathHz) * breathAmp;
+            // Natural Idle "Look-around" noise
+            const idleLookX = Math.sin(t * 0.15) * 0.05 + Math.cos(t * 0.08) * 0.02;
+            const idleLookY = Math.cos(t * 0.12) * 0.03;
 
-            // Subtle head nod when speaking (driven by audio energy changes)
-            if (isSpeaking) {
-                groupRef.current.rotation.z = THREE.MathUtils.lerp(
-                    groupRef.current.rotation.z,
-                    Math.sin(t * 3.5) * audioDelta * 2,
-                    0.08
-                );
-            } else {
-                groupRef.current.rotation.z = THREE.MathUtils.lerp(
-                    groupRef.current.rotation.z, 0, 0.05
-                );
+            // Helper: returns rest rotation for a bone key, or zero
+            const rest = (key: string, axis: 'x' | 'y' | 'z') => restPose[key]?.[axis] ?? 0;
+
+            // ── HIPS (Counter-sway)
+            if (bones.hips) {
+                const swayOffset = Math.sin(t * 0.4) * 0.01 + (isSpeaking ? audio * 0.02 : 0);
+                bones.hips.rotation.z = THREE.MathUtils.lerp(bones.hips.rotation.z, rest('hips', 'z') - swayOffset, 0.04);
+            }
+
+            // ── SPINE (Lean & sway distributed across segments)
+            if (bones.spine) {
+                const leanX = isSpeaking ? -0.01 - audio * 0.015 : -0.008;
+                const swayZ = Math.cos(t * 0.3) * 0.008;
+                bones.spine.rotation.x = THREE.MathUtils.lerp(bones.spine.rotation.x, rest('spine', 'x') + leanX, 0.04);
+                bones.spine.rotation.z = THREE.MathUtils.lerp(bones.spine.rotation.z, rest('spine', 'z') + swayZ, 0.04);
+            }
+            if (bones.spineUpper) {
+                const leanX = isSpeaking ? -0.008 - audio * 0.012 : -0.005;
+                bones.spineUpper.rotation.x = THREE.MathUtils.lerp(bones.spineUpper.rotation.x, rest('spineUpper', 'x') + leanX, 0.04);
+            }
+
+            // ── CHEST (Breathing expansion + twist)
+            if (bones.chest) {
+                const twistY = Math.sin(t * 0.4) * 0.015 + (isSpeaking ? audio * 0.015 : 0);
+                const leanX = isSpeaking ? -0.005 - audio * 0.01 : -0.004;
+                bones.chest.rotation.y = THREE.MathUtils.lerp(bones.chest.rotation.y, rest('chest', 'y') + twistY, 0.05);
+                bones.chest.rotation.x = THREE.MathUtils.lerp(bones.chest.rotation.x, rest('chest', 'x') + leanX, 0.04);
+                bones.chest.scale.setScalar(1 + breathVal * 0.005 + (isSpeaking ? audio * 0.006 : 0));
+            }
+
+            // ── SHOULDERS (Asymmetric breathing shrugs — offsets only)
+            if (bones.leftShoulder) {
+                const liftL = breathVal * 0.015 + (isSpeaking ? audio * 0.04 * (0.8 + Math.sin(t * 5) * 0.2) : 0);
+                bones.leftShoulder.rotation.z = THREE.MathUtils.lerp(bones.leftShoulder.rotation.z, rest('leftShoulder', 'z') + liftL, 0.08);
+            }
+            if (bones.rightShoulder) {
+                const liftR = breathVal * 0.012 + (isSpeaking ? audio * 0.035 * (0.8 + Math.cos(t * 4.5) * 0.2) : 0);
+                bones.rightShoulder.rotation.z = THREE.MathUtils.lerp(bones.rightShoulder.rotation.z, rest('rightShoulder', 'z') - liftR, 0.08);
+            }
+
+            // ── ARMS (Small offsets from rest pose — NOT absolute values)
+            if (bones.leftArm) {
+                const wave = Math.sin(t * 1.2) * 0.02;
+                const spread = isSpeaking ? audio * 0.06 : 0;
+                const swingX = Math.cos(t * 0.6) * 0.01;
+                bones.leftArm.rotation.z = THREE.MathUtils.lerp(bones.leftArm.rotation.z, rest('leftArm', 'z') + spread + wave, 0.05);
+                bones.leftArm.rotation.x = THREE.MathUtils.lerp(bones.leftArm.rotation.x, rest('leftArm', 'x') + swingX, 0.05);
+            }
+            if (bones.rightArm) {
+                const wave = Math.sin(t * 1.2 + 0.5) * 0.02;
+                const spread = isSpeaking ? audio * 0.06 : 0;
+                const swingX = Math.cos(t * 0.6 + 0.5) * 0.01;
+                bones.rightArm.rotation.z = THREE.MathUtils.lerp(bones.rightArm.rotation.z, rest('rightArm', 'z') - spread - wave, 0.05);
+                bones.rightArm.rotation.x = THREE.MathUtils.lerp(bones.rightArm.rotation.x, rest('rightArm', 'x') - swingX, 0.05);
+            }
+
+            // ── FOREARMS (Gentle bend offsets)
+            if (bones.leftForearm) {
+                const bend = Math.sin(t * 1.5) * 0.015 + (isSpeaking ? audio * 0.03 : 0);
+                bones.leftForearm.rotation.y = THREE.MathUtils.lerp(bones.leftForearm.rotation.y, rest('leftForearm', 'y') + bend, 0.05);
+            }
+            if (bones.rightForearm) {
+                const bend = Math.sin(t * 1.5 + 0.3) * 0.015 + (isSpeaking ? audio * 0.03 : 0);
+                bones.rightForearm.rotation.y = THREE.MathUtils.lerp(bones.rightForearm.rotation.y, rest('rightForearm', 'y') - bend, 0.05);
+            }
+
+            // ── HEAD & NECK (Damped inertia & Micro-noise — offsets from rest)
+            if (bones.head || bones.neck) {
+                const lookX = (mousePos.current.x * Math.PI) / 7 + idleLookX;
+                const lookY = (mousePos.current.y * Math.PI) / 9 + idleLookY;
+
+                // Micro-jitter for real-look
+                const jitterX = (Math.random() - 0.5) * 0.0012;
+                const jitterY = (Math.random() - 0.5) * 0.0012;
+
+                if (bones.neck) {
+                    bones.neck.rotation.y = THREE.MathUtils.lerp(bones.neck.rotation.y, rest('neck', 'y') + lookX * 0.35, 0.08);
+                    bones.neck.rotation.x = THREE.MathUtils.lerp(bones.neck.rotation.x, rest('neck', 'x') - lookY * 0.25, 0.08);
+                }
+                if (bones.head) {
+                    bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, rest('head', 'y') + lookX * 0.65 + jitterX, 0.12);
+                    bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, rest('head', 'x') - lookY * 0.75 + jitterY, 0.12);
+
+                    // Nodding & head tilt during speech (subtle)
+                    if (isSpeaking) {
+                        const nodFreq = 3.5 + Math.sin(t * 0.7) * 0.8;
+                        const nod = Math.sin(t * nodFreq) * audio * 0.025;
+                        bones.head.rotation.x += nod;
+                        bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, rest('head', 'z') + Math.sin(t * 1.5) * 0.018 * audio, 0.05);
+                    } else {
+                        bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, rest('head', 'z'), 0.05);
+                    }
+                }
+            }
+
+            // Final fallback if no bones found
+            if (!bones.head && !bones.neck) {
+                groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, (mousePos.current.x * Math.PI) / 8, 0.05);
             }
         }
 
@@ -227,29 +352,48 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
                 );
             }
 
-            // Viseme FF — consonant
+            // Viseme FF: F/V sounds
             const ffIdx = dict['viseme_FF'];
             if (ffIdx !== undefined) {
-                inf[ffIdx] = THREE.MathUtils.lerp(
-                    inf[ffIdx],
-                    isSpeaking ? audio * 0.25 * osc2 : 0,
-                    0.25
-                );
+                inf[ffIdx] = THREE.MathUtils.lerp(inf[ffIdx], isSpeaking ? audio * 0.25 * osc2 : 0, 0.2);
+            }
+
+            // Viseme SS: S/Z sounds (horizontal stretch)
+            const ssIdx = dict['viseme_SS'];
+            if (ssIdx !== undefined) {
+                inf[ssIdx] = THREE.MathUtils.lerp(inf[ssIdx], isSpeaking ? audio * 0.2 * (1 - osc1) : 0, 0.15);
+            }
+
+            // Viseme E: E sound
+            const eIdx = dict['viseme_E'];
+            if (eIdx !== undefined) {
+                inf[eIdx] = THREE.MathUtils.lerp(inf[eIdx], isSpeaking ? audio * 0.3 * syllableOsc : 0, 0.2);
             }
 
             // ── SMILE: micro resting expression ──────────────────────────────
             const smileIdx = dict['mouthSmile'] ?? dict['mouthSmileLeft'];
             if (smileIdx !== undefined) {
-                const restSmile = Math.sin(t * 0.35) * 0.03 + 0.04;
+                const restSmile = isSpeaking ? 0.1 : Math.sin(t * 0.35) * 0.03 + 0.06;
                 inf[smileIdx] = THREE.MathUtils.lerp(inf[smileIdx], restSmile, 0.06);
+                const smileR = dict['mouthSmileRight'];
+                if (smileR !== undefined) inf[smileR] = inf[smileIdx];
             }
 
             // ── BROWS ────────────────────────────────────────────────────────
             const browIdx = dict['browInnerUp'] ?? dict['browUp'];
+            const browDownL = dict['browDownLeft'];
+            const browDownR = dict['browDownRight'];
+
             if (browIdx !== undefined) {
                 const browWave = Math.sin(t * 2.2) * 0.02;
-                const browTarget = isSpeaking ? audio * 0.35 + browWave : browWave + 0.01;
+                const browTarget = isSpeaking ? audio * 0.4 + browWave : browWave + 0.01;
                 inf[browIdx] = THREE.MathUtils.lerp(inf[browIdx], Math.max(0, browTarget), 0.1);
+            }
+            // Occasional brow furrowing when "thinking" (low audio but talking)
+            if (browDownL !== undefined && browDownR !== undefined) {
+                const furrow = (isSpeaking && audio < 0.1) ? 0.15 : 0;
+                inf[browDownL] = THREE.MathUtils.lerp(inf[browDownL], furrow, 0.05);
+                inf[browDownR] = THREE.MathUtils.lerp(inf[browDownR], furrow, 0.05);
             }
 
             // ── EYES (blink state machine) ───────────────────────────────────
@@ -265,10 +409,10 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
             const squintL = dict['eyeSquintLeft'];
             const squintR = dict['eyeSquintRight'];
             if (squintL !== undefined) {
-                inf[squintL] = THREE.MathUtils.lerp(inf[squintL], isSpeaking ? 0.15 : 0, 0.08);
+                inf[squintL] = THREE.MathUtils.lerp(inf[squintL], isSpeaking ? 0.2 : 0, 0.08);
             }
             if (squintR !== undefined) {
-                inf[squintR] = THREE.MathUtils.lerp(inf[squintR], isSpeaking ? 0.15 : 0, 0.08);
+                inf[squintR] = THREE.MathUtils.lerp(inf[squintR], isSpeaking ? 0.2 : 0, 0.08);
             }
 
             // ── CHEEKS: puff when speaking ───────────────────────────────────
@@ -276,7 +420,7 @@ const AvatarModel: React.FC<Avatar3DProps> = ({ analyserRef, isActive }) => {
             if (cheekIdx !== undefined) {
                 inf[cheekIdx] = THREE.MathUtils.lerp(
                     inf[cheekIdx],
-                    isSpeaking ? audio * 0.2 * (1 - syllableOsc) : 0,
+                    isSpeaking ? audio * 0.15 * (1 - syllableOsc) : 0,
                     0.12
                 );
             }
