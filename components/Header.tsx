@@ -1,273 +1,245 @@
-import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
-import { ConnectionState, Personality } from '../types';
+import { useState, useEffect, memo, useCallback, useRef } from 'react';
+import { ConnectionState, type Personality } from '../types';
 import Tooltip from './Tooltip';
 import DocumentUploader from './DocumentUploader';
-import { ProcessedDocument } from '../utils/documentProcessor';
+import type { ProcessedDocument } from '../utils/documentProcessor';
 
-// --- Types ---
 interface HeaderProps {
   connectionState: ConnectionState;
   currentPersonality: Personality;
   uploadedDocuments: ProcessedDocument[];
+  isFunctionCallingEnabled?: boolean;
+  isGoogleSearchEnabled?: boolean;
   onDocumentsChange: (documents: ProcessedDocument[]) => void;
   onConnect: () => void;
   onDisconnect: () => void;
   onOpenToolsList: () => void;
-
   onOpenSystemStatus?: () => void;
   onOpenConclusions?: () => void;
   onOpenHistory?: () => void;
   autoHideDelay?: number;
 }
 
-// --- Icons ---
-const Icons = {
-  Search: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-    </svg>
-  ),
-  Function: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
-    </svg>
-  ),
-  System: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  Lock: () => (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-    </svg>
-  ),
-  FileText: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-    </svg>
-  ),
-  History: () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  )
-};
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
-// --- Sub-Components ---
+const SystemIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+const FileTextIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+  </svg>
+);
+const HistoryIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
 
-const StatusBadge = memo(({ connectionState }: { connectionState: ConnectionState }) => {
-  const statusConfig = {
-    [ConnectionState.CONNECTED]: {
-      label: 'ACTIF',
-      colorClass: 'bg-emerald-400',
-      textClass: 'text-emerald-400',
-      bgClass: 'bg-emerald-500/10'
-    },
-    [ConnectionState.CONNECTING]: {
-      label: 'SYNC',
-      colorClass: 'bg-amber-400',
-      textClass: 'text-amber-400',
-      bgClass: 'bg-amber-500/10'
-    },
-    [ConnectionState.DISCONNECTED]: {
-      label: 'OFFLINE',
-      colorClass: 'bg-zinc-500',
-      textClass: 'text-zinc-500',
-      bgClass: 'bg-zinc-500/10'
-    }
-  };
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-  const config = statusConfig[connectionState] || statusConfig[ConnectionState.DISCONNECTED];
-  const isConnected = connectionState === ConnectionState.CONNECTED;
-  const isConnecting = connectionState === ConnectionState.CONNECTING;
+const StatusDot = memo(({ state }: { state: ConnectionState }) => {
+  const config = {
+    [ConnectionState.CONNECTED]: { dot: 'bg-emerald-500', pulse: true, label: 'ACTIF', text: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/15' },
+    [ConnectionState.CONNECTING]: { dot: 'bg-amber-400', pulse: true, label: 'SYNC...', text: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/15' },
+    [ConnectionState.DISCONNECTED]: { dot: 'bg-zinc-600', pulse: false, label: 'OFFLINE', text: 'text-zinc-500', bg: 'bg-zinc-800/50 border-zinc-700/30' },
+    [ConnectionState.ERROR]: { dot: 'bg-red-500', pulse: true, label: 'ERREUR', text: 'text-red-400', bg: 'bg-red-500/10 border-red-500/15' },
+  }[state] ?? { dot: 'bg-zinc-600', pulse: false, label: 'OFFLINE', text: 'text-zinc-500', bg: 'bg-zinc-800/50 border-zinc-700/30' };
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 backdrop-blur-md ${config.bgClass} transition-all duration-300`}>
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.bg} transition-all duration-300`}>
       <div className="relative flex h-1.5 w-1.5">
-        {(isConnected || isConnecting) && (
-          <span className={`absolute -inset-1 rounded-full opacity-40 ${config.colorClass} animate-ping`} style={{ animationDuration: '2s' }} />
-        )}
-        <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${config.colorClass}`} />
+        {config.pulse && <span className={`absolute inset-0 rounded-full ${config.dot} opacity-50 animate-ping`} style={{ animationDuration: '2s' }} />}
+        <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${config.dot}`} />
       </div>
-      <span className={`text-[10px] font-black tracking-widest ${config.textClass}`}>
-        {isConnecting ? 'SYNC...' : config.label}
-      </span>
+      <span className={`text-[9px] font-black tracking-[0.2em] ${config.text}`}>{config.label}</span>
     </div>
   );
 });
-StatusBadge.displayName = 'StatusBadge';
+StatusDot.displayName = 'StatusDot';
 
-const ControlButton = memo(({
-  active,
-  onClick,
-  icon,
-  label,
-  themeColor,
-  disabled = false,
-  disabledReason
+/** Pill showing the active personality name with its theme color accent */
+const PersonalityBadge = memo(({ personality }: { personality: Personality }) => (
+  <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] transition-all duration-300">
+    <div
+      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+      style={{ backgroundColor: personality.themeColor, boxShadow: `0 0 6px ${personality.themeColor}80` }}
+    />
+    <span className="text-[11px] font-semibold text-white/70 truncate max-w-[120px]">
+      {personality.name}
+    </span>
+  </div>
+));
+PersonalityBadge.displayName = 'PersonalityBadge';
+
+/** Small badge showing how many tools are active */
+const ToolBadges = memo(({
+  isFunctionCallingEnabled,
+  isGoogleSearchEnabled,
+  docsCount,
 }: {
-  active: boolean;
+  isFunctionCallingEnabled: boolean;
+  isGoogleSearchEnabled: boolean;
+  docsCount: number;
+}) => {
+  const badges: { label: string; active: boolean; color: string }[] = [
+    { label: '⚡ Outils', active: isFunctionCallingEnabled, color: 'text-amber-400' },
+    { label: '🔍 Search', active: isGoogleSearchEnabled, color: 'text-sky-400' },
+    { label: `📄 ${docsCount}`, active: docsCount > 0, color: 'text-violet-400' },
+  ];
+
+  const active = badges.filter(b => b.active);
+  if (active.length === 0) return null;
+
+  return (
+    <div className="hidden md:flex items-center gap-1.5">
+      {active.map(b => (
+        <span
+          key={b.label}
+          className={`px-2 py-1 rounded-full text-[9px] font-bold bg-white/[0.04] border border-white/[0.06] ${b.color}`}
+        >
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+});
+ToolBadges.displayName = 'ToolBadges';
+
+const NavButton = memo(({
+  onClick, icon, label, themeColor,
+}: {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
   themeColor: string;
-  disabled?: boolean;
-  disabledReason?: string;
-}) => {
-  return (
-    <Tooltip content={disabled && disabledReason ? `${label} - ${disabledReason}` : label} position="bottom">
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`
-          relative flex items-center justify-center w-9 h-9 rounded-lg
-          transition-all duration-200 ease-out border
-          ${disabled
-            ? 'opacity-30 cursor-not-allowed border-transparent grayscale'
-            : active
-              ? 'bg-white/10 border-white/20 text-white'
-              : 'text-zinc-400 border-transparent hover:text-white hover:bg-white/5'
-          }
-        `}
-      >
-        <div className="relative z-10">{icon}</div>
-        {active && !disabled && (
-          <span
-            className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-zinc-900"
-            style={{ backgroundColor: themeColor }}
-          />
-        )}
-      </button>
-    </Tooltip>
-  );
-});
-ControlButton.displayName = 'ControlButton';
-
-const ControlGroup = memo(({ children }: { children: React.ReactNode; label: string }) => (
-  <div className="flex items-center gap-1 p-0.5 rounded-xl bg-white/[0.03] border border-white/5">
-    {children}
-  </div>
+}) => (
+  <Tooltip content={label} position="bottom">
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 border border-transparent hover:text-white hover:bg-white/[0.06] hover:border-white/[0.08] transition-all duration-200"
+    >
+      {icon}
+    </button>
+  </Tooltip>
 ));
-ControlGroup.displayName = 'ControlGroup';
+NavButton.displayName = 'NavButton';
+
+// ─── Main Header ─────────────────────────────────────────────────────────────
 
 const Header: React.FC<HeaderProps> = ({
   connectionState,
   currentPersonality,
   uploadedDocuments,
+  isFunctionCallingEnabled = false,
+  isGoogleSearchEnabled = false,
   onDocumentsChange,
   onOpenSystemStatus,
   onOpenConclusions,
   onOpenHistory,
-  autoHideDelay = 3000,
+  autoHideDelay = 4000,
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [visible, setVisible] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnected = connectionState === ConnectionState.CONNECTED;
 
-  const resetHideTimeout = useCallback(() => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    setIsVisible(true);
-    hideTimeoutRef.current = setTimeout(() => setIsVisible(false), autoHideDelay);
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setVisible(true);
+    timerRef.current = setTimeout(() => setVisible(false), autoHideDelay);
   }, [autoHideDelay]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (e.clientY <= 80) {
-        setIsVisible(true);
-        resetHideTimeout();
-      }
+    const onMouseMove = (e: MouseEvent) => {
+      if (e.clientY <= 80) resetTimer();
     };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mousedown', resetHideTimeout, { passive: true });
-    window.addEventListener('keydown', resetHideTimeout, { passive: true });
-    resetHideTimeout();
-
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('mousedown', resetTimer, { passive: true });
+    window.addEventListener('keydown', resetTimer, { passive: true });
+    resetTimer();
     return () => {
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mousedown', resetHideTimeout);
-      window.removeEventListener('keydown', resetHideTimeout);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mousedown', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
     };
-  }, [resetHideTimeout]);
+  }, [resetTimer]);
 
   return (
     <header
-      className={`
-        fixed top-0 left-0 w-full z-50 px-6 py-4
-        transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
-        ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}
-      `}
+      className={[
+        'fixed top-0 left-0 w-full z-50 px-4 pt-3 pb-2',
+        'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        visible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none',
+      ].join(' ')}
     >
-      <div className="max-w-[120rem] mx-auto flex items-center justify-between relative px-4 py-2 rounded-2xl bg-zinc-950/60 backdrop-blur-2xl border border-white/10 shadow-xl">
-        {/* LEFT: Status */}
-        <div className="flex items-center gap-4">
-          <StatusBadge connectionState={connectionState} />
+      <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4 px-4 py-2 rounded-2xl bg-zinc-950/65 backdrop-blur-2xl border border-white/[0.07] shadow-lg">
+
+        {/* LEFT: status + personality */}
+        <div className="flex items-center gap-3 min-w-0">
+          <StatusDot state={connectionState} />
+          <PersonalityBadge personality={currentPersonality} />
+          <ToolBadges
+            isFunctionCallingEnabled={isFunctionCallingEnabled}
+            isGoogleSearchEnabled={isGoogleSearchEnabled}
+            docsCount={uploadedDocuments.length}
+          />
         </div>
 
-        {/* RIGHT: Controls */}
-        <nav className="flex items-center gap-4">
-
-          {/* System & Data */}
-          <div className="flex items-center gap-2">
-            {onOpenSystemStatus && (
-              <ControlButton
-                active={false}
-                onClick={onOpenSystemStatus}
-                icon={<Icons.System />}
-                label="System"
-                themeColor={currentPersonality.themeColor}
-              />
+        {/* RIGHT: nav actions */}
+        <nav className="flex items-center gap-2 flex-shrink-0" aria-label="Navigation">
+          {/* View actions */}
+          <div className="flex items-center gap-0.5">
+            {onOpenHistory && (
+              <NavButton onClick={onOpenHistory} icon={<HistoryIcon />} label="Historique" themeColor={currentPersonality.themeColor} />
             )}
             {onOpenConclusions && (
-              <ControlButton
-                active={false}
-                onClick={onOpenConclusions}
-                icon={<Icons.FileText />}
-                label="Conclusions"
-                themeColor={currentPersonality.themeColor}
-              />
-            )}
-            {onOpenHistory && (
-              <ControlButton
-                active={false}
-                onClick={onOpenHistory}
-                icon={<Icons.History />}
-                label="History"
-                themeColor={currentPersonality.themeColor}
-              />
+              <NavButton onClick={onOpenConclusions} icon={<FileTextIcon />} label="Conclusions" themeColor={currentPersonality.themeColor} />
             )}
           </div>
 
-          <div className="h-6 w-px bg-white/10" />
+          <div className="w-px h-5 bg-white/[0.07]" />
 
-          {/* Configuration */}
-          <div className="flex items-center gap-3 bg-white/[0.03] px-3 py-1 rounded-xl border border-white/5">
-            <div className="relative group">
+          {/* Settings + Documents */}
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+            <div className="relative">
               <DocumentUploader
                 documents={uploadedDocuments}
                 onDocumentsChange={onDocumentsChange}
                 disabled={isConnected}
               />
               {uploadedDocuments.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-black text-white">
+                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-black text-white pointer-events-none">
                   {uploadedDocuments.length}
                 </span>
               )}
             </div>
+
+            {onOpenSystemStatus && (
+              <NavButton
+                onClick={onOpenSystemStatus}
+                icon={<SystemIcon />}
+                label="Paramètres système"
+                themeColor={currentPersonality.themeColor}
+              />
+            )}
           </div>
         </nav>
       </div>
 
-      {/* Connectivity Indicator Line */}
+      {/* Animated connection progress line */}
       {isConnected && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-[0.5px] overflow-hidden opacity-20">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-px overflow-hidden opacity-25 pointer-events-none">
           <div
-            className="w-full h-full animate-progress"
+            className="w-full h-full"
             style={{
               background: `linear-gradient(90deg, transparent 0%, ${currentPersonality.themeColor} 50%, transparent 100%)`,
-              backgroundSize: '200% 100%'
+              backgroundSize: '200% 100%',
+              animation: 'progress 4s linear infinite',
             }}
           />
         </div>
@@ -277,9 +249,6 @@ const Header: React.FC<HeaderProps> = ({
         @keyframes progress {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
-        }
-        .animate-progress {
-          animation: progress 4s linear infinite;
         }
       `}</style>
     </header>

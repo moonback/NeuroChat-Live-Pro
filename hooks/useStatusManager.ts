@@ -1,15 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ConnectionState } from '../types';
 import { ToastMessage } from '../components/Toast';
 
 interface UseStatusManagerResult {
   connectionState: ConnectionState;
-  setConnectionState: React.Dispatch<React.SetStateAction<ConnectionState>>;
-  connectionStateRef: React.MutableRefObject<ConnectionState>;
+  setConnectionState: (state: ConnectionState) => void;
   isTalking: boolean;
-  setIsTalking: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsTalking: (v: boolean) => void;
   latency: number;
-  setLatency: React.Dispatch<React.SetStateAction<number>>;
+  setLatency: (v: number) => void;
   toasts: ToastMessage[];
   addToast: (type: ToastMessage['type'], title: string, message: string) => void;
   removeToast: (id: string) => void;
@@ -21,22 +20,16 @@ export const useStatusManager = (): UseStatusManagerResult => {
   const [latency, setLatency] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const connectionStateRef = useRef<ConnectionState>(ConnectionState.DISCONNECTED);
-
-  useEffect(() => {
-    connectionStateRef.current = connectionState;
-  }, [connectionState]);
-
+  // Dedup by title+message — prevents spam on repeated errors (e.g. 5x reconnect failures)
   const addToast = useCallback((type: ToastMessage['type'], title: string, message: string) => {
-    setToasts(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        type,
-        title,
-        message,
-      },
-    ]);
+    setToasts(prev => {
+      const isDuplicate = prev.some(t => t.title === title && t.message === message);
+      if (isDuplicate) return prev;
+      return [
+        ...prev,
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, type, title, message },
+      ];
+    });
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -46,7 +39,6 @@ export const useStatusManager = (): UseStatusManagerResult => {
   return {
     connectionState,
     setConnectionState,
-    connectionStateRef,
     isTalking,
     setIsTalking,
     latency,
@@ -56,5 +48,3 @@ export const useStatusManager = (): UseStatusManagerResult => {
     removeToast,
   };
 };
-
-

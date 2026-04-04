@@ -24,6 +24,8 @@ import { useConnectionLifecycle } from './hooks/useConnectionLifecycle';
 import VideoOverlay from './components/VideoOverlay';
 import BackgroundLayers from './components/BackgroundLayers';
 import ScreenShareOverlay from './components/ScreenShareOverlay';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { CommandPalette } from './components/CommandPalette';
 import { useAppStore } from './stores/appStore';
 import { useUIStore } from './stores/uiStore';
 import {
@@ -44,7 +46,6 @@ const App: React.FC = () => {
   const {
     connectionState,
     setConnectionState,
-    connectionStateRef,
     isTalking,
     setIsTalking,
     latency,
@@ -74,12 +75,10 @@ const App: React.FC = () => {
     setIsAvatar3DEnabled,
   } = useAppStore();
 
-  // Sync useStatusManager with store state
+  // Keep local status manager in sync with store (single direction: store → local)
   useEffect(() => {
-    if (connectionState !== storeConnectionState) {
-      setConnectionState(storeConnectionState);
-    }
-  }, [storeConnectionState, connectionState, setConnectionState]);
+    setConnectionState(storeConnectionState);
+  }, [storeConnectionState, setConnectionState]);
 
   // Voice State (Local UI state)
   const [selectedVoice, setSelectedVoice] = useState<string>(DEFAULT_PERSONALITY.voiceName);
@@ -141,7 +140,6 @@ const App: React.FC = () => {
   } = useGeminiLiveSession({
     connectionState: storeConnectionState,
     setConnectionState: setStoreConnectionState,
-    connectionStateRef,
     setIsTalking,
     setLatency,
     addToast,
@@ -251,14 +249,30 @@ const App: React.FC = () => {
     };
   }, [activateAudioContext]);
 
-  // Final Cleanup
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+  // Cleanup is handled inside useGeminiLiveSession itself (stable ref + empty deps).
+  // Do NOT add disconnect here — [disconnect] in deps causes an infinite setState loop.
 
   const isConnected = storeConnectionState === ConnectionState.CONNECTED;
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // ⌘K / Ctrl+K → command palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        ui.toggleCommandPalette();
+        return;
+      }
+      // Space → mute/unmute mic (only when connected, not typing in an input)
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (e.code === 'Space' && isConnected && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'BUTTON') {
+        e.preventDefault();
+        handleToggleMic();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [ui, isConnected, handleToggleMic]);
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-body text-white selection:bg-indigo-500/30 safe-area-inset">
@@ -273,25 +287,52 @@ const App: React.FC = () => {
       {/* Screen Sharing Indicator */}
       <ScreenShareOverlay isActive={isScreenShareActive} />
 
-      {/* Real-time 3D Avatar or 2D Visualizer */}
-      {isAvatar3DEnabled ? (
-        <Avatar3D
-          analyserRef={analyserRef}
-          color={currentPersonality.themeColor}
-          isActive={isTalking || isConnected}
-        />
-      ) : (
-        <Visualizer
-          analyserRef={analyserRef}
-          color={currentPersonality.themeColor}
-          isActive={isTalking || isConnected}
-          isEyeTrackingEnabled={isEyeTrackingEnabled}
-        />
-      )}
+      {/* Real-time 3D Avatar or 2D Visualizer — isolated so a crash doesn't kill the app */}
+      <ErrorBoundary label="visualizer" fallback={null}>
+        {isAvatar3DEnabled ? (
+          <Avatar3D
+            analyserRef={analyserRef}
+            color={currentPersonality.themeColor}
+            isActive={isTalking || isConnected}
+          />
+        ) : (
+          <Visualizer
+            analyserRef={analyserRef}
+            color={currentPersonality.themeColor}
+            isActive={isTalking || isConnected}
+            isEyeTrackingEnabled={isEyeTrackingEnabled}
+          />
+        )}
+      </ErrorBoundary>
 
       {/* Toast Management System */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <InstallPWA />
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={ui.isCommandPaletteOpen}
+        onClose={() => ui.setCommandPaletteOpen(false)}
+        connectionState={storeConnectionState}
+        isVideoActive={isVideoActive}
+        isScreenShareActive={isScreenShareActive}
+        isMicMuted={isMicMuted}
+        isFunctionCallingEnabled={isFunctionCallingEnabled}
+        isGoogleSearchEnabled={isGoogleSearchEnabled}
+        isAvatar3DEnabled={isAvatar3DEnabled}
+        onConnect={handleConnect}
+        onDisconnect={handleDisconnect}
+        onToggleVideo={() => setIsVideoActive(!isVideoActive)}
+        onToggleScreenShare={toggleScreenShare}
+        onToggleMic={handleToggleMic}
+        onToggleFunctionCalling={handleFunctionCallingToggle}
+        onToggleGoogleSearch={handleGoogleSearchToggle}
+        onToggleAvatar3D={setIsAvatar3DEnabled}
+        onOpenHistory={() => ui.setHistoryModalOpen(true)}
+        onOpenConclusions={() => ui.setConclusionsModalOpen(true)}
+        onOpenSettings={() => ui.setSystemStatusModalOpen(true)}
+        onOpenTools={() => ui.setToolsListOpen(true)}
+      />
 
       {/* Overlays & Modals */}
 
@@ -370,11 +411,11 @@ const App: React.FC = () => {
           connectionState={storeConnectionState}
           currentPersonality={currentPersonality}
           uploadedDocuments={uploadedDocuments}
+          isFunctionCallingEnabled={isFunctionCallingEnabled}
+          isGoogleSearchEnabled={isGoogleSearchEnabled}
           onDocumentsChange={handleDocumentsChange}
           onConnect={handleConnect}
           onDisconnect={handleDisconnect}
-
-
           onOpenToolsList={() => ui.setToolsListOpen(true)}
           onOpenSystemStatus={() => ui.setSystemStatusModalOpen(true)}
           onOpenConclusions={() => ui.setConclusionsModalOpen(true)}
@@ -397,11 +438,13 @@ const App: React.FC = () => {
               onDisconnect={handleDisconnect}
               onToggleVideo={() => setIsVideoActive(!isVideoActive)}
               onToggleScreenShare={toggleScreenShare}
+              onToggleMic={handleToggleMic}
               isFunctionCallingEnabled={isFunctionCallingEnabled}
               isGoogleSearchEnabled={isGoogleSearchEnabled}
               onToggleFunctionCalling={handleFunctionCallingToggle}
               onToggleGoogleSearch={handleGoogleSearchToggle}
               onOpenMobileActions={() => ui.setMobileActionsDrawerOpen(true)}
+              onOpenCommandPalette={() => ui.setCommandPaletteOpen(true)}
             />
           </main>
         </div>

@@ -1,21 +1,19 @@
-import React, { useRef, useCallback, useEffect } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { ConnectionState, DEFAULT_AUDIO_CONFIG, Personality } from '../types';
-import { createBlob, decodeAudioData, base64ToArrayBuffer } from '../utils/audioUtils';
+import { useRef, useCallback, useEffect } from 'react';
+import { GoogleGenAI, type LiveServerMessage, Modality } from '@google/genai';
+import { ConnectionState, Personality } from '../types';
 import { buildSystemInstruction } from '../systemConfig';
-import { buildToolsConfig, executeFunction, PersonalityChangeCallback } from '../utils/tools';
-import { ToastMessage } from '../components/Toast';
+import { buildToolsConfig, executeFunction, type PersonalityChangeCallback } from '../utils/tools';
+import type { ToastMessage } from '../components/Toast';
 import { useReconnection } from './useReconnection';
+import { useAudioPipeline } from './useAudioPipeline';
 import {
   showReconnectionFailure,
   showDisconnection,
   showConnectionSuccess,
   showFunctionExecuted,
-  showFunctionError,
   showSelfCorrection,
   showSessionEnd,
   showSessionError,
-  showSessionCreationError,
   showConnectionFailure,
 } from '../utils/toastHelpers';
 import { useAppStore } from '../stores/appStore';
@@ -24,9 +22,8 @@ import { useUIStore } from '../stores/uiStore';
 interface UseGeminiLiveSessionProps {
   connectionState: ConnectionState;
   setConnectionState: (state: ConnectionState) => void;
-  connectionStateRef: React.MutableRefObject<ConnectionState>;
-  setIsTalking: (isTalking: boolean) => void;
-  setLatency: (latency: number) => void;
+  setIsTalking: (v: boolean) => void;
+  setLatency: (v: number) => void;
   addToast: (type: ToastMessage['type'], title: string, message: string) => void;
   personality: Personality;
   documentsContext: string | undefined;
@@ -38,14 +35,13 @@ interface UseGeminiLiveSessionProps {
   startFrameTransmission: () => void;
   resetVisionState: () => void;
   onToggleScreenShare?: (enabled: boolean) => void;
-  sessionRef: React.MutableRefObject<any>;
+  sessionRef: { current: any };
   onPersonalityChange?: PersonalityChangeCallback;
 }
 
 export const useGeminiLiveSession = ({
-  connectionState: _unused, // Passed but we use store for consistency
+  connectionState: _unused,
   setConnectionState,
-  connectionStateRef,
   setIsTalking,
   setLatency,
   addToast,
@@ -62,21 +58,44 @@ export const useGeminiLiveSession = ({
   sessionRef,
   onPersonalityChange,
 }: UseGeminiLiveSessionProps) => {
-  // Refs for audio resources
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
-  const outputAudioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const inputAnalyserRef = useRef<AnalyserNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const nextStartTimeRef = useRef<number>(0);
-  const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const activeSourceInputRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const lastUserAudioTimeRef = useRef<number>(0);
-  const connectRef = useRef<(() => Promise<void>) | null>(null);
+  // Keep latest config values in a ref — prevents re-triggering connect on every prop change
+  const configRef = useRef({
+    personality,
+    documentsContext,
+    personalityFilesContext,
+    selectedVoice,
+    isFunctionCallingEnabled,
+    isGoogleSearchEnabled,
+    isVideoActive,
+  });
 
-  // Connection management hook
+  useEffect(() => {
+    configRef.current = {
+      personality,
+      documentsContext,
+      personalityFilesContext,
+      selectedVoice,
+      isFunctionCallingEnabled,
+      isGoogleSearchEnabled,
+      isVideoActive,
+    };
+  }, [personality, documentsContext, personalityFilesContext, selectedVoice, isFunctionCallingEnabled, isGoogleSearchEnabled, isVideoActive]);
+
+  // Stable function refs — declared early so they can be referenced in callbacks below
+  const connectRef = useRef<() => Promise<void>>(async () => {});
+  const disconnectRef = useRef<(shouldReload?: boolean) => void>(() => {});
+
+  // Audio pipeline (input 16kHz + output 24kHz)
+  // sendAudio is stable: sessionRef.current is checked at call-time (not captured)
+  const sendAudio = useCallback((blob: Blob) => {
+    sessionRef.current?.sendRealtimeInput({ media: blob });
+  // sessionRef is a stable object (useRef) — its identity never changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const audio = useAudioPipeline(sendAudio, sessionRef);
+
+  // Reconnection logic
   const {
     scheduleReconnect,
     reset: resetReconnection,
@@ -85,72 +104,20 @@ export const useGeminiLiveSession = ({
     setIsIntentionalDisconnect,
   } = useReconnection({
     maxAttempts: 5,
-    onReconnect: () => connect(),
+    onReconnect: () => connectRef.current(),
     onMaxAttemptsReached: () => {
       setConnectionState(ConnectionState.ERROR);
       showReconnectionFailure(addToast);
     },
   });
 
-  // Latest values refs for session config (prevents re-triggering connect)
-  const refs = useRef({
-    personality,
-    documentsContext,
-    personalityFilesContext,
-    selectedVoice,
-    isFunctionCallingEnabled,
-    isGoogleSearchEnabled,
-    isVideoActive
-  });
-
-  useEffect(() => {
-    refs.current = {
-      personality,
-      documentsContext,
-      personalityFilesContext,
-      selectedVoice,
-      isFunctionCallingEnabled,
-      isGoogleSearchEnabled,
-      isVideoActive
-    };
-  }, [personality, documentsContext, personalityFilesContext, selectedVoice, isFunctionCallingEnabled, isGoogleSearchEnabled, isVideoActive]);
-
-  const cleanupAudioResources = useCallback(() => {
-    audioSourcesRef.current.forEach(src => {
-      try { src.stop(); src.disconnect(); } catch (e) { }
-    });
-    audioSourcesRef.current.clear();
-    nextStartTimeRef.current = 0;
-
-    const nodes = [processorRef, activeSourceInputRef, analyserRef, inputAnalyserRef, gainNodeRef];
-    nodes.forEach(nodeRef => {
-      if (nodeRef.current) {
-        try { nodeRef.current.disconnect(); } catch (e) { }
-        if ('onaudioprocess' in nodeRef.current) (nodeRef.current as any).onaudioprocess = null;
-        (nodeRef as any).current = null;
-      }
-    });
-
-    [inputAudioContextRef, outputAudioContextRef].forEach(ctxRef => {
-      if (ctxRef.current) {
-        try { ctxRef.current.close(); } catch (e) { }
-        ctxRef.current = null;
-      }
-    });
-
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => { try { track.stop(); } catch (e) { } });
-      mediaStreamRef.current = null;
-    }
-  }, []);
-
   const disconnect = useCallback((shouldReload = false) => {
     setIsIntentionalDisconnect(true);
     if (sessionRef.current) {
-      try { sessionRef.current.close(); } catch (e) { }
+      try { sessionRef.current.close(); } catch { /* ok */ }
       sessionRef.current = null;
     }
-    cleanupAudioResources();
+    audio.cleanup();
     resetReconnection();
     resetVisionState();
     setConnectionState(ConnectionState.DISCONNECTED);
@@ -161,228 +128,175 @@ export const useGeminiLiveSession = ({
       showDisconnection(addToast);
       setTimeout(() => window.location.reload(), 500);
     }
-  }, [cleanupAudioResources, resetVisionState, setConnectionState, setIsTalking, setLatency, addToast, setIsIntentionalDisconnect, resetReconnection, sessionRef]);
+  }, [audio, resetVisionState, setConnectionState, setIsTalking, setLatency, addToast, setIsIntentionalDisconnect, resetReconnection, sessionRef]);
 
   const connect = useCallback(async () => {
     try {
       if (!isReconnecting) setConnectionState(ConnectionState.CONNECTING);
-
-      // Crucial: Clear stale session reference from previous attempts
       sessionRef.current = null;
 
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const inputCtx = new AudioContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.inputSampleRate });
-      const outputCtx = new AudioContextClass({ sampleRate: DEFAULT_AUDIO_CONFIG.outputSampleRate });
-
-      await Promise.all([inputCtx.resume(), outputCtx.resume()]);
-      inputAudioContextRef.current = inputCtx;
-      outputAudioContextRef.current = outputCtx;
-
-      const analyser = outputCtx.createAnalyser();
-      analyser.fftSize = 512;
-      analyserRef.current = analyser;
-
-      const gainNode = outputCtx.createGain();
-      gainNode.connect(analyser);
-      analyser.connect(outputCtx.destination);
-      gainNodeRef.current = gainNode;
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-
-      const inputAnalyser = inputCtx.createAnalyser();
-      inputAnalyser.fftSize = 256;
-      inputAnalyserRef.current = inputAnalyser;
-
-      const apiKey = process.env.API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey });
+      await audio.setup(stream);
 
       const handleInternalReconnect = () => {
         if (isIntentionalDisconnect) return;
         if (sessionRef.current) {
-          try { sessionRef.current.close(); } catch (e) { }
+          try { sessionRef.current.close(); } catch { /* ok */ }
           sessionRef.current = null;
         }
-        cleanupAudioResources();
+        audio.cleanup();
         scheduleReconnect();
       };
 
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY
+        || (process as any).env?.GEMINI_API_KEY
+        || '';
+
+      const ai = new GoogleGenAI({ apiKey });
+      const cfg = configRef.current;
+
       const session = await ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025', // Restore original model name
-        // Note: keeping the original model name pattern from the code
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
           onopen: async () => {
-            console.log('Gemini Live Session Opened');
             setConnectionState(ConnectionState.CONNECTED);
             showConnectionSuccess(addToast);
             resetReconnection();
-
-            if (refs.current.isVideoActive) startFrameTransmission();
-
-            if (!inputAudioContextRef.current || !mediaStreamRef.current) return;
-            const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-            activeSourceInputRef.current = source;
-            if (inputAnalyserRef.current) source.connect(inputAnalyserRef.current);
-
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const bufferSize = isMobile ? 1024 : 2048;
-            const processor = inputAudioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
-            processorRef.current = processor;
-
-            processor.onaudioprocess = (e) => {
-              // Only send if we have an active session ref and it's not the stale one
-              if (!sessionRef.current) return;
-
-              try {
-                const inputData = e.inputBuffer.getChannelData(0);
-                let sum = 0;
-                for (let i = 0; i < inputData.length; i += (isMobile ? 4 : 1)) {
-                  sum += inputData[i] * inputData[i];
-                }
-                const rms = Math.sqrt(sum / (inputData.length / (isMobile ? 4 : 1)));
-                if (rms > 0.02) lastUserAudioTimeRef.current = Date.now();
-
-                const pcmBlob = createBlob(inputData, DEFAULT_AUDIO_CONFIG.inputSampleRate);
-
-                // Final safety check before sending
-                if (sessionRef.current) {
-                  sessionRef.current.sendRealtimeInput({ media: pcmBlob });
-                }
-              } catch (err: any) {
-                if (err?.message?.includes('closed')) {
-                  // Silent fail for already closed sessions to avoid console spam
-                  return;
-                }
-                console.warn('[UseGemini] onaudioprocess error:', err);
-              }
-            };
-
-            source.connect(processor);
-            processor.connect(inputAudioContextRef.current.destination);
+            if (cfg.isVideoActive) startFrameTransmission();
           },
-          onmessage: async (message: LiveServerMessage) => {
-            const addMessageToStore = useAppStore.getState().addMessageToCurrentSession;
-            const serverContent = message.serverContent as any;
 
-            // Transcripts logic
-            ['userTurn', 'modelTurn'].forEach(turn => {
+          onmessage: async (message: LiveServerMessage) => {
+            const addMsg = useAppStore.getState().addMessageToCurrentSession;
+            const serverContent = (message as any).serverContent;
+
+            // Transcripts
+            for (const [turn, role] of [['userTurn', 'user'], ['modelTurn', 'model']] as const) {
               const text = serverContent?.[turn]?.parts?.map((p: any) => p.text).join('').trim();
-              if (text) addMessageToStore({ role: turn === 'userTurn' ? 'user' : 'model', content: text });
-            });
+              if (text) addMsg({ role, content: text });
+            }
 
             // Tool execution
             if (message.toolCall?.functionCalls) {
               const { setActiveDocument } = useUIStore.getState();
-              const functionResponses = await Promise.all(message.toolCall.functionCalls.map(async (fc) => {
-                try {
-                  const result = await executeFunction(fc, {
-                    onPersonalityChange,
-                    onToggleScreenShare,
-                    onOpenDocument: (doc) => setActiveDocument(doc)
-                  });
-                  showFunctionExecuted(addToast, fc.name);
-                  return { id: fc.id, name: fc.name, response: result };
-                } catch (error) {
-                  console.warn(`[Self-Correction] Tool ${fc.name} failed, informing the model...`, error);
-                  showSelfCorrection(addToast, fc.name);
-                  return { id: fc.id, name: fc.name, response: { result: 'error', message: `Échec de l'outil ${fc.name} : ${String(error)}. Veuillez analyser l'erreur et tenter une correction autonome si possible.` } };
-                }
-              }));
+              const functionResponses = await Promise.all(
+                message.toolCall.functionCalls.map(async (fc) => {
+                  try {
+                    const result = await executeFunction(fc, {
+                      onPersonalityChange,
+                      onToggleScreenShare,
+                      onOpenDocument: (doc) => setActiveDocument(doc),
+                    });
+                    showFunctionExecuted(addToast, fc.name);
+                    return { id: fc.id, name: fc.name, response: result };
+                  } catch (error) {
+                    showSelfCorrection(addToast, fc.name);
+                    return {
+                      id: fc.id,
+                      name: fc.name,
+                      response: {
+                        result: 'error',
+                        message: `Échec de l'outil ${fc.name}: ${String(error)}. Analysez l'erreur et tentez une correction autonome.`,
+                      },
+                    };
+                  }
+                }),
+              );
               if (sessionRef.current) sessionRef.current.sendToolResponse({ functionResponses });
             }
 
-            // Termination command check
+            // Session termination command
             const modelText = serverContent?.modelTurn?.parts?.map((p: any) => p.text).join('').toLowerCase();
             if (modelText?.includes('terminer la session')) {
               showSessionEnd(addToast);
-              disconnect(true);
+              disconnectRef.current(true);
               return;
             }
 
-            // Audio output logic
+            // Audio output
             const base64Audio = serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-            if (base64Audio && outputAudioContextRef.current && gainNodeRef.current) {
-              if (lastUserAudioTimeRef.current > 0) {
-                const latency = Date.now() - lastUserAudioTimeRef.current;
+            if (base64Audio) {
+              const lastUserTime = audio.lastUserAudioTimeRef.current;
+              if (lastUserTime > 0) {
+                const latency = Date.now() - lastUserTime;
                 if (latency < 5000) setLatency(latency);
               }
               setIsTalking(true);
-              const ctx = outputAudioContextRef.current;
-              nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-              const audioBuffer = await decodeAudioData(base64ToArrayBuffer(base64Audio), ctx, DEFAULT_AUDIO_CONFIG.outputSampleRate);
-              const source = ctx.createBufferSource();
-              source.buffer = audioBuffer;
-              source.connect(gainNodeRef.current);
-              source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current += audioBuffer.duration;
-              audioSourcesRef.current.add(source);
-              source.onended = () => audioSourcesRef.current.delete(source);
+              await audio.scheduleOutputAudio(base64Audio);
             }
 
             if (serverContent?.interrupted) {
-              audioSourcesRef.current.forEach(src => { try { src.stop(); } catch (e) { } });
-              audioSourcesRef.current.clear();
-              nextStartTimeRef.current = 0;
+              audio.interruptOutput();
               setIsTalking(false);
             }
           },
+
           onclose: () => {
             if (!isIntentionalDisconnect && !isReconnecting) handleInternalReconnect();
           },
+
           onerror: (err: any) => {
-            console.error('[UseGemini] Session error:', err);
-            showSessionError(addToast, err?.message || 'Une erreur est survenue.');
+            console.error('[GeminiSession] error:', err);
+            showSessionError(addToast, err?.message ?? 'Une erreur est survenue.');
             if (!isIntentionalDisconnect && !isReconnecting && err?.code !== 'AUTH_ERROR') {
               handleInternalReconnect();
             } else {
               setConnectionState(ConnectionState.ERROR);
               setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 5000);
             }
-          }
+          },
         },
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: refs.current.selectedVoice } } },
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: cfg.selectedVoice } },
+          },
           systemInstruction: buildSystemInstruction(
-            refs.current.personality.systemInstruction,
-            refs.current.documentsContext,
-            refs.current.personalityFilesContext
+            cfg.personality.systemInstruction,
+            cfg.documentsContext,
+            cfg.personalityFilesContext,
           ),
-          tools: buildToolsConfig(refs.current.isFunctionCallingEnabled, refs.current.isGoogleSearchEnabled),
-          // @ts-ignore
+          tools: buildToolsConfig(cfg.isFunctionCallingEnabled, cfg.isGoogleSearchEnabled),
+          // @ts-ignore — transcription is a valid but not yet typed field
           transcription: { enabled: true },
-        }
+        },
       });
+
       sessionRef.current = session;
-    } catch (error: any) {
-      console.error("[UseGemini] Connection failure:", error);
-      cleanupAudioResources();
-      showConnectionFailure(addToast, error.message || "Impossible de se connecter.");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Impossible de se connecter.';
+      console.error('[GeminiSession] connection failure:', error);
+      audio.cleanup();
+      showConnectionFailure(addToast, msg);
       setConnectionState(ConnectionState.ERROR);
       setTimeout(() => setConnectionState(ConnectionState.DISCONNECTED), 3000);
       if (!isIntentionalDisconnect && !isReconnecting) scheduleReconnect();
     }
-  }, [cleanupAudioResources, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency, isReconnecting, isIntentionalDisconnect, scheduleReconnect, resetReconnection, sessionRef, onPersonalityChange, onToggleScreenShare, startFrameTransmission]);
+  }, [
+    audio, addToast, resetVisionState, setConnectionState, setIsTalking, setLatency,
+    isReconnecting, isIntentionalDisconnect, scheduleReconnect, resetReconnection,
+    sessionRef, onPersonalityChange, onToggleScreenShare, startFrameTransmission,
+    // disconnect intentionally omitted — accessed via disconnectRef to break circular dep
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ]);
 
+  // Keep stable refs up to date after each render
   useEffect(() => { connectRef.current = connect; }, [connect]);
-  useEffect(() => { return () => { disconnect(); }; }, [disconnect]);
+  useEffect(() => { disconnectRef.current = disconnect; }, [disconnect]);
 
-  const toggleMic = useCallback(() => {
-    if (mediaStreamRef.current) {
-      const tracks = mediaStreamRef.current.getAudioTracks();
-      tracks.forEach(track => track.enabled = !track.enabled);
-      return !tracks[0]?.enabled;
-    }
-    return false;
-  }, []);
-
-  const getMicMutedState = useCallback(() => {
-    return mediaStreamRef.current ? (mediaStreamRef.current.getAudioTracks()[0]?.enabled === false) : false;
-  }, []);
+  // Cleanup ONLY on unmount — empty deps prevents the infinite loop caused by
+  // disconnect changing → cleanup runs → setState in useReconnection → re-render → repeat
+  useEffect(() => { return () => { disconnectRef.current(); }; }, []);
 
   return {
-    sessionRef, connect, disconnect, analyserRef, inputAnalyserRef,
-    mediaStreamRef, toggleMic, getMicMutedState, cleanupAudioResources,
-    setIsIntentionalDisconnect, connectRef
+    connect,
+    disconnect,
+    analyserRef: audio.analyserRef,
+    inputAnalyserRef: audio.inputAnalyserRef,
+    mediaStreamRef: audio.mediaStreamRef,
+    toggleMic: audio.toggleMic,
+    getMicMutedState: audio.getMicMuted,
+    cleanupAudioResources: audio.cleanup,
+    setIsIntentionalDisconnect,
+    connectRef,
   };
 };

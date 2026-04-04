@@ -106,8 +106,11 @@ export default defineConfig(({ mode }) => {
         })
       ],
       define: {
+        // Legacy Electron/CRA-style env access
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        // Standard Vite env var (VITE_ prefix required for browser exposure)
+        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       },
       resolve: {
         alias: {

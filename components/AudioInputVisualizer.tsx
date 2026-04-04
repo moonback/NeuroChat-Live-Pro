@@ -7,7 +7,7 @@ interface AudioInputVisualizerProps {
 
 const AudioInputVisualizer: React.FC<AudioInputVisualizerProps> = ({ analyser, isActive }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(undefined);
 
   useEffect(() => {
     if (!canvasRef.current || !analyser) return;
